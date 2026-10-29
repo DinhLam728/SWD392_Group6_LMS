@@ -1,6 +1,6 @@
 # SWD392 Group 6 — LMS
 
-Frontend React chia theo module nghiệp vụ; backend Spring Boot chia package theo tầng.
+Frontend React và backend Spring Boot chia theo module nghiệp vụ. Bên trong mỗi module BE chia theo tầng controller, service, repository, entity và dto.
 
 ```text
 SWD392_Group6_LMS/
@@ -54,24 +54,61 @@ SWD392_Group6_LMS/
 │   │   ├── main/
 │   │   │   ├── java/fu/se/lms_group6/
 │   │   │   │   ├── BackendApplication.java
-│   │   │   │   ├── controller/         # Nhận request, gọi service, trả response
-│   │   │   │   ├── service/            # Xử lý nghiệp vụ và transaction
-│   │   │   │   ├── repository/         # Truy cập database
-│   │   │   │   ├── entity/             # Entity JPA dùng chung cho các chức năng
-│   │   │   │   ├── dto/                # Dữ liệu request và response
-│   │   │   │   │   ├── auth/
-│   │   │   │   │   ├── course/
-│   │   │   │   │   ├── questionbank/
-│   │   │   │   │   ├── enrollment/
-│   │   │   │   │   ├── payment/
-│   │   │   │   │   └── quiz/
-│   │   │   │   ├── security/           # Xác thực, phân quyền, JWT
-│   │   │   │   └── externalclient/     # Kết nối dịch vụ bên ngoài
-│   │   │   │       ├── google/
-│   │   │   │       ├── email/
-│   │   │   │       ├── gemini/
-│   │   │   │       └── sepay/
-│   │   │   └── resources/
+│   │   │   │   ├── auth/                # Đăng nhập, đăng ký, OTP, reset mật khẩu
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── user/                # Tài khoản dùng chung
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── course/              # Course, CourseModule, Lesson
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── questionbank/        # Câu hỏi và đáp án
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── enrollment/          # Đăng ký khóa học
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── payment/             # Giao dịch và webhook thanh toán
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── quiz/                # Quiz, lượt làm bài và kết quả
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── entity/
+│   │   │   │   └── dto/
+│   │   │   ├── common/                 # Thành phần dùng chung
+│   │   │   │   ├── entity/             # Lớp nền nếu cần
+│   │   │   │   ├── exception/          # Mã lỗi và xử lý exception
+│   │   │   │   ├── http/               # Response và phân trang
+│   │   │   │   └── utils/
+│   │   │   ├── config/                 # Cấu hình ứng dụng
+│   │   │   ├── security/               # Xác thực, phân quyền, JWT
+│   │   │   └── externalclient/         # Kết nối dịch vụ bên ngoài
+│   │   │       ├── google/
+│   │   │       ├── email/
+│   │   │       ├── gemini/
+│   │   │       └── sepay/
+│   │   └── resources/
 │   │   │       └── application.yaml
 │   │   └── test/java/fu/se/lms_group6/
 │   │       └── BackendApplicationTests.java
@@ -85,3 +122,5 @@ SWD392_Group6_LMS/
 ```
 
 Các thư mục trên là khung triển khai; thư mục rỗng không được Git lưu. FE gọi BE qua REST API. File `.env` chứa cấu hình local và không được push; dùng `.env.example` làm mẫu.
+
+Entity nghiệp vụ nằm trong module sở hữu, ví dụ User ở `user/entity`, Course ở `course/entity`; `common/entity` chỉ chứa lớp nền dùng chung. Các module phối hợp qua service.
