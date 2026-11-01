@@ -16,6 +16,8 @@ SWD392_Group6_LMS/
 │       │   └── router/                # Routes và bảo vệ route
 │       ├── shared/
 │       │   ├── api/                   # API client dùng chung
+│       │   │   ├── apiClient.js
+│       │   │   └── ApiError.js
 │       │   ├── components/            # UI dùng chung
 │       │   ├── hooks/
 │       │   ├── utils/
@@ -54,6 +56,9 @@ SWD392_Group6_LMS/
 │   │   ├── main/
 │   │   │   ├── java/fu/se/lms_group6/
 │   │   │   │   ├── BackendApplication.java
+│   │   │   │   ├── common/
+│   │   │   │   │   ├── http/            # ResponseBuilder, response và phân trang
+│   │   │   │   │   └── exception/       # Mã lỗi và xử lý exception chung
 │   │   │   │   ├── controller/         # Nhận request, gọi service, trả response
 │   │   │   │   ├── service/            # Nghiệp vụ và transaction
 │   │   │   │   ├── repository/         # Truy cập database
@@ -77,10 +82,6 @@ SWD392_Group6_LMS/
 │   │       └── BackendApplicationTests.java
 │   ├── .env.example
 │   ├── .gitignore
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   └── pom.xml
-├── .gitignore
 │   ├── mvnw
 │   ├── mvnw.cmd
 │   └── pom.xml
