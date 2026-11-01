@@ -6,6 +6,18 @@ spring:
       - "optional:file:./.env[.properties]"
       - "optional:file:./backend/.env[.properties]"
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME:lms_g6}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+  sql:
+    init:
+      mode: never
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

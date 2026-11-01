@@ -1,6 +1,6 @@
 # SWD392 Group 6 — LMS
 
-Frontend React chia theo module nghiệp vụ; backend Spring Boot chia theo layer (tầng), phù hợp với Package Diagram hiện tại.
+Frontend React chia theo module nghiệp vụ; backend Spring Boot chia theo layer (tầng).
 
 ```text
 SWD392_Group6_LMS/
@@ -16,6 +16,8 @@ SWD392_Group6_LMS/
 │       │   └── router/                # Routes và bảo vệ route
 │       ├── shared/
 │       │   ├── api/                   # API client dùng chung
+│       │   │   ├── apiClient.js
+│       │   │   └── ApiError.js
 │       │   ├── components/            # UI dùng chung
 │       │   ├── hooks/
 │       │   ├── utils/
@@ -54,6 +56,9 @@ SWD392_Group6_LMS/
 │   │   ├── main/
 │   │   │   ├── java/fu/se/lms_group6/
 │   │   │   │   ├── BackendApplication.java
+│   │   │   │   ├── common/
+│   │   │   │   │   ├── http/            # ResponseBuilder, response và phân trang
+│   │   │   │   │   └── exception/       # Mã lỗi và xử lý exception chung
 │   │   │   │   ├── controller/         # Nhận request, gọi service, trả response
 │   │   │   │   ├── service/            # Nghiệp vụ và transaction
 │   │   │   │   ├── repository/         # Truy cập database
@@ -81,13 +86,5 @@ SWD392_Group6_LMS/
 │   ├── mvnw.cmd
 │   └── pom.xml
 ├── .gitignore
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   └── pom.xml
-├── .gitignore
 └── README.md
 ```
-
-Các thư mục trên là khung triển khai; thư mục rỗng không được Git lưu. FE gọi BE qua REST API. File `.env` chứa cấu hình local và không được push; dùng `.env.example` làm mẫu.
-
-BE đặt class theo tầng: ví dụ `controller/CourseController`, `service/CourseService`, `repository/CourseRepository`, `entity/Course`, `dto/course`. Mỗi entity được định nghĩa một lần để các chức năng sử dụng chung. Controller gọi service; service xử lý nghiệp vụ và gọi repository hoặc external client.
