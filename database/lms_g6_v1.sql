@@ -136,6 +136,8 @@ CREATE TABLE quiz_attempts (
     student_id BIGINT NOT NULL,
     score DECIMAL(5, 2) NULL,
     status ENUM('IN_PROGRESS', 'SUBMITTED', 'GRADED') NOT NULL DEFAULT 'IN_PROGRESS',
+    started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    submitted_at DATETIME NULL,
     CONSTRAINT ck_attempt_score CHECK (score IS NULL OR score BETWEEN 0 AND 10),
     CONSTRAINT fk_attempts_quiz
         FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id),
