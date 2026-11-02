@@ -31,6 +31,7 @@ CREATE TABLE courses (
     teacher_id BIGINT NOT NULL,
     title VARCHAR(150) NOT NULL,
     description TEXT NULL,
+    thumbnail_url VARCHAR(500) NULL,
     price DECIMAL(12, 2) NOT NULL DEFAULT 0,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_courses_teacher
