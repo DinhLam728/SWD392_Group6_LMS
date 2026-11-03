@@ -26,7 +26,7 @@ export default function App() {
       localStorage.setItem('lms_user', JSON.stringify(authData.user))
       setCurrentUser(authData.user)
     }
-    window.location.hash = '/courses'
+    window.location.hash = authData.user?.role === 'TEACHER' ? '/question-bank' : '/courses'
   }
 
   function handleLogout() {
@@ -64,7 +64,21 @@ export default function App() {
       <RegistrationResultPage key={path} id={registration[1]} />
     )
   } else if (path === '/question-bank' || path === '/questions') {
-    page = <QuestionBankPage />
+    page =
+      currentUser?.role === 'TEACHER' ? (
+        <QuestionBankPage />
+      ) : (
+        <section className="card">
+          <h1>Chức năng dành cho giáo viên</h1>
+          <p>
+            Vui lòng đăng nhập bằng tài khoản giáo viên để mở ngân hàng câu
+            hỏi.
+          </p>
+          <a href={currentUser ? '#/courses' : '#/login'}>
+            {currentUser ? 'Về khóa học' : 'Đăng nhập'}
+          </a>
+        </section>
+      )
   }
   if (path === '/login') {
     return <AuthPage onAuthSuccess={handleLoginSuccess} />
@@ -86,16 +100,6 @@ export default function App() {
             href="#/courses"
           >
             Khóa học
-          </a>
-          <a
-            className={
-              path === '/question-bank' || path === '/questions'
-                ? 'nav-active'
-                : ''
-            }
-            href="#/question-bank"
-          >
-            Ngân hàng câu hỏi
           </a>
         </nav>
         <div className="header-account">

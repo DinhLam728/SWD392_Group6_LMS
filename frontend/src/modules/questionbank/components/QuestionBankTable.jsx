@@ -116,7 +116,7 @@ export function QuestionBankTable({
             <th className="lms-col-topic" style={{ width: '170px' }}>Topic</th>
             <th className="lms-col-diff" style={{ width: '90px', textAlign: 'center' }}>Difficulty</th>
             <th className="lms-col-status" style={{ width: '110px', textAlign: 'center' }}>Status</th>
-            <th className="lms-col-actions" style={{ width: '80px', textAlign: 'center' }}>Actions</th>
+            <th className="lms-col-actions" style={{ width: '160px', textAlign: 'center' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -212,24 +212,26 @@ export function QuestionBankTable({
                     <button
                       type="button"
                       onClick={() => onEdit(q)}
-                      title="Edit question"
+                      title="Sửa câu hỏi"
                       className="btn-action-icon"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
+                      Sửa
                     </button>
                     <button
                       type="button"
                       onClick={() => onDelete(q.questionId)}
-                      title="Delete question"
+                      title="Xóa câu hỏi"
                       className="btn-action-icon btn-action-delete"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
+                      Xóa
                     </button>
                   </div>
                 </td>

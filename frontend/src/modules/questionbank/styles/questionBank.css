@@ -1230,3 +1230,49 @@ body {
     flex: 1 1 auto;
   }
 }
+/* Keep toolbar controls aligned within the shared application layout. */
+.lms-app .lms-table-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 20px;
+  padding: 20px;
+}
+.lms-app .lms-toolbar-left {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  gap: 12px;
+}
+.lms-app .lms-search-wrapper { min-width: 0; }
+.lms-app .lms-search-input { padding-left: 34px; padding-right: 36px; }
+.lms-app .lms-toolbar-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.lms-app .lms-toolbar-filters select { min-width: 0; }
+.lms-app .lms-course-switcher {
+  display: grid;
+  grid-template-columns: 88px auto;
+  gap: 8px;
+}
+.lms-app .lms-course-switcher label { grid-column: 1 / -1; }
+.lms-app .lms-course-switcher input { width: 88px !important; min-height: 44px; }
+.lms-app .lms-course-switcher button { min-height: 44px; padding: 8px 14px !important; }
+.lms-app .btn-action-icon {
+  width: auto;
+  height: 34px;
+  padding: 6px 10px;
+  gap: 5px;
+  color: #4338ca;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  white-space: nowrap;
+}
+.lms-app .btn-action-delete { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+.lms-app .btn-action-icon svg { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .lms-app .lms-table-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .lms-app .lms-toolbar-filters { grid-template-columns: minmax(0, 1fr); }
+}

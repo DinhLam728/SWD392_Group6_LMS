@@ -43,3 +43,7 @@ Cập nhật ERD/mô tả bảng với courses.created_at và registrations.expi
 ## Kiểm chứng bản hiện tại
 
 Đã chạy schema và seed trên database tạm riêng, chạy seed hai lần không sinh bản ghi trùng. Đã đối chiếu toàn bộ cột của 10 entity và khởi động BE với Hibernate `ddl-auto=validate` thành công. Database đang dùng không bị reset trong quá trình kiểm tra.
+
+## Tài khoản teacher test local
+
+Seed có thêm tài khoản `teacher.test@example.test`, mật khẩu `Teacher@123`, role TEACHER và status ACTIVE để thử menu/Question Bank. Mật khẩu lưu BCrypt. Chỉ dùng demo local; seed không thay mật khẩu nếu email này đã tồn tại.
