@@ -1,6 +1,6 @@
 package fu.se.lms_group6.dto.auth;
 
-import fu.se.lms_group6.entity.Role;
+import fu.se.lms_group6.entity.enums.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +21,6 @@ public record RegisterRequest(
     String password,
 
     @NotNull(message = "Vai trò không được để trống")
-    Role role
+    UserRole role
 ) {}
 

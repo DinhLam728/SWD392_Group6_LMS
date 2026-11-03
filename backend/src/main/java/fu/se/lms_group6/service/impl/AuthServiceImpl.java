@@ -15,9 +15,9 @@ import fu.se.lms_group6.dto.auth.ResetPasswordRequest;
 import fu.se.lms_group6.dto.auth.UserResponse;
 import fu.se.lms_group6.dto.auth.ValidateResetOtpRequest;
 import fu.se.lms_group6.dto.auth.VerifyOtpRequest;
-import fu.se.lms_group6.entity.Role;
+import fu.se.lms_group6.entity.enums.UserRole;
 import fu.se.lms_group6.entity.User;
-import fu.se.lms_group6.entity.UserStatus;
+import fu.se.lms_group6.entity.enums.UserStatus;
 import fu.se.lms_group6.externalclient.google.GoogleAuthClient;
 import fu.se.lms_group6.externalclient.google.GoogleUserInfo;
 import fu.se.lms_group6.repository.UserRepository;
@@ -211,7 +211,7 @@ public class AuthServiceImpl implements AuthService {
                         .fullName(googleUser.name())
                         .email(email)
                         .googleId(googleUser.sub())
-                        .role(Role.STUDENT)
+                        .role(UserRole.STUDENT)
                         .status(UserStatus.ACTIVE)
                         .build();
                 user = userRepository.save(user);
