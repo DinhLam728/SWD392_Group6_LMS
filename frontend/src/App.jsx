@@ -1,12 +1,10 @@
-function LMS() {
-  return <h1>LMS</h1>
-}
+import { QuestionBankPage } from './modules/questionbank/pages/QuestionBankPage.jsx'
 
 function App() {
   return (
-    <>
-      <LMS />
-    </>
+    <main>
+      <QuestionBankPage />
+    </main>
   )
 }
 
