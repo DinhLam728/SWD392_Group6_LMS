@@ -1,8 +1,15 @@
+import { formatRegistrationId } from '../utils/formatRegistrationId.js'
+import StatusBadge from '../components/StatusBadge.jsx'
 import { useEffect, useState } from 'react'
 import { getRegistrations } from '../services/registrationService.js'
 
-export default function MyRegistrationsPage() {
-  const [query, setQuery] = useState({ page: 0 })
+export default function MyRegistrationsPage({ initialKeyword = '' }) {
+  const [query, setQuery] = useState({
+    page: 0,
+    size: 7,
+    sort: 'registeredAt,desc',
+    keyword: initialKeyword,
+  })
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -24,6 +31,8 @@ export default function MyRegistrationsPage() {
     const values = Object.fromEntries(new FormData(event.currentTarget))
     setQuery({
       page: 0,
+      size: 7,
+      sort: values.sort,
       keyword: values.keyword,
       status: values.status || undefined,
       paymentStatus: values.paymentStatus || undefined,
@@ -31,18 +40,44 @@ export default function MyRegistrationsPage() {
   }
   return (
     <>
-      <h1>Đăng ký của tôi</h1>
+      <div
+        className="breadcrumb registration-breadcrumb"
+        aria-label="Đường dẫn trang"
+      >
+        <a href="#/courses">Khóa học</a>
+        <span aria-hidden="true"> / </span>
+        <span aria-current="page">Đăng ký của tôi</span>
+      </div>
+      <div className="page-heading">
+        <span className="eyebrow">HÀNH TRÌNH CỦA BẠN</span>
+        <h1>Đăng ký của tôi</h1>
+        <p>Theo dõi đăng ký, thanh toán và các khóa học đã được kích hoạt.</p>
+      </div>
       <form className="filters" onSubmit={search}>
         <label>
           Tìm kiếm
-          <input name="keyword" placeholder="Tên khóa học hoặc ID" />
+          <input
+            name="keyword"
+            placeholder="Tên khóa học hoặc ID"
+            defaultValue={initialKeyword}
+          />
         </label>
         <label>
           Đăng ký
           <select name="status">
             <option value="">Tất cả</option>
             {['PENDING', 'ACTIVE', 'EXPIRED'].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {
+                  {
+                    PENDING: 'Đang chờ',
+                    ACTIVE: 'Đã kích hoạt',
+                    EXPIRED: 'Đã hết hạn',
+                    SUCCESS: 'Thành công',
+                    FAILED: 'Thất bại',
+                  }[s]
+                }
+              </option>
             ))}
           </select>
         </label>
@@ -51,8 +86,25 @@ export default function MyRegistrationsPage() {
           <select name="paymentStatus">
             <option value="">Tất cả</option>
             {['PENDING', 'SUCCESS', 'FAILED'].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {
+                  {
+                    PENDING: 'Đang chờ',
+                    ACTIVE: 'Đã kích hoạt',
+                    EXPIRED: 'Đã hết hạn',
+                    SUCCESS: 'Thành công',
+                    FAILED: 'Thất bại',
+                  }[s]
+                }
+              </option>
             ))}
+          </select>
+        </label>
+        <label>
+          Ngày đăng ký
+          <select name="sort" defaultValue="registeredAt,desc">
+            <option value="registeredAt,desc">Mới nhất</option>
+            <option value="registeredAt,asc">Cũ nhất</option>
           </select>
         </label>
         <button>Lọc</button>
@@ -66,6 +118,7 @@ export default function MyRegistrationsPage() {
                 <tr>
                   <th>ID</th>
                   <th>Khóa học</th>
+                  <th>Ngày đăng ký</th>
                   <th>Số tiền</th>
                   <th>Đăng ký</th>
                   <th>Thanh toán</th>
@@ -75,13 +128,23 @@ export default function MyRegistrationsPage() {
               <tbody>
                 {result.items.map((r) => (
                   <tr key={r.registrationId}>
-                    <td>#{r.registrationId}</td>
+                    <td>{formatRegistrationId(r.registrationId)}</td>
                     <td>{r.courseTitle}</td>
+                    <td>{r.registeredAt?.replace('T', ' ')}</td>
                     <td>{Number(r.amount).toLocaleString('vi-VN')} ₫</td>
-                    <td>{r.status}</td>
-                    <td>{r.paymentStatus}</td>
+                    <td>
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td>
+                      <StatusBadge status={r.paymentStatus} />
+                    </td>
                     <td>
                       <a
+                        className={
+                          r.status === 'PENDING'
+                            ? 'button'
+                            : 'button button-secondary'
+                        }
                         href={`#/registrations/${r.registrationId}${r.status === 'PENDING' ? '/payment' : ''}`}
                       >
                         {r.status === 'PENDING'
@@ -102,7 +165,17 @@ export default function MyRegistrationsPage() {
             >
               Trước
             </button>
-            <span>Trang {query.page + 1}</span>
+            {Array.from({ length: result.totalPages }, (_, page) => (
+              <button
+                key={page}
+                className="page-number"
+                aria-label={`Trang ${page + 1}`}
+                aria-current={query.page === page ? 'page' : undefined}
+                onClick={() => setQuery({ ...query, page })}
+              >
+                {page + 1}
+              </button>
+            ))}
             <button
               disabled={query.page + 1 >= result.totalPages}
               onClick={() => setQuery({ ...query, page: query.page + 1 })}

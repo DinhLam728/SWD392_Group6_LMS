@@ -1,3 +1,5 @@
+import CourseOutline from '../components/CourseOutline.jsx'
+import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
 import { useEffect, useState } from 'react'
 import { getCourse } from '../services/courseService.js'
 import { registerCourse } from '../../enrollment/services/registrationService.js'
@@ -31,45 +33,85 @@ export default function CourseDetailPage({ id }) {
   }
   return (
     <>
-      <a href="#/courses">← Các khóa học</a>
+      <div
+        className="breadcrumb registration-breadcrumb"
+        aria-label="Đường dẫn trang"
+      >
+        <a href="#/courses">Khóa học</a>
+        <span aria-hidden="true"> / </span>
+        <span aria-current="page">Chi tiết khóa học</span>
+      </div>
       {error && <p role="alert">{error}</p>}
       {!detail ? (
         <p>Đang tải khóa học...</p>
       ) : (
         <>
-          <h1>{detail.course.title}</h1>
-          <p>Giảng viên: {detail.course.teacherName}</p>
-          <div className="two-columns">
-            <section className="card">
+          <div className="two-columns course-detail-layout">
+            <section className="course-overview">
+              {detail.course.thumbnailUrl ? (
+                <img
+                  className="detail-cover"
+                  src={detail.course.thumbnailUrl}
+                  alt=""
+                />
+              ) : (
+                <div className="placeholder detail-cover">
+                  <span className="cover-symbol">&lt;/&gt;</span>
+                  <span>LMS ACADEMY · LEARN & GROW</span>
+                </div>
+              )}
+              <h1>{detail.course.title}</h1>
+              <p className="teacher-name">
+                Giảng viên · {detail.course.teacherName}
+              </p>
+              <CourseCreatedAt value={detail.course.createdAt} />
               <h2>Giới thiệu</h2>
               <p>{detail.course.description}</p>
-              <h2>Nội dung khóa học</h2>
-              <ol>
-                {detail.modules.map((module) => (
-                  <li key={module.moduleId}>{module.title}</li>
-                ))}
-              </ol>
+              <h2 id="course-outline" tabIndex={-1}>
+                Nội dung khóa học
+              </h2>
+              <CourseOutline modules={detail.modules} />
             </section>
-            <aside className="card">
-              <h2>Đăng ký khóa học</h2>
+            <aside className="card enrollment-card">
+              <span className="eyebrow">BẮT ĐẦU HÀNH TRÌNH</span>
+              <h2>
+                {detail.registrationStatus === 'ACTIVE'
+                  ? 'Khóa học của bạn'
+                  : 'Đăng ký khóa học'}
+              </h2>
               <p className="price">
                 {Number(detail.course.price).toLocaleString('vi-VN')} ₫
               </p>
-              {detail.registrationId ? (
+              {detail.registrationStatus === 'ACTIVE' ? (
+                <button
+                  onClick={() => {
+                    const outline = document.getElementById('course-outline')
+                    outline?.focus({ preventScroll: true })
+                    outline?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    })
+                  }}
+                >
+                  Khám phá ngay
+                </button>
+              ) : detail.registrationId ? (
                 <a
                   className="button"
-                  href={`#/registrations/${detail.registrationId}${detail.registrationStatus === 'PENDING' ? '/payment' : ''}`}
+                  href={`#/registrations/${detail.registrationId}/payment`}
                 >
-                  {detail.registrationStatus === 'ACTIVE'
-                    ? 'Đã đăng ký · Xem kết quả'
-                    : 'Tiếp tục thanh toán'}
+                  Đăng ký khóa học
                 </a>
               ) : (
                 <button disabled={busy} onClick={register}>
                   {busy ? 'Đang tạo đăng ký...' : 'Đăng ký khóa học'}
                 </button>
               )}
-              <p>Thanh toán bằng QR SePay. Thời hạn 24 giờ.</p>
+              <p>
+                {detail.registrationStatus === 'ACTIVE'
+                  ? 'Bạn đã đăng ký thành công khóa học này.'
+                  : 'Thanh toán bằng QR SePay. Thời hạn 24 giờ.'}
+              </p>
             </aside>
           </div>
         </>

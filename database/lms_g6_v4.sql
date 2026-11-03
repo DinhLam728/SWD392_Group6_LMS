@@ -1,21 +1,11 @@
--- Version 3: paid courses and 24-hour registration payment window.
--- Changes from v2:
---   1) Require courses.price > 0 and remove the zero-price default.
---   2) Add registrations.expires_at; application sets registered_at + 24 hours.
---   3) Allow multiple historical registrations per student/course.
--- Application must prevent new registrations while an ACTIVE or unexpired
--- PENDING registration exists, including concurrent requests.
--- Time passing does not automatically update status; application handles expiry.
--- Scores use a 0..10 scale; default passing score is 5.00.
--- LMS Group 6 - Database Design (MySQL 8.0+)
--- Lecturer changes and Quiz configuration:
---   1) Remove payments table; move payment fields to registrations.
---   2) Quizzes belong to modules (modules 1-N quizzes).
---   3) Each quiz has at most one config via quiz_configs.quiz_id UNIQUE.
---   4) Optional random subset, shuffle question order, shuffle options.
---   5) questions.quiz_id NULL = question in course bank, not assigned to a quiz.
---      A question belongs to at most one quiz in this minimal design.
--- WARNING: This resets lms_g6 and DELETES ALL DATA in the database.
+-- LMS Group 6 - Database v4 (MySQL 8.0+)
+-- SCHEMA ONLY. Run this first, then seed_enrollment_demo.sql if sample data is needed.
+-- WARNING: DROP DATABASE deletes ALL existing lms_g6 accounts and payments.
+-- Current schema: 10 tables, courses.created_at, registration expiry and payment fields.
+-- Registration expiry (24 hours) is set by application code, not a SQL scheduler.
+-- Scores use 0..10; default passing_score is 5.00.
+
+SET NAMES utf8mb4;
 
 DROP DATABASE IF EXISTS lms_g6;
 CREATE DATABASE lms_g6
@@ -42,6 +32,7 @@ CREATE TABLE courses (
     thumbnail_url VARCHAR(500) NULL,
     price DECIMAL(12, 2) NOT NULL,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_courses_teacher
         FOREIGN KEY (teacher_id) REFERENCES users(user_id),
     CONSTRAINT ck_course_price CHECK (price > 0)
