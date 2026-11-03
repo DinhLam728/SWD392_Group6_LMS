@@ -1,4 +1,4 @@
-spring:
+﻿spring:
   application:
     name: backend
   config:
@@ -18,6 +18,20 @@ spring:
     init:
       mode: never
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
