@@ -1,15 +1,20 @@
 -- LMS Group 6 - Enrollment demo seed. Run AFTER lms_g6_v4.sql.
--- Adds 1 demo teacher, 18 paid published courses, 24 modules, 72 lessons,
+-- Adds 1 course-owner teacher, 1 test-login teacher, 18 paid published courses, 24 modules, 72 lessons,
 -- and 24 quiz TITLES for the course outline. No quiz questions/config are seeded.
 -- Does not reset the DB or modify existing accounts, courses, dates or payments.
 -- Safe to rerun serially: inserts missing demo records only.
--- No student login credentials or fake successful payments are included.
+-- Includes a separate local TEACHER login; no student credentials or fake payments.
 -- Register/verify a STUDENT through the app (or Google login) to test enrollment.
 -- The sample teacher has no password and is only for course ownership.
 SET NAMES utf8mb4;
 USE lms_g6;
 
 START TRANSACTION;
+-- Local demo login only: teacher.test@example.test / Teacher@123
+INSERT INTO users (full_name, email, password_hash, role, status)
+SELECT 'Giảng viên Test', 'teacher.test@example.test', '$2a$10$6Zo1eya9JbH3.a0PZz21a.78E/rvgDvLTXJWD95D.9zm76UmyN4PG', 'TEACHER', 'ACTIVE'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email='teacher.test@example.test');
+
 INSERT INTO users (full_name, email, role, status)
 SELECT 'Giảng viên LMS Demo', 'teacher.enrollment@example.test', 'TEACHER', 'ACTIVE'
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'teacher.enrollment@example.test');

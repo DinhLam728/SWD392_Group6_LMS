@@ -841,7 +841,7 @@ body {
 
 .lms-app .site-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 1.2fr);
 }
 .header-account {
   justify-self: end;
@@ -877,3 +877,24 @@ body {
 .payment-check-feedback {
   min-height: 3.2em;
 }
+
+.profile-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  text-align: left;
+}
+.profile-role {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.profile-summary .profile-role {
+  margin-top: 4px;
+}
+
+.profile-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.profile-summary-heading .profile-role { margin: 0; flex-shrink: 0; color: #4f46e5; background: #eef2ff; border-radius: 6px; padding: 3px 7px; }

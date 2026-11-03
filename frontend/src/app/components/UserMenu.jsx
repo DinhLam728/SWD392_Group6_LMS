@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ClipboardList, LogOut } from 'lucide-react'
+import { ClipboardList, LogOut, LibraryBig } from 'lucide-react'
 
 export default function UserMenu({ user, onLogout }) {
   const [open, setOpen] = useState(false)
@@ -26,6 +26,8 @@ export default function UserMenu({ user, onLogout }) {
   }, [open])
 
   const name = user.fullName || 'Tài khoản'
+  const roleLabel =
+    { STUDENT: 'Học sinh', TEACHER: 'Giáo viên' }[user.role] || 'Tài khoản'
   const initials = name
     .trim()
     .split(/\s+/)
@@ -54,18 +56,32 @@ export default function UserMenu({ user, onLogout }) {
         <span className="profile-avatar" aria-hidden="true">
           {initials}
         </span>
-        <span className="profile-name">{name}</span>
+        <span className="profile-identity">
+          <span className="profile-name">{name}</span>
+          <span className="profile-role">{roleLabel}</span>
+        </span>
       </button>
       {open && (
         <div className="profile-dropdown" id="profile-dropdown">
           <div className="profile-summary">
-            <strong>{name}</strong>
+            <div className="profile-summary-heading">
+              <strong>{name}</strong>
+              <span className="profile-role">{roleLabel}</span>
+            </div>
             {user.email && <small>{user.email}</small>}
           </div>
-          <a href="#/registrations" onClick={() => setOpen(false)}>
-            <ClipboardList size={17} aria-hidden="true" />
-            Đăng ký của tôi
-          </a>
+          {user.role === 'STUDENT' && (
+            <a href="#/registrations" onClick={() => setOpen(false)}>
+              <ClipboardList size={17} aria-hidden="true" />
+              Đăng ký của tôi
+            </a>
+          )}
+          {user.role === 'TEACHER' && (
+            <a href="#/question-bank" onClick={() => setOpen(false)}>
+              <LibraryBig size={17} aria-hidden="true" />
+              Ngân hàng câu hỏi
+            </a>
+          )}
           <button className="profile-logout" onClick={onLogout}>
             <LogOut size={17} aria-hidden="true" />
             Đăng xuất

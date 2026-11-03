@@ -64,9 +64,6 @@ export function QuestionBankPage() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
 
-  // Top navigation tab
-  const [activeNavTab, setActiveNavTab] = useState('question-bank')
-
   // Load stats
   useEffect(() => {
     let active = true
@@ -264,36 +261,9 @@ export function QuestionBankPage() {
 
   return (
     <div className="lms-page-wrapper">
-      {/* TOP NAVBAR */}
-      <nav className="lms-navbar">
-        <div className="lms-navbar-left">
-          <span className="lms-logo-text">LMS</span>
-          <div className="lms-nav-links">
-            <span
-              className={`lms-nav-item ${activeNavTab === 'my-courses' ? 'active' : ''}`}
-              onClick={() => setActiveNavTab('my-courses')}
-            >
-              My Courses
-            </span>
-            <span
-              className={`lms-nav-item ${activeNavTab === 'question-bank' ? 'active' : ''}`}
-              onClick={() => setActiveNavTab('question-bank')}
-            >
-              Question Bank
-            </span>
-            <span
-              className={`lms-nav-item ${activeNavTab === 'practice-quizzes' ? 'active' : ''}`}
-              onClick={() => setActiveNavTab('practice-quizzes')}
-            >
-              Practice Quizzes
-            </span>
-          </div>
-        </div>
-
-        <div className="lms-navbar-right">
-          <span className="lms-user-role">Teacher</span>
-        </div>
-      </nav>
+      <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
+        <a href="#/courses">Khóa học</a><span aria-hidden="true"> / </span><span aria-current="page">Ngân hàng câu hỏi</span>
+      </div>
 
       {/* MAIN CONTAINER */}
       <div className="lms-container">
@@ -466,7 +436,8 @@ export function QuestionBankPage() {
                 <input
                   type="text"
                   className="lms-search-input"
-                  placeholder="Instant search questions (content, topic, choices)..."
+                  aria-label="Tìm câu hỏi"
+                  placeholder="Tìm nội dung, chủ đề hoặc đáp án..."
                   value={keywordInput}
                   onChange={(e) => setKeywordInput(e.target.value)}
                 />
@@ -486,6 +457,7 @@ export function QuestionBankPage() {
               <div className="lms-toolbar-filters">
                 <select
                   className="lms-form-select"
+                  aria-label="Chủ đề"
                   value={topicFilter}
                   onChange={(e) => {
                     setTopicFilter(e.target.value)
@@ -502,6 +474,7 @@ export function QuestionBankPage() {
 
                 <select
                   className="lms-form-select"
+                  aria-label="Độ khó"
                   value={difficultyFilter}
                   onChange={(e) => {
                     setDifficultyFilter(e.target.value)
@@ -516,6 +489,7 @@ export function QuestionBankPage() {
 
                 <select
                   className="lms-form-select"
+                  aria-label="Trạng thái"
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value)
@@ -543,16 +517,19 @@ export function QuestionBankPage() {
             {/* Course Switcher */}
             <div className="lms-toolbar-right">
               <form onSubmit={handleApplyCourse} className="lms-course-switcher">
-                <span>Course:</span>
+                <label htmlFor="question-bank-course">Mã khóa học</label>
                 <input
+                  id="question-bank-course"
                   type="number"
+                  min="1"
+                  required
                   className="lms-form-control"
                   style={{ width: '48px', padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}
                   value={courseIdInput}
                   onChange={(e) => setCourseIdInput(e.target.value)}
                 />
                 <button type="submit" className="btn-lms btn-lms-secondary" style={{ padding: '4px 8px', fontSize: '11.5px' }}>
-                  Go
+                  Xem
                 </button>
               </form>
             </div>
