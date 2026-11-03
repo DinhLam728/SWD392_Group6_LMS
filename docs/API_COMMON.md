@@ -56,7 +56,7 @@ Các quy ước trên áp dụng cho chức năng mới. Giữ nguyên code nề
 ### Prompt để thành viên sử dụng với AI
 
 ```text
-Đọc docs/API_COMMON.md, README.md, database/lms_g6_quiz_random.sql
+Đọc docs/API_COMMON.md, README.md, database/lms_g6_v4.sql
 và code chung hiện có trước khi triển khai.
 
 Chức năng cần làm: [mô tả chức năng, quyền truy cập và quy tắc nghiệp vụ].
@@ -287,7 +287,7 @@ Các setter là ví dụ state của page. ApiError import từ `shared/api/ApiE
 
 Lần gom package và thêm helper/exception này không đổi schema hoặc dữ liệu, nên không cần chạy lại SQL chỉ vì thay đổi code này.
 
-Database vẫn là `lms_g6`, passing_score/score theo thang 0–10, điểm đạt mặc định 5.00. Bản SQL hiện có là `database/lms_g6_quiz_random.sql`; file này tạo lại database và xóa toàn bộ dữ liệu lms_g6. Chỉ dùng khi muốn tạo lại database, không dùng như migration giữ dữ liệu.
+Database vẫn là `lms_g6`, passing_score/score theo thang 0–10, điểm đạt mặc định 5.00. Bản SQL hiện có là `database/lms_g6_v4.sql`; file này tạo lại database và xóa toàn bộ dữ liệu lms_g6. Chỉ dùng khi muốn tạo lại database, không dùng như migration giữ dữ liệu. File này chỉ tạo schema. Dữ liệu mẫu enrollment nằm riêng ở `database/seed_enrollment_demo.sql`, chạy sau schema; xem `database/README.md`.
 
 ## 10. Chạy kiểm tra
 
@@ -300,4 +300,4 @@ npm run lint
 npm run build
 ```
 
-Lệnh Maven trên build backend và bỏ qua chạy test. BackendApplicationTests có sẵn vẫn được giữ; muốn chạy test đó cần database và cấu hình local hợp lệ. Các ví dụ Course trong hướng dẫn là mẫu cách dùng, không có nghĩa endpoint Course đã triển khai.
+Lệnh Maven trên build backend và bỏ qua chạy test. Các ví dụ Course trong hướng dẫn là mẫu cách dùng, không có nghĩa endpoint Course đã triển khai.

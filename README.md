@@ -78,8 +78,6 @@ SWD392_Group6_LMS/
 │   │   │   │       └── sepay/
 │   │   │   └── resources/
 │   │   │       └── application.yaml
-│   │   └── test/java/fu/se/lms_group6/
-│   │       └── BackendApplicationTests.java
 │   ├── .env.example
 │   ├── .gitignore
 │   ├── mvnw
@@ -88,3 +86,5 @@ SWD392_Group6_LMS/
 ├── .gitignore
 └── README.md
 ```
+
+Database: chạy `database/lms_g6_v4.sql` trước để tạo schema, rồi chạy `database/seed_enrollment_demo.sql` nếu cần dữ liệu demo enrollment. File schema reset toàn bộ `lms_g6`; sao lưu trước nếu cần giữ dữ liệu. Chi tiết: [database/README.md](database/README.md).

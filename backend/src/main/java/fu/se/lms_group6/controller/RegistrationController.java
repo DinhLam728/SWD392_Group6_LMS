@@ -16,6 +16,8 @@ import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,8 +57,13 @@ public class RegistrationController {
             @RequestParam(required = false) RegistrationStatus status,
             @RequestParam(required = false) PaymentStatus paymentStatus,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        var pageable = PageRequestFactory.create(page, size, "registrationId,desc", Set.of("registrationId"));
+            @RequestParam(defaultValue = "7") int size,
+            @RequestParam(defaultValue = "registeredAt,desc") String sort) {
+        var pageable = PageRequestFactory.create(page, size, sort, Set.of("registrationId", "registeredAt"));
+        if (pageable.getSort().getOrderFor("registrationId") == null) {
+            pageable = PageRequest.of(page, size,
+                    pageable.getSort().and(Sort.by(Sort.Direction.DESC, "registrationId")));
+        }
         return ResponseBuilder.ok(registrations.getRegistrations(student.requireId(), keyword, status, paymentStatus, pageable));
     }
 

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,6 +51,10 @@ public class Course {
     @Setter
     @Column(name = "is_published", nullable = false)
     private Boolean isPublished = false;
+
+    // Database-generated; historical rows may not have a recorded creation date.
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     public Course(User teacher, String title, BigDecimal price) {
         this.teacher = teacher;

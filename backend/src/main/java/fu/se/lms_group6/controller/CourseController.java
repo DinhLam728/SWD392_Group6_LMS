@@ -11,6 +11,8 @@ import fu.se.lms_group6.service.CourseService;
 import java.math.BigDecimal;
 import java.util.Set;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,7 +38,11 @@ public class CourseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "9") int size,
             @RequestParam(defaultValue = "courseId,desc") String sort) {
-        var pageable = PageRequestFactory.create(page, size, sort, Set.of("courseId", "price", "title"));
+        var pageable = PageRequestFactory.create(page, size, sort, Set.of("courseId", "price", "title", "createdAt"));
+        // Stable page boundaries when courses share the same creation time or price.
+        if (pageable.getSort().getOrderFor("courseId") == null) {
+            pageable = PageRequest.of(page, size, pageable.getSort().and(Sort.by(Sort.Direction.DESC, "courseId")));
+        }
         return ResponseBuilder.ok(courses.getCourses(keyword, minPrice, maxPrice, pageable));
     }
 

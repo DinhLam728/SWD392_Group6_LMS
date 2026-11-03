@@ -35,3 +35,11 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
+  sepay:
+    bank: ${SEPAY_BANK:}
+    account-number: ${SEPAY_ACCOUNT_NUMBER:}
+    account-name: ${SEPAY_ACCOUNT_NAME:}
+    webhook-api-key: ${SEPAY_WEBHOOK_API_KEY:}
+    qr-base-url: ${SEPAY_QR_BASE_URL:https://qr.sepay.vn/img}
+    transfer-prefix: ${SEPAY_TRANSFER_PREFIX:}
+    sub-account: ${SEPAY_SUB_ACCOUNT:}

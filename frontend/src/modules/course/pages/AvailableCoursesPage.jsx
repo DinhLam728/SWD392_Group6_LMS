@@ -1,8 +1,9 @@
+import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
 import { useEffect, useState } from 'react'
 import { getCourses } from '../services/courseService.js'
 
 export default function AvailableCoursesPage() {
-  const [query, setQuery] = useState({ page: 0, size: 9, sort: 'price,asc' })
+  const [query, setQuery] = useState({ page: 0, size: 8, sort: 'price,asc' })
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -28,31 +29,36 @@ export default function AvailableCoursesPage() {
       minPrice: values.minPrice || undefined,
       maxPrice: values.maxPrice || undefined,
       page: 0,
-      size: 9,
+      size: 8,
     })
   }
   return (
     <>
-      <h1>Khám phá khóa học</h1>
-      <p>Chọn khóa học phù hợp và bắt đầu hành trình học tập.</p>
-      <form className="filters" onSubmit={search}>
+      <div className="page-heading">
+        <span className="eyebrow">KHÔNG GIAN HỌC TẬP</span>
+        <h1>Khám phá khóa học</h1>
+        <p>Chọn khóa học phù hợp và bắt đầu hành trình học tập.</p>
+      </div>
+      <form className="filters course-filters" onSubmit={search}>
         <label>
           Tìm khóa học
-          <input name="keyword" placeholder="Tên khóa học" />
+          <input name="keyword" placeholder="Nhập từ khóa để tìm kiếm" />
         </label>
         <label>
           Giá từ
-          <input name="minPrice" type="number" min="0" />
+          <input name="minPrice" type="number" min="0" placeholder="VD: 5.000" />
         </label>
         <label>
           Đến
-          <input name="maxPrice" type="number" min="0" />
+          <input name="maxPrice" type="number" min="0" placeholder="VD: 50.000" />
         </label>
         <label>
           Sắp xếp
           <select name="sort">
             <option value="price,asc">Giá tăng dần</option>
             <option value="price,desc">Giá giảm dần</option>
+            <option value="createdAt,desc">Mới nhất</option>
+            <option value="createdAt,asc">Cũ nhất</option>
           </select>
         </label>
         <button>Tìm kiếm</button>
@@ -63,23 +69,41 @@ export default function AvailableCoursesPage() {
         <p>Đang tải...</p>
       ) : (
         <>
+          <p className="course-count" role="status">
+            Hiển thị{' '}
+            <strong>
+              {result.items.length ? result.page * result.size + 1 : 0}–
+              {result.items.length
+                ? result.page * result.size + result.items.length
+                : 0}
+            </strong>{' '}
+            trên tổng <strong>{result.totalElements}</strong> khóa học
+          </p>
           <div className="course-grid">
             {result.items.map((course) => (
-              <article className="card" key={course.courseId}>
+              <article className="card course-card" key={course.courseId}>
                 {course.thumbnailUrl ? (
                   <img className="thumbnail" src={course.thumbnailUrl} alt="" />
                 ) : (
-                  <div className="placeholder">LMS · LEARN</div>
+                  <div className="placeholder">
+                    <span className="cover-symbol">&lt;/&gt;</span>
+                    <span>LMS ACADEMY</span>
+                  </div>
                 )}
                 <h2>{course.title}</h2>
-                <p>{course.teacherName}</p>
-                <p>{course.description}</p>
-                <strong>
-                  {Number(course.price).toLocaleString('vi-VN')} ₫
-                </strong>
-                <a className="button" href={`#/courses/${course.courseId}`}>
-                  Xem chi tiết
-                </a>
+                <p className="teacher-name">
+                  Giảng viên · {course.teacherName}
+                </p>
+                <CourseCreatedAt value={course.createdAt} />
+                <p className="course-description">{course.description}</p>
+                <div className="course-card-footer">
+                  <strong>
+                    {Number(course.price).toLocaleString('vi-VN')} ₫
+                  </strong>
+                  <a className="button" href={`#/courses/${course.courseId}`}>
+                    Xem chi tiết →
+                  </a>
+                </div>
               </article>
             ))}
           </div>
@@ -91,9 +115,17 @@ export default function AvailableCoursesPage() {
             >
               Trước
             </button>
-            <span>
-              Trang {query.page + 1} / {Math.max(1, result.totalPages)}
-            </span>
+            {Array.from({ length: result.totalPages }, (_, page) => (
+              <button
+                key={page}
+                className="page-number"
+                aria-label={`Trang ${page + 1}`}
+                aria-current={query.page === page ? 'page' : undefined}
+                onClick={() => setQuery({ ...query, page })}
+              >
+                {page + 1}
+              </button>
+            ))}
             <button
               disabled={query.page + 1 >= result.totalPages}
               onClick={() => setQuery({ ...query, page: query.page + 1 })}
