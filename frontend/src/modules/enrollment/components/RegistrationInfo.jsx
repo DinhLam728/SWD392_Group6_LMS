@@ -1,37 +1,35 @@
+import { formatRegistrationId } from '../utils/formatRegistrationId.js'
+import StatusBadge from './StatusBadge.jsx'
+
 const money = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
   currency: 'VND',
 })
+const dateTime = (value) => value?.replace('T', ' ') || '—'
 
 export default function RegistrationInfo({ registration }) {
+  const fields = [
+    ['Mã đăng ký', formatRegistrationId(registration.registrationId)],
+    ['Khóa học', registration.courseTitle],
+    ['Số tiền', money.format(registration.amount)],
+    ['Đăng ký', <StatusBadge status={registration.status} />],
+    ['Thanh toán', <StatusBadge status={registration.paymentStatus} />],
+    ['Ngày đăng ký', dateTime(registration.registeredAt)],
+    ['Hạn thanh toán', `${dateTime(registration.expiresAt)} (giờ Việt Nam)`],
+  ]
+  if (registration.transactionRef)
+    fields.push(['Mã giao dịch', registration.transactionRef])
+  if (registration.paidAt)
+    fields.push(['Ngày thanh toán', dateTime(registration.paidAt)])
+
   return (
     <dl className="details">
-      <dt>Mã đăng ký</dt>
-      <dd>#{registration.registrationId}</dd>
-      <dt>Khóa học</dt>
-      <dd>{registration.courseTitle}</dd>
-      <dt>Số tiền</dt>
-      <dd>{money.format(registration.amount)}</dd>
-      <dt>Đăng ký</dt>
-      <dd>{registration.status}</dd>
-      <dt>Thanh toán</dt>
-      <dd>{registration.paymentStatus}</dd>
-      <dt>Ngày đăng ký</dt>
-      <dd>{registration.registeredAt?.replace('T', ' ')}</dd>
-      <dt>Hạn thanh toán</dt>
-      <dd>{registration.expiresAt?.replace('T', ' ')} (giờ Việt Nam)</dd>
-      {registration.transactionRef && (
-        <>
-          <dt>Mã giao dịch</dt>
-          <dd>{registration.transactionRef}</dd>
-        </>
-      )}
-      {registration.paidAt && (
-        <>
-          <dt>Ngày thanh toán</dt>
-          <dd>{registration.paidAt.replace('T', ' ')}</dd>
-        </>
-      )}
+      {fields.map(([label, value]) => (
+        <div className="detail-field" key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
     </dl>
   )
 }

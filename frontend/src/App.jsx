@@ -1,3 +1,4 @@
+import UserMenu from './app/components/UserMenu.jsx'
 import { useEffect, useState } from 'react'
 import AvailableCoursesPage from './modules/course/pages/AvailableCoursesPage.jsx'
 import CourseDetailPage from './modules/course/pages/CourseDetailPage.jsx'
@@ -53,8 +54,9 @@ export default function App() {
     page = <AvailableCoursesPage />
   } else if (course) {
     page = <CourseDetailPage key={path} id={course[1]} />
-  } else if (path === '/registrations') {
-    page = <MyRegistrationsPage />
+  } else if (path.split('?')[0] === '/registrations') {
+    const keyword = new URLSearchParams(path.split('?')[1]).get('keyword') || ''
+    page = <MyRegistrationsPage key={path} initialKeyword={keyword} />
   } else if (registration) {
     page = registration[2] ? (
       <PaymentQrPage key={path} id={registration[1]} />
@@ -64,28 +66,52 @@ export default function App() {
   } else if (path === '/question-bank' || path === '/questions') {
     page = <QuestionBankPage />
   }
-
+  if (path === '/login') {
+    return <AuthPage onAuthSuccess={handleLoginSuccess} />
+  }
   return (
-    <>
-      <header>
+    <div className="lms-app">
+      <header className="site-header">
         <a className="brand" href="#/courses">
-          LMS
+          <span className="brand-mark">LMS</span>
+          <span className="brand-caption">E-Learning Platform</span>
         </a>
-        <nav>
-          <a href="#/courses">Khóa học</a>
-          <a href="#/registrations">Đăng ký của tôi</a>
-          <a href="#/question-bank">Ngân hàng câu hỏi</a>
-          {currentUser ? (
-            <>
-              <span>{currentUser.fullName || currentUser.email}</span>
-              <button onClick={handleLogout}>Đăng xuất</button>
-            </>
-          ) : (
-            <a href="#/login">Đăng nhập</a>
-          )}
+        <nav aria-label="Menu chính">
+          <a
+            className={
+              path.startsWith('/courses') || path.startsWith('/registrations')
+                ? 'nav-active'
+                : ''
+            }
+            href="#/courses"
+          >
+            Khóa học
+          </a>
+          <a
+            className={
+              path === '/question-bank' || path === '/questions'
+                ? 'nav-active'
+                : ''
+            }
+            href="#/question-bank"
+          >
+            Ngân hàng câu hỏi
+          </a>
         </nav>
+        <div className="header-account">
+          {currentUser ? (
+            <UserMenu key={path} user={currentUser} onLogout={handleLogout} />
+          ) : (
+            <a className="button button-secondary" href="#/login">
+              Đăng nhập
+            </a>
+          )}
+        </div>
       </header>
-      <main>{page}</main>
-    </>
+      <main className="page-content">{page}</main>
+      <footer className="site-footer">
+        LMS <span>Học tập hôm nay, phát triển ngày mai.</span>
+      </footer>
+    </div>
   )
 }

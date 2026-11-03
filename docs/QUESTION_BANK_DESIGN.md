@@ -188,3 +188,16 @@ sequenceDiagram
 | `DELETE`| `/api/v1/questions/{questionId}` | Xóa câu hỏi khỏi ngân hàng | `204 No Content` |
 | `POST` | `/api/v1/question-bank/generate-ai` | Gọi Gemini API tự động sinh câu hỏi theo chủ đề | `200 OK` |
 | `POST` | `/api/v1/question-bank/batch-save` | Lưu hàng loạt câu hỏi được duyệt từ AI vào ngân hàng | `201 Created` |
+
+
+## Chạy sau khi tích hợp với enrollment
+
+Mặc định ứng dụng dùng MySQL theo backend/.env, ddl-auto: none, schema database/lms_g6_v4.sql. Không tự seed khi startup.
+
+Nếu cần giữ cách demo Question Bank bằng H2 và DataInitializer, bật profile questionbank-demo:
+
+```powershell
+mvn -f backend/pom.xml spring-boot:run "-Dspring-boot.run.profiles=questionbank-demo"
+```
+
+Profile này dùng database in-memory riêng, dữ liệu mất khi dừng ứng dụng. Không dùng H2 demo để kiểm tra giao dịch SePay Live. Menu Ngân hàng câu hỏi nằm cạnh Khóa học; các route /question-bank và /questions được giữ.
