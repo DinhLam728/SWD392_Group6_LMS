@@ -1,17 +1,59 @@
 package fu.se.lms_group6.security;
 
+import fu.se.lms_group6.repository.UserRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.*;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
     @Bean
+    @Order(1)
+    SecurityFilterChain sePayWebhookChain(HttpSecurity http) throws Exception {
+        // The controller verifies the SePay API key; browser credentials do not apply.
+        return http.securityMatcher("/api/v1/registrations/webhooks/sepay")
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST,
+                        "/api/v1/registrations/webhooks/sepay").permitAll().anyRequest().denyAll())
+                .build();
+    }
+
+    @Bean
+    @Profile("enrollment-demo")
+    @Order(2)
+    SecurityFilterChain enrollmentDemoChain(HttpSecurity http, UserRepository users,
+            RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler) throws Exception {
+        return http.securityMatcher("/api/v1/courses", "/api/v1/courses/**",
+                        "/api/v1/registrations", "/api/v1/registrations/**")
+                .cors(cors -> {})
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new DemoStudentFilter(users, entryPoint), UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/v1/courses", "/api/v1/courses/**").permitAll()
+                        .anyRequest().hasRole("STUDENT"))
+                .exceptionHandling(errors -> errors.authenticationEntryPoint(entryPoint).accessDeniedHandler(deniedHandler))
+                .build();
+    }
+
+    @Bean
+    @Order(3)
     SecurityFilterChain securityFilterChain(HttpSecurity http,
             RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler) throws Exception {
         // Keep authentication required and CSRF protection until the auth flow is implemented.
@@ -25,11 +67,14 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
+            @Value("${app.cors.allowed-origins}") List<String> allowedOrigins, Environment environment) {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(allowedOrigins);
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Accept", "Content-Type", "Authorization", "X-CSRF-TOKEN", "X-XSRF-TOKEN"));
+        if (environment.acceptsProfiles(Profiles.of("enrollment-demo"))) {
+            cors.addAllowedHeader("X-User-Id");
+        }
         cors.setExposedHeaders(List.of("Location"));
         cors.setAllowCredentials(false);
         cors.setMaxAge(3600L);
