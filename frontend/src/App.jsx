@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AuthPage from './modules/auth/pages/AuthPage.jsx'
+import { QuestionBankPage } from './modules/questionbank/pages/QuestionBankPage.jsx'
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -14,8 +15,11 @@ function App() {
     return null
   })
 
+  const [viewMode, setViewMode] = useState(() => {
+    return 'question-bank'
+  })
+
   const handleLoginSuccess = (authData) => {
-    // authData: { token, tokenType, user }
     if (authData.token) {
       localStorage.setItem('lms_token', authData.token)
     }
@@ -23,41 +27,68 @@ function App() {
       localStorage.setItem('lms_user', JSON.stringify(authData.user))
       setCurrentUser(authData.user)
     }
+    setViewMode('question-bank')
   }
 
   const handleLogout = () => {
     localStorage.removeItem('lms_token')
     localStorage.removeItem('lms_user')
     setCurrentUser(null)
+    setViewMode('auth')
   }
 
-  if (currentUser) {
+  if (viewMode === 'auth' && !currentUser) {
     return (
-      <div style={{ padding: '40px', maxWidth: '600px', margin: '60px auto', background: '#fff', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }}>
-        <h2 style={{ color: '#4f46e5' }}>🎉 Đăng nhập thành công!</h2>
-        <p>Xin chào, <strong>{currentUser.fullName}</strong> ({currentUser.email})</p>
-        <p>Vai trò: <span style={{ padding: '4px 8px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontWeight: 600 }}>{currentUser.role}</span></p>
-        <p>Trạng thái tài khoản: <strong>{currentUser.status}</strong></p>
-        <button
-          onClick={handleLogout}
-          style={{
-            marginTop: '20px',
-            padding: '10px 20px',
-            background: '#ef4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 600
-          }}
-        >
-          Đăng xuất
-        </button>
+      <div>
+        <div style={{ textAlign: 'right', padding: '10px 20px', background: '#f8fafc' }}>
+          <button
+            onClick={() => setViewMode('question-bank')}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12.5px',
+              background: '#4f46e5',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Go to Question Bank →
+          </button>
+        </div>
+        <AuthPage onAuthSuccess={handleLoginSuccess} />
       </div>
     )
   }
 
-  return <AuthPage onAuthSuccess={handleLoginSuccess} />
+  return (
+    <main>
+      {currentUser && (
+        <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '6px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '12.5px', color: '#475569' }}>
+            Logged in as <strong>{currentUser.fullName || currentUser.email}</strong>
+          </span>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '3px 8px',
+              fontSize: '11.5px',
+              background: '#ef4444',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+      <QuestionBankPage />
+    </main>
+  )
 }
 
 export default App

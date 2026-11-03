@@ -49,4 +49,3 @@ public class User {
     @Builder.Default
     private UserStatus status = UserStatus.PENDING;
 }
-
