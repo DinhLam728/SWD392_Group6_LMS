@@ -6,7 +6,10 @@ export function enrollmentClient(path, options = {}) {
     ? import.meta.env.VITE_DEMO_USER_ID
     : null
   const headers = new Headers(options.headers)
-  if (demoUserId) {
+  const token = localStorage.getItem('lms_token')
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  } else if (demoUserId) {
     headers.set('X-User-Id', demoUserId)
   }
   return apiClient(path, { ...options, headers })

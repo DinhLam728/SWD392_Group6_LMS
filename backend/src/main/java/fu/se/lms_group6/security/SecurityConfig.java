@@ -3,6 +3,7 @@ package fu.se.lms_group6.security;
 import fu.se.lms_group6.repository.UserRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -14,6 +15,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -22,6 +25,18 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+    @Bean
+    FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
+        var registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean
     @Order(1)
     SecurityFilterChain sePayWebhookChain(HttpSecurity http) throws Exception {
@@ -38,13 +53,15 @@ public class SecurityConfig {
     @Profile("enrollment-demo")
     @Order(2)
     SecurityFilterChain enrollmentDemoChain(HttpSecurity http, UserRepository users,
-            RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler) throws Exception {
+            RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler,
+            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         return http.securityMatcher("/api/v1/courses", "/api/v1/courses/**",
                         "/api/v1/registrations", "/api/v1/registrations/**")
                 .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new DemoStudentFilter(users, entryPoint), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new DemoStudentFilter(users, entryPoint), JwtAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses", "/api/v1/courses/**").permitAll()
                         .anyRequest().hasRole("STUDENT"))
@@ -55,11 +72,18 @@ public class SecurityConfig {
     @Bean
     @Order(3)
     SecurityFilterChain securityFilterChain(HttpSecurity http,
-            RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler) throws Exception {
-        // Keep authentication required and CSRF protection until the auth flow is implemented.
+            RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler,
+            JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+        // JWT protects application APIs; SePay uses its separate API key chain.
         return http.cors(cors -> {})
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .httpBasic(basic -> basic.authenticationEntryPoint(entryPoint))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/courses", "/api/v1/courses/**").permitAll()
+                        .requestMatchers("/api/v1/registrations", "/api/v1/registrations/**").hasRole("STUDENT")
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler))
                 .build();

@@ -28,6 +28,10 @@ public class DemoStudentFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain chain) throws ServletException, IOException {
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            chain.doFilter(request, response);
+            return;
+        }
         String header = request.getHeader("X-User-Id");
         if (header != null && !"OPTIONS".equals(request.getMethod())) {
             Long id;

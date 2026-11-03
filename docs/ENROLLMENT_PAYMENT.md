@@ -37,7 +37,7 @@ RegistrationController → RegistrationServiceImpl → RegistrationRepository
 - SePayProxy: dựng URL QR; không gọi thêm cổng thanh toán khác.
 - RegistrationExpirationJob: mỗi phút chuyển PENDING quá hạn sang EXPIRED. Service vẫn kiểm tra thời gian trực tiếp.
 - Đăng ký và webhook đều khóa user trước, rồi khóa registration; việc kiểm tra và cập nhật diễn ra cùng transaction.
-- CurrentStudent là điểm nối với auth. DemoStudentFilter cung cấp principal dạng Long; khi có JWT thì tích hợp danh tính thật tại đây.
+- CurrentStudent lấy ID user từ email đã xác thực bởi JWT. FE gửi Bearer token sau đăng nhập; X-User-Id chỉ dùng dự phòng khi không có token trong profile enrollment-demo.
 - Profile enrollment-demo chỉ áp dụng X-User-Id cho API course/registration. Ngoài profile này header không xác thực được người dùng.
 - Webhook có security chain riêng và kiểm tra Authorization: Apikey ... trong controller/service. Không dùng JWT hay X-User-Id cho webhook.
 
@@ -53,10 +53,10 @@ Không có script nào được ứng dụng tự chạy; ddl-auto vẫn là non
 1. Giữ các biến DB trong backend/.env. Bổ sung biến từ backend/.env.enrollment.example với tài khoản nhận thật hoặc tài khoản sandbox SePay.
 2. Điền SEPAY_BANK, SEPAY_ACCOUNT_NUMBER, SEPAY_ACCOUNT_NAME, SEPAY_WEBHOOK_API_KEY. Không commit file .env.
 3. Tạo frontend/.env.local theo frontend/.env.enrollment.example, thay VITE_DEMO_USER_ID bằng ID user STUDENT đang ACTIVE trong database.
-4. Từ root chạy BE:
+4. Từ root chạy BE (JWT/login đã tích hợp; chỉ bật enrollment-demo khi cần thử bằng X-User-Id):
 
 ```powershell
-mvn -f backend/pom.xml spring-boot:run "-Dspring-boot.run.profiles=enrollment-demo"
+mvn -f backend/pom.xml spring-boot:run
 ```
 
 5. Chạy FE:
