@@ -2,11 +2,14 @@ package fu.se.lms_group6;
 
 import java.math.BigDecimal;
 import fu.se.lms_group6.entity.Course;
+import fu.se.lms_group6.entity.CourseModule;
 import fu.se.lms_group6.entity.Question;
 import fu.se.lms_group6.entity.Quiz;
 import fu.se.lms_group6.entity.User;
-import fu.se.lms_group6.entity.Role;
-import fu.se.lms_group6.entity.UserStatus;
+import fu.se.lms_group6.entity.enums.QuizStatus;
+import fu.se.lms_group6.entity.enums.UserRole;
+import fu.se.lms_group6.entity.enums.UserStatus;
+import fu.se.lms_group6.repository.CourseModuleRepository;
 import fu.se.lms_group6.repository.CourseRepository;
 import fu.se.lms_group6.repository.QuestionRepository;
 import fu.se.lms_group6.repository.QuizRepository;
@@ -23,17 +26,20 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
+    private final CourseModuleRepository courseModuleRepository;
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
 
     public DataInitializer(
             UserRepository userRepository,
             CourseRepository courseRepository,
+            CourseModuleRepository courseModuleRepository,
             QuizRepository quizRepository,
             QuestionRepository questionRepository
     ) {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
+        this.courseModuleRepository = courseModuleRepository;
         this.quizRepository = quizRepository;
         this.questionRepository = questionRepository;
     }
@@ -49,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
         User teacher = User.builder()
                 .fullName("Prof. John Doe")
                 .email("teacher@fpt.edu.vn")
-                .role(Role.TEACHER)
+                .role(UserRole.TEACHER)
                 .status(UserStatus.ACTIVE)
                 .build();
         teacher = userRepository.save(teacher);
@@ -63,10 +69,13 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
         course = courseRepository.save(course);
 
+        CourseModule module = new CourseModule(course, "Module 1: Foundations", 1);
+        module = courseModuleRepository.save(module);
+
         Quiz quiz = Quiz.builder()
-                .moduleId(1L)
+                .module(module)
                 .title("Quiz 01: Core OOP Concepts")
-                .status("ACTIVE")
+                .status(QuizStatus.ACTIVE)
                 .build();
         quiz = quizRepository.save(quiz);
 

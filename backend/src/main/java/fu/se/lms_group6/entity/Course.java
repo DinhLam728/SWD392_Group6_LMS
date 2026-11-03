@@ -50,4 +50,11 @@ public class Course {
     @Column(name = "is_published", nullable = false)
     @Builder.Default
     private Boolean isPublished = false;
+
+    public Course(User teacher, String title, BigDecimal price) {
+        this.teacher = teacher;
+        this.title = title;
+        this.price = price;
+        this.isPublished = false;
+    }
 }

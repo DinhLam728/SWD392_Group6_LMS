@@ -48,4 +48,11 @@ public class Question {
 
     @Column(name = "correct_answer", nullable = false, columnDefinition = "TEXT")
     private String correctAnswer;
+
+    public Question(Course course, String content, String questionType, String correctAnswer) {
+        this.course = course;
+        this.content = content;
+        this.questionType = questionType;
+        this.correctAnswer = correctAnswer;
+    }
 }

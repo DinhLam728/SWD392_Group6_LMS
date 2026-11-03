@@ -1,3 +1,11 @@
+-- Version 3: paid courses and 24-hour registration payment window.
+-- Changes from v2:
+--   1) Require courses.price > 0 and remove the zero-price default.
+--   2) Add registrations.expires_at; application sets registered_at + 24 hours.
+--   3) Allow multiple historical registrations per student/course.
+-- Application must prevent new registrations while an ACTIVE or unexpired
+-- PENDING registration exists, including concurrent requests.
+-- Time passing does not automatically update status; application handles expiry.
 -- Scores use a 0..10 scale; default passing score is 5.00.
 -- LMS Group 6 - Database Design (MySQL 8.0+)
 -- Lecturer changes and Quiz configuration:
@@ -32,10 +40,11 @@ CREATE TABLE courses (
     title VARCHAR(150) NOT NULL,
     description TEXT NULL,
     thumbnail_url VARCHAR(500) NULL,
-    price DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    price DECIMAL(12, 2) NOT NULL,
     is_published BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_courses_teacher
-        FOREIGN KEY (teacher_id) REFERENCES users(user_id)
+        FOREIGN KEY (teacher_id) REFERENCES users(user_id),
+    CONSTRAINT ck_course_price CHECK (price > 0)
 );
 
 -- 3. Required by the new Course -> Module -> Lesson scope.
@@ -118,6 +127,7 @@ CREATE TABLE registrations (
     course_id BIGINT NOT NULL,
     status ENUM('PENDING', 'ACTIVE', 'EXPIRED') NOT NULL DEFAULT 'PENDING',
     registered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     payment_code VARCHAR(50) NULL UNIQUE,
     transaction_ref VARCHAR(100) NULL UNIQUE,
@@ -127,7 +137,7 @@ CREATE TABLE registrations (
         FOREIGN KEY (student_id) REFERENCES users(user_id),
     CONSTRAINT fk_registrations_course
         FOREIGN KEY (course_id) REFERENCES courses(course_id),
-    CONSTRAINT uq_student_course UNIQUE (student_id, course_id)
+    INDEX idx_registration_student_course (student_id, course_id)
 );
 
 -- 9. Each student attempt to take a quiz.
