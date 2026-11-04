@@ -38,6 +38,17 @@ export default function MyRegistrationsPage({ initialKeyword = '' }) {
       paymentStatus: values.paymentStatus || undefined,
     })
   }
+  function resetFilters(event) {
+    event.preventDefault()
+    const fields = event.currentTarget.elements
+    fields.namedItem('keyword').value = ''
+    fields.namedItem('status').value = ''
+    fields.namedItem('paymentStatus').value = ''
+    fields.namedItem('sort').value = 'registeredAt,desc'
+    setError('')
+    setResult(null)
+    setQuery({ page: 0, size: 7, sort: 'registeredAt,desc' })
+  }
   return (
     <>
       <div
@@ -53,7 +64,7 @@ export default function MyRegistrationsPage({ initialKeyword = '' }) {
         <h1>Đăng ký của tôi</h1>
         <p>Theo dõi đăng ký, thanh toán và các khóa học đã được kích hoạt.</p>
       </div>
-      <form className="filters" onSubmit={search}>
+      <form className="filters" onSubmit={search} onReset={resetFilters}>
         <label>
           Tìm kiếm
           <input
@@ -107,7 +118,10 @@ export default function MyRegistrationsPage({ initialKeyword = '' }) {
             <option value="registeredAt,asc">Cũ nhất</option>
           </select>
         </label>
-        <button>Lọc</button>
+        <div className="filter-actions">
+          <button type="submit">Lọc</button>
+          <button type="reset" className="button-secondary">Đặt lại</button>
+        </div>
       </form>
       {error && <p role="alert">{error}</p>}
       {result ? (

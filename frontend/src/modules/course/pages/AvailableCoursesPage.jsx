@@ -32,6 +32,11 @@ export default function AvailableCoursesPage() {
       size: 8,
     })
   }
+  function resetFilters() {
+    setError('')
+    setResult(null)
+    setQuery({ page: 0, size: 8, sort: 'price,asc' })
+  }
   return (
     <>
       <div className="page-heading">
@@ -39,7 +44,7 @@ export default function AvailableCoursesPage() {
         <h1>Khám phá khóa học</h1>
         <p>Chọn khóa học phù hợp và bắt đầu hành trình học tập.</p>
       </div>
-      <form className="filters course-filters" onSubmit={search}>
+      <form className="filters course-filters" onSubmit={search} onReset={resetFilters}>
         <label>
           Tìm khóa học
           <input name="keyword" placeholder="Nhập từ khóa để tìm kiếm" />
@@ -61,7 +66,10 @@ export default function AvailableCoursesPage() {
             <option value="createdAt,asc">Cũ nhất</option>
           </select>
         </label>
-        <button>Tìm kiếm</button>
+        <div className="filter-actions">
+          <button type="submit">Tìm kiếm</button>
+          <button type="reset" className="button-secondary">Đặt lại</button>
+        </div>
       </form>
       {error ? (
         <p role="alert">{error}</p>

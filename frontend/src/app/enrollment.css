@@ -183,6 +183,11 @@ body {
   border-radius: 14px;
   box-shadow: 0 4px 18px #1e293b03;
 }
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
 .filters label {
   flex: 1;
   min-width: 130px;
