@@ -5,7 +5,7 @@ Database `lms_g6`, MySQL 8.0+. SQL v4 là schema hiện tại tương ứng code
 ## Thứ tự chạy
 
 1. Sao lưu nếu cần giữ tài khoản, khóa học hoặc giao dịch cũ.
-2. Chạy toàn bộ `lms_g6_v4.sql` trong MySQL Workbench để tạo lại 10 bảng. **File có DROP DATABASE: xóa toàn bộ dữ liệu lms_g6 đang có.**
+2. Chỉ chạy `lms_g6_v4.sql` khi khởi tạo schema lần đầu để tạo 10 bảng. File không xóa database hay dữ liệu hiện có. Nếu bảng đã tồn tại, CREATE TABLE sẽ báo lỗi; file này không tự nâng cấp schema. Database TiDB chung đã có đủ bảng thì không cần chạy lại; dùng script ALTER TABLE được nhóm thống nhất khi thay đổi cấu trúc.
 3. Chạy `seed_enrollment_demo.sql` nếu muốn dữ liệu mẫu để xem và thử luồng enrollment.
 4. Đặt `DB_NAME=lms_g6` trong `backend/.env`, restart BE; giữ `ddl-auto: none`.
 5. Đăng ký/xác thực tài khoản STUDENT qua ứng dụng, hoặc đăng nhập Google, rồi thử đăng ký khóa học.

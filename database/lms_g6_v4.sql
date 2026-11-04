@@ -1,14 +1,14 @@
 -- LMS Group 6 - Database v4 (MySQL 8.0+)
 -- SCHEMA ONLY. Run this first, then seed_enrollment_demo.sql if sample data is needed.
--- WARNING: DROP DATABASE deletes ALL existing lms_g6 accounts and payments.
+-- Initial schema only: does not delete an existing database or its data.
+-- Existing tables cause CREATE TABLE errors; use reviewed ALTER TABLE scripts for changes.
 -- Current schema: 10 tables, courses.created_at, registration expiry and payment fields.
 -- Registration expiry (24 hours) is set by application code, not a SQL scheduler.
 -- Scores use 0..10; default passing_score is 5.00.
 
 SET NAMES utf8mb4;
 
-DROP DATABASE IF EXISTS lms_g6;
-CREATE DATABASE lms_g6
+CREATE DATABASE IF NOT EXISTS lms_g6
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE lms_g6;
 
