@@ -5,9 +5,7 @@
 - Java 21, Node.js và cấu hình TiDB trong `backend/.env`.
 - Các biến `SEPAY_*` đã được điền trong `backend/.env`.
 - `SEPAY_WEBHOOK_API_KEY` trùng API Key của webhook trên SePay.
-- File `cloudflared.exe` tại `backend/target/sepay-tunnel/cloudflared.exe`.
-
-File cloudflared không được lưu trên Git. Máy mới cần tải bản Windows phù hợp từ trang phát hành chính thức https://github.com/cloudflare/cloudflared/releases và đặt vào đường dẫn trên, đổi tên thành `cloudflared.exe`. Tạo thư mục nếu chưa có. Thư mục `target` có thể bị xóa khi chạy Maven clean; khi đó cần đặt lại file.
+- Ngrok trên Windows. Lấy authtoken từ dashboard ngrok và cấu hình một lần bằng `ngrok config add-authtoken "<TOKEN>"`.
 
 ## Mỗi buổi test thanh toán
 
@@ -24,35 +22,39 @@ npm run dev
 
 Mở địa chỉ Vite hiển thị, thường là `http://localhost:5173`. FE cần gọi đúng backend local qua `VITE_API_BASE_URL=http://localhost:8080/api/v1`.
 
-### 2. Chạy proxy và tunnel bằng một lệnh
+### 2. Chạy proxy và ngrok
 
 Mở terminal PowerShell mới tại thư mục gốc project:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start-sepay-tunnel.ps1
+node .\scripts\sepay-webhook-proxy.cjs
 ```
 
-Script khởi động proxy cổng 18081 và Cloudflare Quick Tunnel. Nếu cổng 18081 đã có proxy đang chạy, script dùng proxy đó. Proxy chỉ chuyển tiếp POST tại endpoint webhook tới backend cổng 8080.
+Proxy lắng nghe cổng 18081 và chuyển tiếp POST webhook tới backend cổng 8080. Mở terminal khác để chạy ngrok.
+
+~~~powershell
+ngrok http http://127.0.0.1:18081
+~~~
 
 Tìm URL được in trong terminal, ví dụ:
 
 ```text
-https://ten-ngau-nhien.trycloudflare.com
+https://ten-duoc-cap.ngrok-free.dev
 ```
 
-Giữ terminal mở trong lúc test. Nhấn Ctrl+C để dừng tunnel; script dừng proxy do chính nó tạo, không dừng proxy đã chạy sẵn.
+Giữ cả hai terminal mở trong lúc test. Nhấn Ctrl+C trong từng terminal để dừng.
 
 ### 3. Cập nhật webhook trên SePay
 
 Vào SePay Live → Tích hợp Webhook → Sửa webhook thanh toán LMS. Đặt URL nhận webhook bằng URL vừa tạo cộng với endpoint:
 
 ```text
-https://ten-ngau-nhien.trycloudflare.com/api/v1/registrations/webhooks/sepay
+https://ten-duoc-cap.ngrok-free.dev/api/v1/registrations/webhooks/sepay
 ```
 
 Giữ loại giao dịch Tiền vào, định dạng JSON, tài khoản nhận tiền và phương thức API Key. API Key phải trùng `SEPAY_WEBHOOK_API_KEY`. Bật tự động gửi lại khi server trả lỗi và lưu.
 
-URL Quick Tunnel có thể đổi khi chạy lại tunnel. Chỉ cần sửa URL trên SePay nếu nó thay đổi; không điền URL tunnel vào `.env`. Restart riêng BE/FE khi tunnel vẫn chạy không yêu cầu đổi URL.
+Dùng cùng tên miền ngrok đã cấp để giữ URL webhook qua các lần khởi động.
 
 ### 4. Test
 
@@ -62,8 +64,8 @@ Nếu đã chuyển tiền nhưng còn PENDING, chưa chuyển thêm tiền: ki�
 
 ## Khi gặp lỗi
 
-- Không tìm thấy cloudflared: tải/đặt lại executable đúng đường dẫn ở phần chuẩn bị.
-- Cổng 18081 đang dùng: script tái sử dụng tiến trình hiện có; nếu đó không phải proxy LMS, cần xác định và dừng đúng ứng dụng chiếm cổng trước khi chạy lại.
+- Không tìm thấy ngrok: kiểm tra cài đặt bằng ngrok version trong terminal mới.
+- Cổng 18081 đang dùng: nếu proxy LMS đang chạy, dùng tiến trình đó. Nếu ứng dụng khác chiếm cổng, xác định ứng dụng trước khi dừng.
 - Webhook 502: kiểm tra BE đang chạy ở cổng 8080.
 - Webhook 401/403: kiểm tra URL, phương thức API Key và cấu hình security; sau khi đổi `.env` cần restart BE.
 - Webhook 500: xem log BE, không reset database để thử sửa.

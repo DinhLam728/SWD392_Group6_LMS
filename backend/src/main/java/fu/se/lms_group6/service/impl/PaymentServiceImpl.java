@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
@@ -72,12 +73,18 @@ public class PaymentServiceImpl implements PaymentService {
             return null;
         }
         try {
-            LocalDateTime paidAt = LocalDateTime.parse(request.transactionDate(), TRANSACTION_TIME);
-            if (paidAt.isBefore(registration.getRegisteredAt()) || !paidAt.isBefore(registration.getExpiresAt())
-                    || paidAt.isAfter(LocalDateTime.now(clock))) {
+            LocalDateTime bankTime = LocalDateTime.parse(request.transactionDate(), TRANSACTION_TIME);
+            LocalDateTime receivedAt = LocalDateTime.now(clock).withNano(0);
+            // Some bank timestamps are rounded down to the minute by SePay.
+            LocalDateTime registeredAt = registration.getRegisteredAt();
+            boolean sameRoundedMinute = bankTime.getSecond() == 0
+                    && bankTime.equals(registeredAt.truncatedTo(ChronoUnit.MINUTES));
+            if ((bankTime.isBefore(registeredAt) && !sameRoundedMinute) || !bankTime.isBefore(registration.getExpiresAt())
+                    || bankTime.isAfter(receivedAt)) {
                 return null;
             }
-            return paidAt;
+            // Bank time is only minute-precise, so record when the payment was confirmed instead.
+            return receivedAt;
         } catch (DateTimeParseException exception) {
             return null;
         }

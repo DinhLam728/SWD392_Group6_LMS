@@ -25,4 +25,6 @@ const server = http.createServer((request, response) => {
   request.on('aborted', () => upstream.destroy())
   request.pipe(upstream)
 })
-server.listen(18081, '127.0.0.1')
+server.listen(18081, '127.0.0.1', () => {
+  console.log(`[SePay proxy] Listening on http://127.0.0.1:18081${webhookPath} (POST only)`)
+})
