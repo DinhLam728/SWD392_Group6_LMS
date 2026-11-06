@@ -20,7 +20,7 @@ export default function RegistrationInfo({ registration }) {
   if (registration.transactionRef)
     fields.push(['Mã giao dịch', registration.transactionRef])
   if (registration.paidAt)
-    fields.push(['Ngày thanh toán', dateTime(registration.paidAt)])
+    fields.push(['Xác nhận lúc', dateTime(registration.paidAt)])
 
   return (
     <dl className="details">

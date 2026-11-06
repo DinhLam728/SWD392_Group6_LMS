@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useState, useEffect } from 'react'
 import { ApiError } from '../../../shared/api/ApiError.js'
 import {
@@ -262,7 +263,7 @@ export function QuestionBankPage() {
   return (
     <div className="lms-page-wrapper">
       <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
-        <a href="#/courses">Khóa học</a><span aria-hidden="true"> / </span><span aria-current="page">Ngân hàng câu hỏi</span>
+        <Link to="/courses">Khóa học</Link><span aria-hidden="true"> / </span><span aria-current="page">Ngân hàng câu hỏi</span>
       </div>
 
       {/* MAIN CONTAINER */}

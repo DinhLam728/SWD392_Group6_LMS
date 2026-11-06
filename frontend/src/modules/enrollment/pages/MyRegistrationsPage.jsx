@@ -1,9 +1,21 @@
+import { Link } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { formatRegistrationId } from '../utils/formatRegistrationId.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { useEffect, useState } from 'react'
 import { getRegistrations } from '../services/registrationService.js'
 
-export default function MyRegistrationsPage({ initialKeyword = '' }) {
+export default function MyRegistrationsPage() {
+  const [params] = useSearchParams()
+  return (
+    <MyRegistrationsPageContent
+      key={params.toString()}
+      initialKeyword={params.get('keyword') || ''}
+    />
+  )
+}
+
+function MyRegistrationsPageContent({ initialKeyword }) {
   const [query, setQuery] = useState({
     page: 0,
     size: 7,
@@ -55,7 +67,7 @@ export default function MyRegistrationsPage({ initialKeyword = '' }) {
         className="breadcrumb registration-breadcrumb"
         aria-label="Đường dẫn trang"
       >
-        <a href="#/courses">Khóa học</a>
+        <Link to="/courses">Khóa học</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">Đăng ký của tôi</span>
       </div>
@@ -153,18 +165,18 @@ export default function MyRegistrationsPage({ initialKeyword = '' }) {
                       <StatusBadge status={r.paymentStatus} />
                     </td>
                     <td>
-                      <a
+                      <Link
                         className={
                           r.status === 'PENDING'
                             ? 'button'
                             : 'button button-secondary'
                         }
-                        href={`#/registrations/${r.registrationId}${r.status === 'PENDING' ? '/payment' : ''}`}
+                        to={`/registrations/${r.registrationId}${r.status === 'PENDING' ? '/payment' : ''}`}
                       >
                         {r.status === 'PENDING'
                           ? 'Tiếp tục thanh toán'
                           : 'Xem kết quả'}
-                      </a>
+                      </Link>
                     </td>
                   </tr>
                 ))}
