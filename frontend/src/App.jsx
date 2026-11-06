@@ -1,5 +1,6 @@
 import UserMenu from './app/components/UserMenu.jsx'
 import { useEffect, useState } from 'react'
+import AppRouter from './app/router/AppRouter.jsx'
 import AvailableCoursesPage from './modules/course/pages/AvailableCoursesPage.jsx'
 import CourseDetailPage from './modules/course/pages/CourseDetailPage.jsx'
 import MyRegistrationsPage from './modules/enrollment/pages/MyRegistrationsPage.jsx'
@@ -26,7 +27,7 @@ export default function App() {
       localStorage.setItem('lms_user', JSON.stringify(authData.user))
       setCurrentUser(authData.user)
     }
-    window.location.hash = authData.user?.role === 'TEACHER' ? '/question-bank' : '/courses'
+    window.location.hash = authData.user?.role === 'TEACHER' ? '/teacher/courses' : '/courses'
   }
 
   function handleLogout() {
@@ -43,6 +44,10 @@ export default function App() {
     window.addEventListener('hashchange', update)
     return () => window.removeEventListener('hashchange', update)
   }, [])
+
+  if (path.startsWith('/teacher')) {
+    return <AppRouter />
+  }
 
   let page = <p>Không tìm thấy trang.</p>
   const course = path.match(/^\/courses\/(\d+)$/)
@@ -101,6 +106,9 @@ export default function App() {
           >
             Khóa học
           </a>
+          {currentUser?.role === 'TEACHER' && (
+            <a href="#/teacher/courses">Quản lý khóa học</a>
+          )}
         </nav>
         <div className="header-account">
           {currentUser ? (
