@@ -13,10 +13,7 @@ export default function CourseOutline({ modules }) {
             </span>
             <span className="module-heading">
               <strong>{module.title}</strong>
-              <small>
-                {module.lessons.length} bài học · {module.quizzes.length} bài
-                quiz
-              </small>
+              <small>{module.lessons.length} bài học</small>
             </span>
             <Plus className="expand-icon" size={20} aria-hidden="true" />
             <Minus className="collapse-icon" size={20} aria-hidden="true" />
@@ -29,16 +26,11 @@ export default function CourseOutline({ modules }) {
                 <small>Bài học</small>
               </li>
             ))}
-            {module.quizzes.map((quiz) => (
-              <li key={`quiz-${quiz.quizId}`}>
-                <ClipboardList size={18} aria-hidden="true" />
-                <span>{quiz.title}</span>
-                <small>Quiz</small>
-              </li>
-            ))}
-            {!module.lessons.length && !module.quizzes.length && (
-              <li>Nội dung đang được cập nhật.</li>
-            )}
+            <li>
+              <ClipboardList size={18} aria-hidden="true" />
+              <span>Tạo quiz ôn tập</span>
+              <small>Quiz</small>
+            </li>
           </ul>
         </details>
       ))}

@@ -1,15 +1,23 @@
+import { Link } from 'react-router'
 import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getCourses } from '../services/courseService.js'
 
 export default function AvailableCoursesPage() {
   const [query, setQuery] = useState({ page: 0, size: 8, sort: 'price,asc' })
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const pages = useRef(new Map())
   useEffect(() => {
+    if (pages.current.has(query.page)) {
+      setResult(pages.current.get(query.page))
+      return
+    }
     const controller = new AbortController()
     getCourses(query, controller.signal)
       .then(({ data }) => {
+        if (controller.signal.aborted) return
+        pages.current.set(query.page, data)
         setResult(data)
         setError('')
       })
@@ -23,6 +31,8 @@ export default function AvailableCoursesPage() {
   function search(event) {
     event.preventDefault()
     const values = Object.fromEntries(new FormData(event.currentTarget))
+    pages.current.clear()
+    setError('')
     setResult(null)
     setQuery({
       ...values,
@@ -33,9 +43,15 @@ export default function AvailableCoursesPage() {
     })
   }
   function resetFilters() {
+    pages.current.clear()
     setError('')
     setResult(null)
     setQuery({ page: 0, size: 8, sort: 'price,asc' })
+  }
+  function changePage(page) {
+    if (page === query.page) return
+    setResult(pages.current.get(page) ?? null)
+    setQuery({ ...query, page })
   }
   return (
     <>
@@ -74,7 +90,7 @@ export default function AvailableCoursesPage() {
       {error ? (
         <p role="alert">{error}</p>
       ) : !result ? (
-        <p>Đang tải...</p>
+        <p role="status">Đang tải khóa học...</p>
       ) : (
         <>
           <p className="course-count" role="status">
@@ -108,9 +124,9 @@ export default function AvailableCoursesPage() {
                   <strong>
                     {Number(course.price).toLocaleString('vi-VN')} ₫
                   </strong>
-                  <a className="button" href={`#/courses/${course.courseId}`}>
+                  <Link className="button" to={`/courses/${course.courseId}`}>
                     Xem chi tiết →
-                  </a>
+                  </Link>
                 </div>
               </article>
             ))}
@@ -119,7 +135,7 @@ export default function AvailableCoursesPage() {
           <div className="pagination">
             <button
               disabled={query.page === 0}
-              onClick={() => setQuery({ ...query, page: query.page - 1 })}
+              onClick={() => changePage(query.page - 1)}
             >
               Trước
             </button>
@@ -129,14 +145,14 @@ export default function AvailableCoursesPage() {
                 className="page-number"
                 aria-label={`Trang ${page + 1}`}
                 aria-current={query.page === page ? 'page' : undefined}
-                onClick={() => setQuery({ ...query, page })}
+                onClick={() => changePage(page)}
               >
                 {page + 1}
               </button>
             ))}
             <button
               disabled={query.page + 1 >= result.totalPages}
-              onClick={() => setQuery({ ...query, page: query.page + 1 })}
+              onClick={() => changePage(query.page + 1)}
             >
               Sau
             </button>

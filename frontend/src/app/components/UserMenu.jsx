@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useEffect, useRef, useState } from 'react'
 import { ClipboardList, LogOut, LibraryBig } from 'lucide-react'
 
@@ -71,16 +72,16 @@ export default function UserMenu({ user, onLogout }) {
             {user.email && <small>{user.email}</small>}
           </div>
           {user.role === 'STUDENT' && (
-            <a href="#/registrations" onClick={() => setOpen(false)}>
+            <Link to="/registrations" onClick={() => setOpen(false)}>
               <ClipboardList size={17} aria-hidden="true" />
               Đăng ký của tôi
-            </a>
+            </Link>
           )}
           {user.role === 'TEACHER' && (
-            <a href="#/question-bank" onClick={() => setOpen(false)}>
+            <Link to="/question-bank" onClick={() => setOpen(false)}>
               <LibraryBig size={17} aria-hidden="true" />
               Ngân hàng câu hỏi
-            </a>
+            </Link>
           )}
           <button className="profile-logout" onClick={onLogout}>
             <LogOut size={17} aria-hidden="true" />

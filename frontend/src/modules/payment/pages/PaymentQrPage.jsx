@@ -1,8 +1,17 @@
+import { Link } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getRegistration } from '../../enrollment/services/registrationService.js'
 import RegistrationInfo from '../../enrollment/components/RegistrationInfo.jsx'
 
-export default function PaymentQrPage({ id }) {
+export default function PaymentQrPage() {
+  const { id } = useParams()
+  if (!/^\d+$/.test(id)) return <p>Không tìm thấy trang.</p>
+  return <PaymentQrPageContent key={id} id={id} />
+}
+
+function PaymentQrPageContent({ id }) {
+  const navigate = useNavigate()
   const [registration, setRegistration] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -38,7 +47,7 @@ export default function PaymentQrPage({ id }) {
           )
         }
         if (data.status !== 'PENDING') {
-          window.location.hash = `/registrations/${id}`
+          navigate(`/registrations/${id}`)
         }
       } catch (e) {
         if (!signal.aborted) {
@@ -49,7 +58,7 @@ export default function PaymentQrPage({ id }) {
         if (manual && !signal.aborted) setBusy(false)
       }
     },
-    [id],
+    [id, navigate],
   )
   useEffect(() => {
     const controller = new AbortController()
@@ -74,10 +83,10 @@ export default function PaymentQrPage({ id }) {
   return (
     <>
       <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
-        <a href="#/courses">Khóa học</a>
+        <Link to="/courses">Khóa học</Link>
         <span aria-hidden="true"> / </span>
         {registration ? (
-          <a href={`#/courses/${registration.courseId}`}>Chi tiết khóa học</a>
+          <Link to={`/courses/${registration.courseId}`}>Chi tiết khóa học</Link>
         ) : (
           <span>Chi tiết khóa học</span>
         )}

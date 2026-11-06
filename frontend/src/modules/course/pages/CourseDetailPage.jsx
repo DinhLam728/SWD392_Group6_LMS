@@ -1,10 +1,19 @@
+import { Link } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import CourseOutline from '../components/CourseOutline.jsx'
 import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
 import { useEffect, useState } from 'react'
 import { getCourse } from '../services/courseService.js'
 import { registerCourse } from '../../enrollment/services/registrationService.js'
 
-export default function CourseDetailPage({ id }) {
+export default function CourseDetailPage() {
+  const { id } = useParams()
+  if (!/^\d+$/.test(id)) return <p>Không tìm thấy trang.</p>
+  return <CourseDetailPageContent key={id} id={id} />
+}
+
+function CourseDetailPageContent({ id }) {
+  const navigate = useNavigate()
   const [detail, setDetail] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -24,7 +33,7 @@ export default function CourseDetailPage({ id }) {
     setError('')
     try {
       const { data } = await registerCourse(Number(id))
-      window.location.hash = `/registrations/${data.registrationId}/payment`
+      navigate(`/registrations/${data.registrationId}/payment`)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -37,7 +46,7 @@ export default function CourseDetailPage({ id }) {
         className="breadcrumb registration-breadcrumb"
         aria-label="Đường dẫn trang"
       >
-        <a href="#/courses">Khóa học</a>
+        <Link to="/courses">Khóa học</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">Chi tiết khóa học</span>
       </div>
@@ -96,12 +105,12 @@ export default function CourseDetailPage({ id }) {
                   Khám phá ngay
                 </button>
               ) : detail.registrationId ? (
-                <a
+                <Link
                   className="button"
-                  href={`#/registrations/${detail.registrationId}/payment`}
+                  to={`/registrations/${detail.registrationId}/payment`}
                 >
                   Đăng ký khóa học
-                </a>
+                </Link>
               ) : (
                 <button disabled={busy} onClick={register}>
                   {busy ? 'Đang tạo đăng ký...' : 'Đăng ký khóa học'}

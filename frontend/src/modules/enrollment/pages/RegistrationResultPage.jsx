@@ -1,8 +1,16 @@
+import { Link } from 'react-router'
+import { useParams } from 'react-router'
 import { useEffect, useState } from 'react'
 import { getRegistration } from '../services/registrationService.js'
 import RegistrationInfo from '../components/RegistrationInfo.jsx'
 
-export default function RegistrationResultPage({ id }) {
+export default function RegistrationResultPage() {
+  const { id } = useParams()
+  if (!/^\d+$/.test(id)) return <p>Không tìm thấy trang.</p>
+  return <RegistrationResultPageContent key={id} id={id} />
+}
+
+function RegistrationResultPageContent({ id }) {
   const [registration, setRegistration] = useState(null)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -19,9 +27,9 @@ export default function RegistrationResultPage({ id }) {
   return (
     <>
       <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
-        <a href="#/courses">Khóa học</a>
+        <Link to="/courses">Khóa học</Link>
         <span aria-hidden="true"> / </span>
-        <a href="#/registrations">Đăng ký của tôi</a>
+        <Link to="/registrations">Đăng ký của tôi</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">Kết quả đăng ký</span>
       </div>
@@ -65,34 +73,34 @@ export default function RegistrationResultPage({ id }) {
                     được giữ ở đăng ký bên dưới.
                   </p>
                 )}
-                <a
+                <Link
                   className="button"
-                  href={`#/registrations/${registration.activeRegistrationId}`}
+                  to={`/registrations/${registration.activeRegistrationId}`}
                 >
                   Xem đăng ký đang hoạt động
-                </a>
+                </Link>
               </>
             )}
           <h2>Thông tin đăng ký</h2>
           <RegistrationInfo registration={registration} />
           {registration.status === 'PENDING' && (
-            <a className="button" href={`#/registrations/${id}/payment`}>
+            <Link className="button" to={`/registrations/${id}/payment`}>
               Tiếp tục thanh toán
-            </a>
+            </Link>
           )}
           {registration.status === 'EXPIRED' &&
             !registration.activeRegistrationId && (
-              <a className="button" href={`#/courses/${registration.courseId}`}>
+              <Link className="button" to={`/courses/${registration.courseId}`}>
                 Đăng ký lại
-              </a>
+              </Link>
             )}
           <div className="result-actions">
-            <a className="button button-secondary" href="#/courses">
+            <Link className="button button-secondary" to="/courses">
               ← Về khóa học
-            </a>
-            <a className="button" href="#/registrations">
+            </Link>
+            <Link className="button" to="/registrations">
               Đăng ký của tôi →
-            </a>
+            </Link>
           </div>
         </section>
       )}
