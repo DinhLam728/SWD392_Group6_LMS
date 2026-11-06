@@ -7,6 +7,9 @@ import RegistrationResultPage from './modules/enrollment/pages/RegistrationResul
 import PaymentQrPage from './modules/payment/pages/PaymentQrPage.jsx'
 import AuthPage from './modules/auth/pages/AuthPage.jsx'
 import { QuestionBankPage } from './modules/questionbank/pages/QuestionBankPage.jsx'
+import QuizStartPage from './modules/quiz/pages/QuizStartPage.jsx'
+import QuizTakingPage from './modules/quiz/pages/QuizTakingPage.jsx'
+import QuizResultPage from './modules/quiz/pages/QuizResultPage.jsx'
 import './app/enrollment.css'
 
 export default function App() {
@@ -47,6 +50,8 @@ export default function App() {
   let page = <p>Không tìm thấy trang.</p>
   const course = path.match(/^\/courses\/(\d+)$/)
   const registration = path.match(/^\/registrations\/(\d+)(\/payment)?$/)
+  const quiz = path.match(/^\/quizzes\/(\d+)$/)
+  const quizAttempt = path.match(/^\/quiz-attempts\/(\d+)(\/result)?$/)
 
   if (path === '/login') {
     page = <AuthPage onAuthSuccess={handleLoginSuccess} />
@@ -62,6 +67,14 @@ export default function App() {
       <PaymentQrPage key={path} id={registration[1]} />
     ) : (
       <RegistrationResultPage key={path} id={registration[1]} />
+    )
+  } else if (quiz) {
+    page = <QuizStartPage key={path} id={quiz[1]} />
+  } else if (quizAttempt) {
+    page = quizAttempt[2] ? (
+      <QuizResultPage key={path} id={quizAttempt[1]} />
+    ) : (
+      <QuizTakingPage key={path} id={quizAttempt[1]} />
     )
   } else if (path === '/question-bank' || path === '/questions') {
     page =

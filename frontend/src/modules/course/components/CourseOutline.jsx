@@ -32,7 +32,7 @@ export default function CourseOutline({ modules }) {
             {module.quizzes.map((quiz) => (
               <li key={`quiz-${quiz.quizId}`}>
                 <ClipboardList size={18} aria-hidden="true" />
-                <span>{quiz.title}</span>
+                <a href={`#/quizzes/${quiz.quizId}`}>{quiz.title}</a>
                 <small>Quiz</small>
               </li>
             ))}

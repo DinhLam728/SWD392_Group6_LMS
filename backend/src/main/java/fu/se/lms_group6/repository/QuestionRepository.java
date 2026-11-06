@@ -1,6 +1,7 @@
 package fu.se.lms_group6.repository;
 
 import fu.se.lms_group6.entity.Question;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -42,4 +43,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     long countByCourse_CourseIdAndQuizIsNotNull(Long courseId);
 
     long countByCourse_CourseIdAndQuizIsNull(Long courseId);
+
+    // Câu hỏi đã gán vào một quiz, dùng khi tạo đề cho lượt làm bài.
+    List<Question> findByQuizQuizIdOrderByQuestionIdAsc(Long quizId);
 }

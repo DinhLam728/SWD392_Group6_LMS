@@ -7,6 +7,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,17 +55,7 @@ public class GeminiClient {
             String prompt = buildPrompt(request.topic(), request.contextMaterial(), count, difficulty);
             String requestBody = buildGeminiRequestBody(prompt);
 
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/"
-                    + model + ":generateContent?key=" + apiKey;
-
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(45))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = sendGenerateContent(requestBody);
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 return parseGeminiResponse(response.body());
@@ -76,6 +67,49 @@ public class GeminiClient {
             log.error("Failed to call Gemini API, falling back to simulated question generator", ex);
             return generateMockQuestions(request.topic(), count, difficulty);
         }
+    }
+
+    /**
+     * Sinh văn bản tự do từ prompt (ví dụ giải thích đáp án quiz).
+     * Trả về rỗng khi chưa cấu hình API key, Gemini lỗi hoặc không có nội dung; không dùng dữ liệu giả.
+     */
+    public Optional<String> generateText(String prompt) {
+        if (apiKey.isEmpty()) {
+            log.warn("GEMINI_API_KEY is not configured. Text generation is unavailable.");
+            return Optional.empty();
+        }
+        try {
+            HttpResponse<String> response = sendGenerateContent(buildGeminiRequestBody(prompt, false));
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.error("Gemini API returned error HTTP {} for text generation", response.statusCode());
+                return Optional.empty();
+            }
+            JsonNode parts = objectMapper.readTree(response.body())
+                    .path("candidates").path(0).path("content").path("parts");
+            StringBuilder text = new StringBuilder();
+            if (parts.isArray()) {
+                parts.forEach(part -> text.append(part.path("text").asText("")));
+            }
+            String result = text.toString().trim();
+            return result.isEmpty() ? Optional.empty() : Optional.of(result);
+        } catch (Exception ex) {
+            log.error("Failed to call Gemini API for text generation", ex);
+            return Optional.empty();
+        }
+    }
+
+    private HttpResponse<String> sendGenerateContent(String requestBody) throws Exception {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/"
+                + model + ":generateContent?key=" + apiKey;
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(45))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        return httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
     }
 
     private String buildPrompt(String topic, String context, int count, String difficulty) {
@@ -108,6 +142,10 @@ public class GeminiClient {
     }
 
     private String buildGeminiRequestBody(String prompt) throws Exception {
+        return buildGeminiRequestBody(prompt, true);
+    }
+
+    private String buildGeminiRequestBody(String prompt, boolean jsonOutput) throws Exception {
         var rootNode = objectMapper.createObjectNode();
         var contentsArray = rootNode.putArray("contents");
         var contentObj = contentsArray.addObject();
@@ -116,7 +154,9 @@ public class GeminiClient {
 
         var configNode = rootNode.putObject("generationConfig");
         configNode.put("temperature", 0.4);
-        configNode.put("responseMimeType", "application/json");
+        if (jsonOutput) {
+            configNode.put("responseMimeType", "application/json");
+        }
 
         return objectMapper.writeValueAsString(rootNode);
     }
