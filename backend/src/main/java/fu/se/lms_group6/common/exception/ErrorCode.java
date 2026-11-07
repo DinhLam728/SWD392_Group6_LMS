@@ -18,7 +18,19 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(HttpStatus.FORBIDDEN, "Tài khoản đã bị khóa"),
     ACCOUNT_NOT_ACTIVATED(HttpStatus.FORBIDDEN, "Tài khoản chưa được kích hoạt"),
     INVALID_OTP(HttpStatus.BAD_REQUEST, "Mã OTP không chính xác hoặc đã hết hạn"),
-    ACCOUNT_ALREADY_ACTIVATED(HttpStatus.BAD_REQUEST, "Tài khoản đã được kích hoạt trước đó");
+    ACCOUNT_ALREADY_ACTIVATED(HttpStatus.BAD_REQUEST, "Tài khoản đã được kích hoạt trước đó"),
+
+    // Practice quiz
+    QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bài quiz"),
+    QUIZ_NOT_AVAILABLE(HttpStatus.CONFLICT, "Bài quiz hiện chưa được mở"),
+    QUIZ_HAS_NO_QUESTIONS(HttpStatus.CONFLICT, "Bài quiz chưa có câu hỏi"),
+    NOT_ENROLLED(HttpStatus.FORBIDDEN, "Bạn cần đăng ký khóa học trước khi làm bài quiz"),
+    MAX_ATTEMPTS_REACHED(HttpStatus.CONFLICT, "Bạn đã dùng hết số lượt làm bài quiz này"),
+    ATTEMPT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy lượt làm bài"),
+    ATTEMPT_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "Lượt làm bài đã được nộp"),
+    ATTEMPT_EXPIRED(HttpStatus.CONFLICT, "Đã hết thời gian làm bài"),
+    ATTEMPT_NOT_GRADED(HttpStatus.CONFLICT, "Lượt làm bài chưa được chấm điểm"),
+    AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ AI tạm thời không khả dụng, vui lòng thử lại sau");
 
     private final HttpStatus status;
     private final String message;
