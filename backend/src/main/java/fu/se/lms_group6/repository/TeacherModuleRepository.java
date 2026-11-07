@@ -1,5 +1,6 @@
 package fu.se.lms_group6.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,4 +35,8 @@ public interface TeacherModuleRepository extends JpaRepository<CourseModule, Lon
     // Quizzes belong to another feature and have no entity here.
     @Query(value = "select count(*) from quizzes where module_id = :moduleId", nativeQuery = true)
     long countQuizzes(@Param("moduleId") Long moduleId);
+
+    @Query(value = "select module_id as moduleId, count(*) as total from quizzes "
+            + "where module_id in (:moduleIds) group by module_id", nativeQuery = true)
+    List<TeacherModuleCount> countQuizzesByModule(@Param("moduleIds") Collection<Long> moduleIds);
 }

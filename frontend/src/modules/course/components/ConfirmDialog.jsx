@@ -17,12 +17,12 @@ export default function ConfirmDialog({
       onClose={busy ? () => {} : onCancel}
       footer={
         <>
-          <button type="button" className="tc-btn" onClick={onCancel} disabled={busy}>
+          <button type="button" className="button button-secondary" onClick={onCancel} disabled={busy}>
             Cancel
           </button>
           <button
             type="button"
-            className={danger ? 'tc-btn tc-btn-danger-solid' : 'tc-btn tc-btn-primary'}
+            className={danger ? 'button tc-danger-solid' : 'button'}
             onClick={onConfirm}
             disabled={busy}
           >

@@ -40,6 +40,15 @@ public interface TeacherCourseRepository extends JpaRepository<Course, Long>, Jp
     @Query(value = "select count(*) from registrations where course_id = :courseId", nativeQuery = true)
     long countRegistrations(@Param("courseId") Long courseId);
 
+    // Students of a course are its ACTIVE registrations (PENDING is unpaid, EXPIRED is over).
+    @Query(value = "select count(*) from registrations where course_id = :courseId and status = 'ACTIVE'",
+            nativeQuery = true)
+    long countActiveStudents(@Param("courseId") Long courseId);
+
+    @Query(value = "select course_id as courseId, count(*) as total from registrations "
+            + "where status = 'ACTIVE' and course_id in (:courseIds) group by course_id", nativeQuery = true)
+    List<TeacherCourseCount> activeStudentCounts(@Param("courseIds") Collection<Long> courseIds);
+
     @Query(value = "select count(*) from questions where course_id = :courseId", nativeQuery = true)
     long countQuestions(@Param("courseId") Long courseId);
 

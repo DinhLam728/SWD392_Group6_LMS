@@ -5,6 +5,8 @@ import ModuleDialog from '../components/ModuleDialog.jsx'
 import ModuleSection from '../components/ModuleSection.jsx'
 import Notice from '../components/Notice.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
+import { formatDate } from '../components/formatDate.js'
+import { formatVnd } from '../components/formatVnd.js'
 import {
   createModule,
   deleteLesson,
@@ -63,15 +65,29 @@ export function CourseContentPage({ courseId }) {
     setDialog(next)
   }
 
+  const lessonTotal = content ? content.modules.reduce((sum, module) => sum + module.lessons.length, 0) : 0
+
   return (
     <>
-      <div className="tc-page-head">
-        <h1>Course Content</h1>
-        <p className="tc-breadcrumb">
-          <a href="#/teacher/courses">My Courses</a> / <span>{content ? content.title : '…'}</span> /{' '}
-          <span>Content</span>
-          {content && <StatusBadge status={content.status} />}
-        </p>
+      <div className="breadcrumb" role="navigation" aria-label="Breadcrumb">
+        <a href="#/teacher/courses">My Courses</a>
+        <span aria-hidden="true"> / </span>
+        <span>{content ? content.title : '…'}</span>
+        <span aria-hidden="true"> / </span>
+        <span aria-current="page">Content</span>
+      </div>
+
+      <div className="page-heading tc-head">
+        <div>
+          <span className="eyebrow">TEACHER</span>
+          <h1>Course Content</h1>
+          <p>Use the arrows to change the order of modules and lessons.</p>
+        </div>
+        {content && (
+          <button type="button" onClick={() => openDialog({ type: 'module-form' })}>
+            + Add Module
+          </button>
+        )}
       </div>
 
       {message && <Notice tone="success">{message}</Notice>}
@@ -79,13 +95,54 @@ export function CourseContentPage({ courseId }) {
       {moveError && <Notice tone="error">{moveError}</Notice>}
 
       {content && (
-        <div className="tc-toolbar">
-          <p className="tc-subtitle">Use the arrows to change the order of modules and lessons.</p>
-          <span className="tc-toolbar-spacer" />
-          <button type="button" className="tc-btn tc-btn-primary" onClick={() => openDialog({ type: 'module-form' })}>
-            + Add Module
-          </button>
-        </div>
+        <section className="card tc-summary" aria-label="Course information">
+          {content.thumbnailUrl ? (
+            <img className="tc-summary-cover" src={content.thumbnailUrl} alt="" />
+          ) : (
+            <span className="tc-summary-cover">No image</span>
+          )}
+          <div>
+            <div className="tc-summary-title">
+              <h2>{content.title}</h2>
+              <StatusBadge status={content.status} />
+            </div>
+            {content.description && <p className="tc-summary-text">{content.description}</p>}
+            <dl className="tc-stats">
+              <div>
+                <dt>Price</dt>
+                <dd>{formatVnd(content.price)}</dd>
+              </div>
+              <div>
+                <dt>Modules</dt>
+                <dd>{content.modules.length}</dd>
+              </div>
+              <div>
+                <dt>Lessons</dt>
+                <dd>{lessonTotal}</dd>
+              </div>
+              <div>
+                <dt>Students</dt>
+                <dd>{content.studentCount}</dd>
+              </div>
+              <div>
+                <dt>Questions</dt>
+                <dd>{content.questionCount}</dd>
+              </div>
+              <div>
+                <dt>Created</dt>
+                <dd>{formatDate(content.createdAt)}</dd>
+              </div>
+            </dl>
+            <div className="tc-actions">
+              <a className="button button-secondary tc-small" href={`#/teacher/courses/${courseId}/edit`}>
+                Edit course
+              </a>
+              <a className="button button-secondary tc-small" href="#/question-bank">
+                Question Bank
+              </a>
+            </div>
+          </div>
+        </section>
       )}
 
       {loading && !content && <p className="tc-empty">Loading course content…</p>}
@@ -112,7 +169,7 @@ export function CourseContentPage({ courseId }) {
         ))}
 
       <div className="tc-actions">
-        <a className="tc-btn" href="#/teacher/courses">
+        <a className="button button-secondary" href="#/teacher/courses">
           Back to My Courses
         </a>
       </div>

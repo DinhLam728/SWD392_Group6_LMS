@@ -20,10 +20,10 @@ export default function ModuleDialog({ initialTitle = '', busy = false, error = 
       onClose={busy ? () => {} : onCancel}
       footer={
         <>
-          <button type="button" className="tc-btn" onClick={onCancel} disabled={busy}>
+          <button type="button" className="button button-secondary" onClick={onCancel} disabled={busy}>
             Cancel
           </button>
-          <button type="button" className="tc-btn tc-btn-primary" onClick={submit} disabled={busy}>
+          <button type="button" className="button" onClick={submit} disabled={busy}>
             {busy ? 'Saving…' : 'Save module'}
           </button>
         </>
@@ -33,7 +33,6 @@ export default function ModuleDialog({ initialTitle = '', busy = false, error = 
         <label htmlFor={inputId}>Module title *</label>
         <input
           id={inputId}
-          className="tc-input"
           value={title}
           maxLength={150}
           aria-invalid={touched && invalid}

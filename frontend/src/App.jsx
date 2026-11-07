@@ -45,15 +45,27 @@ export default function App() {
     return () => window.removeEventListener('hashchange', update)
   }, [])
 
-  if (path.startsWith('/teacher')) {
-    return <AppRouter />
-  }
-
   let page = <p>Không tìm thấy trang.</p>
   const course = path.match(/^\/courses\/(\d+)$/)
   const registration = path.match(/^\/registrations\/(\d+)(\/payment)?$/)
 
-  if (path === '/login') {
+  if (path.startsWith('/teacher')) {
+    // Teacher pages sit in the same header and footer as every other page.
+    page =
+      currentUser?.role === 'TEACHER' ? (
+        <AppRouter />
+      ) : (
+        <section className="card">
+          <h1>Chức năng dành cho giáo viên</h1>
+          <p>
+            Vui lòng đăng nhập bằng tài khoản giáo viên để quản lý khóa học.
+          </p>
+          <a href={currentUser ? '#/courses' : '#/login'}>
+            {currentUser ? 'Về khóa học' : 'Đăng nhập'}
+          </a>
+        </section>
+      )
+  } else if (path === '/login') {
     page = <AuthPage onAuthSuccess={handleLoginSuccess} />
   } else if (path === '/courses') {
     page = <AvailableCoursesPage />
@@ -107,7 +119,24 @@ export default function App() {
             Khóa học
           </a>
           {currentUser?.role === 'TEACHER' && (
-            <a href="#/teacher/courses">Quản lý khóa học</a>
+            <>
+              <a
+                className={path.startsWith('/teacher') ? 'nav-active' : ''}
+                href="#/teacher/courses"
+              >
+                Quản lý khóa học
+              </a>
+              <a
+                className={
+                  path === '/question-bank' || path === '/questions'
+                    ? 'nav-active'
+                    : ''
+                }
+                href="#/question-bank"
+              >
+                Ngân hàng câu hỏi
+              </a>
+            </>
           )}
         </nav>
         <div className="header-account">

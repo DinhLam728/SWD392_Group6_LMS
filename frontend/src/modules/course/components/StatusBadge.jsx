@@ -1,3 +1,9 @@
+// Same badge as the registration pages: green for live, amber for not yet.
 export default function StatusBadge({ status }) {
-  return <span className={`tc-badge tc-badge-${status.toLowerCase()}`}>{status}</span>
+  const published = status === 'PUBLISHED'
+  return (
+    <span className={`status-badge ${published ? 'status-active' : 'status-pending'}`}>
+      {published ? 'PUBLISHED' : 'DRAFT'}
+    </span>
+  )
 }
