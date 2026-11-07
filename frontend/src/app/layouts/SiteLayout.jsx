@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import UserMenu from '../components/UserMenu.jsx'
 import { AuthContext } from '../provider/AuthContext.js'
 
-export default function SiteLayout({ home = '/courses', links }) {
+export default function SiteLayout({ home = '/courses', links, children }) {
   const { user, logout } = useContext(AuthContext)
   const location = useLocation()
   const navigate = useNavigate()
@@ -35,7 +35,7 @@ export default function SiteLayout({ home = '/courses', links }) {
           )}
         </div>
       </header>
-      <main className="page-content"><Outlet /></main>
+      <main className="page-content">{children || <Outlet />}</main>
       <footer className="site-footer">
         LMS <span>Học tập hôm nay, phát triển ngày mai.</span>
       </footer>

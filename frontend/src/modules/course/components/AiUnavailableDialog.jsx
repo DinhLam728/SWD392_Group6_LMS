@@ -8,10 +8,10 @@ export default function AiUnavailableDialog({ onRetry, onCancel }) {
       onClose={onCancel}
       footer={
         <>
-          <button type="button" className="tc-btn" onClick={onCancel}>
+          <button type="button" className="button button-secondary" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className="tc-btn tc-btn-primary" onClick={onRetry}>
+          <button type="button" className="button" onClick={onRetry}>
             Retry
           </button>
         </>

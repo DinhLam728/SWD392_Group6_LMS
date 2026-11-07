@@ -65,14 +65,13 @@ function CourseForm({ course }) {
   }
 
   return (
-    <form className="tc-form" onSubmit={submit} noValidate>
+    <form className="card tc-form" onSubmit={submit} noValidate>
       {failure && <Notice tone="error">{failure}</Notice>}
 
       <div className="tc-field">
         <label htmlFor={ids.title}>Course Title *</label>
         <input
           id={ids.title}
-          className="tc-input"
           placeholder="e.g. Java Programming Basics"
           value={values.title}
           aria-invalid={Boolean(errors.title)}
@@ -104,7 +103,6 @@ function CourseForm({ course }) {
         <label htmlFor={ids.price}>Price (VND) *</label>
         <input
           id={ids.price}
-          className="tc-input"
           inputMode="numeric"
           placeholder="e.g. 500000"
           value={values.price}
@@ -124,7 +122,6 @@ function CourseForm({ course }) {
           )}
           <input
             id={ids.thumbnail}
-            className="tc-input"
             placeholder="https://…"
             value={values.thumbnailUrl}
             aria-invalid={Boolean(errors.thumbnailUrl)}
@@ -135,10 +132,10 @@ function CourseForm({ course }) {
       </div>
 
       <div className="tc-actions">
-        <button type="submit" className="tc-btn tc-btn-primary" disabled={saving}>
+        <button type="submit" disabled={saving}>
           {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Save as Draft'}
         </button>
-        <Link className="tc-btn" to="/teacher/courses">
+        <Link className="button button-secondary" to="/teacher/courses">
           Cancel
         </Link>
       </div>
@@ -148,12 +145,17 @@ function CourseForm({ course }) {
 
 function PageHead({ title }) {
   return (
-    <div className="tc-page-head">
-      <h1>{title}</h1>
-      <p className="tc-breadcrumb">
-        <Link to="/teacher/courses">My Courses</Link> / <span>{title}</span>
-      </p>
-    </div>
+    <>
+      <div className="breadcrumb" role="navigation" aria-label="Breadcrumb">
+        <Link to="/teacher/courses">My Courses</Link>
+        <span aria-hidden="true"> / </span>
+        <span aria-current="page">{title}</span>
+      </div>
+      <div className="page-heading">
+        <span className="eyebrow">TEACHER</span>
+        <h1>{title}</h1>
+      </div>
+    </>
   )
 }
 

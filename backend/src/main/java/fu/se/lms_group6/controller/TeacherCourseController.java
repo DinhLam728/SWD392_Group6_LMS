@@ -42,7 +42,7 @@ import fu.se.lms_group6.service.TeacherCourseService;
 @RestController
 @RequestMapping("/api/v1/teacher")
 public class TeacherCourseController {
-    private static final Set<String> COURSE_SORT_FIELDS = Set.of("courseId", "title", "price");
+    private static final Set<String> COURSE_SORT_FIELDS = Set.of("courseId", "title", "price", "createdAt");
 
     private final TeacherCourseService service;
     private final CurrentTeacher teacher;

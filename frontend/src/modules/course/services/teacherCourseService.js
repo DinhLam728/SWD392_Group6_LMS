@@ -1,18 +1,28 @@
 import { apiClient } from '../../../shared/api/apiClient.js'
 
 // Teacher endpoints always need the logged-in user's token; there is no demo-user fallback here.
-function teacherApi(path, options = {}) {
+async function teacherApi(path, options = {}) {
   const headers = new Headers(options.headers)
   const token = localStorage.getItem('lms_token')
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
-  return apiClient(`teacher/${path}`, { ...options, headers })
+  try {
+    return await apiClient(`teacher/${path}`, { ...options, headers })
+  } catch (error) {
+    if (error?.status === 401) {
+      // The token is missing or expired: forget it and let the Teacher log in again.
+      localStorage.removeItem('lms_token')
+      localStorage.removeItem('lms_user')
+      window.location.assign('/login')
+    }
+    throw error
+  }
 }
 
-export const listMyCourses = ({ keyword, status, page, size }, signal) =>
+export const listMyCourses = ({ keyword, status, sort, page, size }, signal) =>
   teacherApi('courses', {
-    query: { keyword: keyword || undefined, status: status || undefined, page, size },
+    query: { keyword: keyword || undefined, status: status || undefined, sort: sort || undefined, page, size },
     signal,
   })
 

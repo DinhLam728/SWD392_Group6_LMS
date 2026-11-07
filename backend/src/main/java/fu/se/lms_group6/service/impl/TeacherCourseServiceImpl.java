@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import fu.se.lms_group6.common.exception.BadRequestException;
 import fu.se.lms_group6.common.exception.BusinessException;
-import fu.se.lms_group6.common.exception.ConflictException;
 import fu.se.lms_group6.common.exception.ErrorCode;
 import fu.se.lms_group6.common.exception.NotFoundException;
 import fu.se.lms_group6.common.http.PageResponse;
@@ -40,12 +39,14 @@ import fu.se.lms_group6.entity.Course;
 import fu.se.lms_group6.entity.CourseModule;
 import fu.se.lms_group6.entity.Lesson;
 import fu.se.lms_group6.entity.User;
-import fu.se.lms_group6.externalclient.gemini.LessonAiClient;
+import fu.se.lms_group6.externalclient.gemini.GeminiClient;
 import fu.se.lms_group6.repository.TeacherCourseCount;
 import fu.se.lms_group6.repository.TeacherCourseRepository;
 import fu.se.lms_group6.repository.TeacherLessonRepository;
+import fu.se.lms_group6.repository.TeacherModuleCount;
 import fu.se.lms_group6.repository.TeacherModuleRepository;
 import fu.se.lms_group6.repository.UserRepository;
+import fu.se.lms_group6.service.TeacherConflictException;
 import fu.se.lms_group6.service.TeacherCourseService;
 
 @Service
@@ -60,15 +61,15 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     private final TeacherModuleRepository modules;
     private final TeacherLessonRepository lessons;
     private final UserRepository users;
-    private final LessonAiClient lessonAi;
+    private final GeminiClient gemini;
 
     public TeacherCourseServiceImpl(TeacherCourseRepository courses, TeacherModuleRepository modules,
-            TeacherLessonRepository lessons, UserRepository users, LessonAiClient lessonAi) {
+            TeacherLessonRepository lessons, UserRepository users, GeminiClient gemini) {
         this.courses = courses;
         this.modules = modules;
         this.lessons = lessons;
         this.users = users;
-        this.lessonAi = lessonAi;
+        this.gemini = gemini;
     }
 
     // ---------------------------------------------------------------- courses
@@ -98,10 +99,12 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         List<Long> ids = page.getContent().stream().map(Course::getCourseId).toList();
         Map<Long, Long> moduleCounts = ids.isEmpty() ? Map.of() : toMap(courses.countModules(ids));
         Map<Long, Long> lessonCounts = ids.isEmpty() ? Map.of() : toMap(courses.countLessons(ids));
+        Map<Long, Long> studentCounts = ids.isEmpty() ? Map.of() : toMap(courses.activeStudentCounts(ids));
         return PageResponse.from(page.map(course -> new TeacherCourseSummaryResponse(
                 course.getCourseId(), course.getTitle(), course.getThumbnailUrl(), course.getPrice(),
                 statusOf(course), moduleCounts.getOrDefault(course.getCourseId(), 0L),
-                lessonCounts.getOrDefault(course.getCourseId(), 0L))));
+                lessonCounts.getOrDefault(course.getCourseId(), 0L), course.getCreatedAt(),
+                studentCounts.getOrDefault(course.getCourseId(), 0L))));
     }
 
     @Override
@@ -132,9 +135,22 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     @Override
     public void deleteCourse(Long teacherId, Long courseId) {
         ownedCourse(teacherId, courseId);
-        if (courses.countRegistrations(courseId) > 0 || courses.countQuestions(courseId) > 0
-                || courses.countQuizzes(courseId) > 0) {
-            throw new ConflictException();
+        long registrations = courses.countRegistrations(courseId);
+        long questions = courses.countQuestions(courseId);
+        long quizzes = courses.countQuizzes(courseId);
+        if (registrations > 0 || questions > 0 || quizzes > 0) {
+            List<String> blockers = new ArrayList<>();
+            if (registrations > 0) {
+                blockers.add(registrations + " registration(s)");
+            }
+            if (questions > 0) {
+                blockers.add(questions + " question(s) in the question bank");
+            }
+            if (quizzes > 0) {
+                blockers.add(quizzes + " practice quiz(zes)");
+            }
+            throw new TeacherConflictException("This course cannot be deleted because it still has "
+                    + String.join(", ", blockers) + ".");
         }
         courses.deleteLessonsOfCourse(courseId);
         courses.deleteModulesOfCourse(courseId);
@@ -154,7 +170,8 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     private TeacherCourseResponse changePublication(Long teacherId, Long courseId, boolean published) {
         Course course = ownedCourse(teacherId, courseId);
         if (Boolean.TRUE.equals(course.getIsPublished()) == published) {
-            throw new ConflictException();
+            throw new TeacherConflictException(published ? "The course is already published."
+                    : "The course is already a draft.");
         }
         course.setIsPublished(published);
         return toCourseResponse(course);
@@ -173,12 +190,22 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
                     .add(new CourseContentResponse.LessonItem(
                             lesson.getLessonId(), lesson.getTitle(), lesson.getPosition(), hasContent));
         }
-        List<CourseContentResponse.ModuleContent> moduleItems = modules.findByCourseCourseIdOrderByPositionAsc(courseId)
-                .stream()
+        List<CourseModule> moduleList = modules.findByCourseCourseIdOrderByPositionAsc(courseId);
+        Map<Long, Long> quizCounts = new HashMap<>();
+        if (!moduleList.isEmpty()) {
+            List<Long> moduleIds = moduleList.stream().map(CourseModule::getModuleId).toList();
+            for (TeacherModuleCount count : modules.countQuizzesByModule(moduleIds)) {
+                quizCounts.put(count.getModuleId(), count.getTotal());
+            }
+        }
+        List<CourseContentResponse.ModuleContent> moduleItems = moduleList.stream()
                 .map(module -> new CourseContentResponse.ModuleContent(module.getModuleId(), module.getTitle(),
-                        module.getPosition(), lessonsByModule.getOrDefault(module.getModuleId(), List.of())))
+                        module.getPosition(), quizCounts.getOrDefault(module.getModuleId(), 0L),
+                        lessonsByModule.getOrDefault(module.getModuleId(), List.of())))
                 .toList();
-        return new CourseContentResponse(course.getCourseId(), course.getTitle(), statusOf(course), moduleItems);
+        return new CourseContentResponse(course.getCourseId(), course.getTitle(), course.getDescription(),
+                course.getThumbnailUrl(), course.getPrice(), statusOf(course), course.getCreatedAt(),
+                courses.countActiveStudents(courseId), courses.countQuestions(courseId), moduleItems);
     }
 
     // ---------------------------------------------------------------- modules
@@ -200,8 +227,10 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     @Override
     public void deleteModule(Long teacherId, Long moduleId) {
         CourseModule module = ownedModule(teacherId, moduleId);
-        if (modules.countQuizzes(moduleId) > 0) {
-            throw new ConflictException();
+        long quizzes = modules.countQuizzes(moduleId);
+        if (quizzes > 0) {
+            throw new TeacherConflictException("This module cannot be deleted because it still has "
+                    + quizzes + " practice quiz(zes).");
         }
         Long courseId = module.getCourse().getCourseId();
         int deletedPosition = module.getPosition();
@@ -225,7 +254,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         CourseModule neighbour = (direction == MoveDirection.UP
                 ? modules.findFirstByCourseCourseIdAndPositionLessThanOrderByPositionDesc(courseId, current)
                 : modules.findFirstByCourseCourseIdAndPositionGreaterThanOrderByPositionAsc(courseId, current))
-                .orElseThrow(ConflictException::new);
+                .orElseThrow(() -> new TeacherConflictException("The module is already at the edge of the list."));
         int other = neighbour.getPosition();
         module.setPosition(TEMPORARY_POSITION);
         modules.saveAndFlush(module);
@@ -281,7 +310,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         Lesson neighbour = (direction == MoveDirection.UP
                 ? lessons.findFirstByModuleModuleIdAndPositionLessThanOrderByPositionDesc(moduleId, current)
                 : lessons.findFirstByModuleModuleIdAndPositionGreaterThanOrderByPositionAsc(moduleId, current))
-                .orElseThrow(ConflictException::new);
+                .orElseThrow(() -> new TeacherConflictException("The lesson is already at the edge of the list."));
         int other = neighbour.getPosition();
         lesson.setPosition(TEMPORARY_POSITION);
         lessons.saveAndFlush(lesson);
@@ -300,7 +329,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     public AiLessonResponse generateLessonContent(Long teacherId, AiLessonRequest request) {
         CourseModule module = ownedModule(teacherId, request.moduleId());
         String prompt = buildPrompt(module.getCourse(), module, request.title().strip());
-        return new AiLessonResponse(lessonAi.generateLesson(prompt));
+        return new AiLessonResponse(gemini.generateLesson(prompt));
     }
 
     private String buildPrompt(Course course, CourseModule module, String lessonTitle) {
@@ -355,7 +384,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         try {
             return save.get();
         } catch (DataIntegrityViolationException ex) {
-            throw new ConflictException();
+            throw new TeacherConflictException("Another change was saved at the same time. Reload the page and try again.");
         }
     }
 
@@ -385,7 +414,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
 
     private TeacherCourseResponse toCourseResponse(Course course) {
         return new TeacherCourseResponse(course.getCourseId(), course.getTitle(), course.getDescription(),
-                course.getThumbnailUrl(), course.getPrice(), statusOf(course));
+                course.getThumbnailUrl(), course.getPrice(), statusOf(course), course.getCreatedAt());
     }
 
     private TeacherModuleResponse toModuleResponse(CourseModule module) {

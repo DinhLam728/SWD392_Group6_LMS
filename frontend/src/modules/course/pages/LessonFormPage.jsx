@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useRemoteData } from '../../../shared/hooks/useRemoteData.js'
 import AiUnavailableDialog from '../components/AiUnavailableDialog.jsx'
@@ -45,7 +45,11 @@ function LessonForm({ context, lesson }) {
   const [replaceDialog, setReplaceDialog] = useState(false)
   // Retry sends the title of the failed request again, even if the field was edited meanwhile.
   const requestedTitle = useRef('')
+  // The request in flight; it is cancelled when the Teacher leaves the page.
+  const pending = useRef(null)
   const contentUrl = `/teacher/courses/${context.courseId}/content`
+
+  useEffect(() => () => pending.current?.abort(), [])
 
   function setField(name, value) {
     setValues((current) => ({ ...current, [name]: value }))
@@ -53,17 +57,23 @@ function LessonForm({ context, lesson }) {
 
   async function runGeneration(title) {
     requestedTitle.current = title
+    pending.current?.abort()
+    const request = new AbortController()
+    pending.current = request
     setGenerating(true)
     setAiNotice(false)
     setAiDialog(false)
     setReplaceDialog(false)
     setFailure('')
     try {
-      const response = await generateLessonContent({ moduleId: context.moduleId, title })
+      const response = await generateLessonContent({ moduleId: context.moduleId, title }, request.signal)
       setField('content', response.data.content)
       setErrors((current) => ({ ...current, content: undefined }))
       setAiNotice(true)
     } catch (error) {
+      if (request.signal.aborted) {
+        return
+      }
       if (error.status === 502 || error.code === 'AI_SERVICE_UNAVAILABLE') {
         setAiDialog(true)
       } else {
@@ -71,7 +81,9 @@ function LessonForm({ context, lesson }) {
         setFailure(error.message || 'The content could not be generated.')
       }
     } finally {
-      setGenerating(false)
+      if (!request.signal.aborted) {
+        setGenerating(false)
+      }
     }
   }
 
@@ -112,17 +124,17 @@ function LessonForm({ context, lesson }) {
   const busy = saving || generating
 
   return (
-    <form className="tc-form" onSubmit={save} noValidate>
+    <form className="card tc-form" onSubmit={save} noValidate>
       {failure && <Notice tone="error">{failure}</Notice>}
 
       <div className="tc-row">
         <div className="tc-field">
           <label>Module</label>
-          <input className="tc-input" value={context.moduleTitle} readOnly aria-readonly="true" />
+          <input value={context.moduleTitle} readOnly aria-readonly="true" />
         </div>
         <div className="tc-field">
           <label>Order</label>
-          <input className="tc-input" value={context.order} readOnly aria-readonly="true" />
+          <input value={context.order} readOnly aria-readonly="true" />
         </div>
       </div>
 
@@ -130,7 +142,6 @@ function LessonForm({ context, lesson }) {
         <label htmlFor={ids.title}>Lesson Title *</label>
         <input
           id={ids.title}
-          className="tc-input"
           placeholder="e.g. Introduction to Java classes"
           value={values.title}
           aria-invalid={Boolean(errors.title)}
@@ -147,7 +158,7 @@ function LessonForm({ context, lesson }) {
       <div className="tc-field">
         <div className="tc-label-row">
           <label htmlFor={ids.content}>Lesson Content *</label>
-          <button type="button" className="tc-btn tc-btn-ai" onClick={generate} disabled={busy}>
+          <button type="button" className="tc-ai" onClick={generate} disabled={busy}>
             {generating ? 'Generating content...' : 'Generate Content with AI'}
           </button>
         </div>
@@ -175,10 +186,10 @@ function LessonForm({ context, lesson }) {
       </div>
 
       <div className="tc-actions">
-        <button type="submit" className="tc-btn tc-btn-primary" disabled={busy}>
+        <button type="submit" disabled={busy}>
           {saving ? 'Saving…' : 'Save Lesson'}
         </button>
-        <Link className="tc-btn" to={`${contentUrl}`}>
+        <Link className="button button-secondary" to={`${contentUrl}`}>
           Cancel
         </Link>
       </div>
@@ -205,12 +216,19 @@ function LessonForm({ context, lesson }) {
 
 function PageHead({ title }) {
   return (
-    <div className="tc-page-head">
-      <h1>{title}</h1>
-      <p className="tc-breadcrumb">
-        <Link to="/teacher/courses">My Courses</Link> / <span>Content</span> / <span>{title}</span>
-      </p>
-    </div>
+    <>
+      <div className="breadcrumb" role="navigation" aria-label="Breadcrumb">
+        <Link to="/teacher/courses">My Courses</Link>
+        <span aria-hidden="true"> / </span>
+        <span>Content</span>
+        <span aria-hidden="true"> / </span>
+        <span aria-current="page">{title}</span>
+      </div>
+      <div className="page-heading">
+        <span className="eyebrow">TEACHER</span>
+        <h1>{title}</h1>
+      </div>
+    </>
   )
 }
 

@@ -1,32 +1,43 @@
-export default function Pagination({ page, size, totalElements, totalPages, noun, onPageChange }) {
+// "Showing 1–10 of 23 courses", the same line as the student course list.
+export function ResultCount({ page, size, totalElements, noun }) {
   const first = totalElements === 0 ? 0 : page * size + 1
   const last = Math.min((page + 1) * size, totalElements)
   return (
-    <nav className="tc-pagination" aria-label="Pagination">
-      <p>
-        Showing {first} - {last} of {totalElements} {noun}
-      </p>
-      <div className="tc-pagination-controls">
+    <p className="course-count" role="status">
+      Showing{' '}
+      <strong>
+        {first}–{last}
+      </strong>{' '}
+      of <strong>{totalElements}</strong> {noun}
+    </p>
+  )
+}
+
+// Same markup as the shared pagination: Previous, one button per page, Next.
+export default function Pagination({ page, totalPages, onPageChange }) {
+  if (totalPages <= 0) {
+    return null
+  }
+  return (
+    <nav className="pagination" aria-label="Pagination">
+      <button type="button" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
+        Previous
+      </button>
+      {Array.from({ length: totalPages }, (_, index) => (
         <button
+          key={index}
           type="button"
-          className="tc-btn tc-btn-small"
-          onClick={() => onPageChange(page - 1)}
-          disabled={page <= 0}
+          className="page-number"
+          aria-label={`Page ${index + 1}`}
+          aria-current={index === page ? 'page' : undefined}
+          onClick={() => onPageChange(index)}
         >
-          Previous
+          {index + 1}
         </button>
-        <span aria-current="page">
-          Page {totalPages === 0 ? 0 : page + 1} of {totalPages}
-        </span>
-        <button
-          type="button"
-          className="tc-btn tc-btn-small"
-          onClick={() => onPageChange(page + 1)}
-          disabled={page + 1 >= totalPages}
-        >
-          Next
-        </button>
-      </div>
+      ))}
+      <button type="button" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
+        Next
+      </button>
     </nav>
   )
 }

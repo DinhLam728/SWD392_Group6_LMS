@@ -3,8 +3,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRemoteData } from '../../../shared/hooks/useRemoteData.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Notice from '../components/Notice.jsx'
-import Pagination from '../components/Pagination.jsx'
+import Pagination, { ResultCount } from '../components/Pagination.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
+import { formatDate } from '../components/formatDate.js'
 import { formatVnd } from '../components/formatVnd.js'
 import {
   deleteCourse,
@@ -15,6 +16,14 @@ import {
 import { clearFlash, peekFlash } from '../services/flash.js'
 
 const PAGE_SIZE = 10
+const DEFAULT_SORT = 'createdAt,desc'
+const SORT_OPTIONS = [
+  ['createdAt,desc', 'Newest first'],
+  ['createdAt,asc', 'Oldest first'],
+  ['title,asc', 'Title A–Z'],
+  ['price,asc', 'Price: low to high'],
+  ['price,desc', 'Price: high to low'],
+]
 
 const DIALOG_TEXT = {
   delete: {
@@ -49,7 +58,8 @@ const DONE_MESSAGE = {
 export function TeacherCoursesPage() {
   const [keywordInput, setKeywordInput] = useState('')
   const [statusInput, setStatusInput] = useState('')
-  const [filters, setFilters] = useState({ keyword: '', status: '' })
+  const [sortInput, setSortInput] = useState(DEFAULT_SORT)
+  const [filters, setFilters] = useState({ keyword: '', status: '', sort: DEFAULT_SORT })
   const [page, setPage] = useState(0)
   const [message, setMessage] = useState(() => peekFlash() || '')
   const [dialog, setDialog] = useState(null)
@@ -64,7 +74,7 @@ export function TeacherCoursesPage() {
     [filters, page],
   )
   const { data, error, loading, reload } = useRemoteData(
-    `${filters.keyword}|${filters.status}|${page}`,
+    `${filters.keyword}|${filters.status}|${filters.sort}|${page}`,
     loader,
   )
   const result = data?.data
@@ -72,7 +82,16 @@ export function TeacherCoursesPage() {
   function applyFilters(event) {
     event.preventDefault()
     setPage(0)
-    setFilters({ keyword: keywordInput.trim(), status: statusInput })
+    setFilters({ keyword: keywordInput.trim(), status: statusInput, sort: sortInput })
+  }
+
+  function resetFilters(event) {
+    event.preventDefault()
+    setKeywordInput('')
+    setStatusInput('')
+    setSortInput(DEFAULT_SORT)
+    setPage(0)
+    setFilters({ keyword: '', status: '', sort: DEFAULT_SORT })
   }
 
   function openDialog(type, course) {
@@ -102,57 +121,74 @@ export function TeacherCoursesPage() {
 
   return (
     <>
-      <div className="tc-page-head">
-        <h1>My Courses</h1>
-        <p className="tc-subtitle">Manage your courses, modules and lessons</p>
+      <div className="page-heading tc-head">
+        <div>
+          <span className="eyebrow">TEACHER</span>
+          <h1>My Courses</h1>
+          <p>Manage your courses, modules and lessons.</p>
+        </div>
+        <Link className="button" to="/teacher/courses/new">
+          + Create Course
+        </Link>
       </div>
 
       {message && <Notice tone="success">{message}</Notice>}
       {error && <Notice tone="error">{error.message}</Notice>}
 
-      <form className="tc-toolbar" onSubmit={applyFilters}>
-        <div className="tc-field tc-toolbar-search">
-          <label htmlFor="tc-search">Search courses</label>
+      <form className="filters" onSubmit={applyFilters} onReset={resetFilters}>
+        <label>
+          Search courses
           <input
-            id="tc-search"
-            className="tc-input"
             placeholder="Search by course title..."
             maxLength={150}
             value={keywordInput}
             onChange={(event) => setKeywordInput(event.target.value)}
           />
-        </div>
-        <button type="submit" className="tc-btn">
-          Search
-        </button>
-        <div className="tc-field">
-          <label htmlFor="tc-status">Status</label>
-          <select
-            id="tc-status"
-            className="tc-select"
-            value={statusInput}
-            onChange={(event) => setStatusInput(event.target.value)}
-          >
+        </label>
+        <label>
+          Status
+          <select value={statusInput} onChange={(event) => setStatusInput(event.target.value)}>
             <option value="">All statuses</option>
             <option value="DRAFT">DRAFT</option>
             <option value="PUBLISHED">PUBLISHED</option>
           </select>
+        </label>
+        <label>
+          Sort by
+          <select value={sortInput} onChange={(event) => setSortInput(event.target.value)}>
+            {SORT_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="filter-actions">
+          <button type="submit">Search</button>
+          <button type="reset" className="button-secondary">
+            Reset
+          </button>
         </div>
-        <span className="tc-toolbar-spacer" />
-        <Link className="tc-btn tc-btn-primary" to="/teacher/courses/new">
-          + Create Course
-        </Link>
       </form>
 
-      <div className="tc-table-wrap" aria-busy={loading}>
-        <table className="tc-table">
+      {result && (
+        <ResultCount
+          page={result.page}
+          size={result.size}
+          totalElements={result.totalElements}
+          noun="courses"
+        />
+      )}
+
+      <div className="table-wrap" aria-busy={loading}>
+        <table>
           <thead>
             <tr>
               <th>#</th>
-              <th>Thumbnail</th>
-              <th>Course Title</th>
+              <th>Course</th>
               <th>Modules</th>
               <th>Lessons</th>
+              <th>Students</th>
               <th>Price</th>
               <th>Status</th>
               <th>Actions</th>
@@ -161,32 +197,38 @@ export function TeacherCoursesPage() {
           <tbody>
             {result?.items.map((course, index) => (
               <tr key={course.courseId}>
-                <td className="tc-num">{page * PAGE_SIZE + index + 1}</td>
+                <td>{page * PAGE_SIZE + index + 1}</td>
                 <td>
-                  {course.thumbnailUrl ? (
-                    <img className="tc-thumb" src={course.thumbnailUrl} alt="" />
-                  ) : (
-                    <span className="tc-thumb">No image</span>
-                  )}
+                  <div className="tc-course-cell">
+                    {course.thumbnailUrl ? (
+                      <img className="tc-thumb" src={course.thumbnailUrl} alt="" />
+                    ) : (
+                      <span className="tc-thumb">No image</span>
+                    )}
+                    <div>
+                      <span>{course.title}</span>
+                      <small>Created {formatDate(course.createdAt)}</small>
+                    </div>
+                  </div>
                 </td>
-                <td>{course.title}</td>
-                <td className="tc-num">{course.moduleCount}</td>
-                <td className="tc-num">{course.lessonCount}</td>
-                <td className="tc-num">{formatVnd(course.price)}</td>
+                <td>{course.moduleCount}</td>
+                <td>{course.lessonCount}</td>
+                <td>{course.studentCount}</td>
+                <td>{formatVnd(course.price)}</td>
                 <td>
                   <StatusBadge status={course.status} />
                 </td>
                 <td>
                   <div className="tc-row-actions">
-                    <Link className="tc-btn tc-btn-small" to={`/teacher/courses/${course.courseId}/edit`}>
-                      Edit
-                    </Link>
-                    <Link className="tc-btn tc-btn-small" to={`/teacher/courses/${course.courseId}/content`}>
+                    <Link className="button button-secondary" to={`/teacher/courses/${course.courseId}/content`}>
                       Content
+                    </Link>
+                    <Link className="button button-secondary" to={`/teacher/courses/${course.courseId}/edit`}>
+                      Edit
                     </Link>
                     <button
                       type="button"
-                      className="tc-btn tc-btn-small"
+                      className="button button-secondary"
                       onClick={() =>
                         openDialog(course.status === 'PUBLISHED' ? 'unpublish' : 'publish', course)
                       }
@@ -195,7 +237,7 @@ export function TeacherCoursesPage() {
                     </button>
                     <button
                       type="button"
-                      className="tc-btn tc-btn-small tc-btn-danger"
+                      className="button button-secondary tc-danger"
                       onClick={() => openDialog('delete', course)}
                     >
                       Delete
@@ -216,16 +258,7 @@ export function TeacherCoursesPage() {
         )}
       </div>
 
-      {result && (
-        <Pagination
-          page={result.page}
-          size={result.size}
-          totalElements={result.totalElements}
-          totalPages={result.totalPages}
-          noun="courses"
-          onPageChange={setPage}
-        />
-      )}
+      {result && <Pagination page={result.page} totalPages={result.totalPages} onPageChange={setPage} />}
 
       {dialog && (
         <ConfirmDialog

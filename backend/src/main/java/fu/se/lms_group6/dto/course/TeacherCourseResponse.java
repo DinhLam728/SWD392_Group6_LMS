@@ -1,6 +1,7 @@
 package fu.se.lms_group6.dto.course;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /** A course as the owning Teacher sees it. status is DRAFT or PUBLISHED. */
 public record TeacherCourseResponse(
@@ -9,5 +10,6 @@ public record TeacherCourseResponse(
         String description,
         String thumbnailUrl,
         BigDecimal price,
-        String status
+        String status,
+        LocalDateTime createdAt
 ) {}
