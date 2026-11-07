@@ -8,6 +8,7 @@ public record AttemptResponse(
         Long quizId,
         String quizTitle,
         Long courseId,
+        String courseTitle,
         String status,
         Integer durationMinutes,
         LocalDateTime startedAt,

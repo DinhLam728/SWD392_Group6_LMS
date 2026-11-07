@@ -10,6 +10,7 @@ public record AttemptResultResponse(
         Long quizId,
         String quizTitle,
         Long courseId,
+        String courseTitle,
         String status,
         BigDecimal score,
         BigDecimal passingScore,

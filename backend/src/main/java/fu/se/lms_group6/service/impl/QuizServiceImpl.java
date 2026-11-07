@@ -384,7 +384,8 @@ public class QuizServiceImpl implements QuizService {
         }
         Quiz quiz = attempt.getQuiz();
         return new AttemptResponse(attempt.getAttemptId(), quiz.getQuizId(), quiz.getTitle(),
-                quiz.getModule().getCourse().getCourseId(), attempt.getStatus().name(), settings.durationMinutes(),
+                quiz.getModule().getCourse().getCourseId(), quiz.getModule().getCourse().getTitle(),
+                attempt.getStatus().name(), settings.durationMinutes(),
                 attempt.getStartedAt(), deadlineOf(attempt, settings), now, items);
     }
 
@@ -410,7 +411,8 @@ public class QuizServiceImpl implements QuizService {
                 quiz.getQuizId(), attempt.getStudent().getUserId());
         int attemptNumber = history.indexOf(attempt) + 1;
         return new AttemptResultResponse(attempt.getAttemptId(), attemptNumber, quiz.getQuizId(), quiz.getTitle(),
-                quiz.getModule().getCourse().getCourseId(), attempt.getStatus().name(), attempt.getScore(),
+                quiz.getModule().getCourse().getCourseId(), quiz.getModule().getCourse().getTitle(),
+                attempt.getStatus().name(), attempt.getScore(),
                 settings.passingScore(), isPassed(attempt, settings), correct, rows.size(), attempt.getStartedAt(),
                 attempt.getSubmittedAt(), items);
     }

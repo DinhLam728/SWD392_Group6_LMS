@@ -88,7 +88,7 @@ function QuizTakingContent({ id }) {
     return (
       <>
         <QuizErrorNotice error={error} />
-        {!error && <p className="muted">Đang tải đề...</p>}
+        {!error && <p>Đang tải đề...</p>}
       </>
     )
   }
@@ -99,8 +99,10 @@ function QuizTakingContent({ id }) {
 
   return (
     <>
-      <div className="breadcrumb" aria-label="Đường dẫn trang">
-        <Link to={`/courses/${attempt.courseId}`}>Khóa học</Link>
+      <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
+        <Link to="/courses">Khóa học</Link>
+        <span aria-hidden="true"> / </span>
+        <Link to={`/courses/${attempt.courseId}`}>{attempt.courseTitle}</Link>
         <span aria-hidden="true"> / </span>
         <Link to={`/quizzes/${attempt.quizId}`}>{attempt.quizTitle}</Link>
         <span aria-hidden="true"> / </span>

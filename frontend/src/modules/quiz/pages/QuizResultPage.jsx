@@ -72,15 +72,17 @@ function QuizResultContent({ id }) {
     return (
       <>
         <QuizErrorNotice error={error} />
-        {!error && <p className="muted">Đang tải kết quả...</p>}
+        {!error && <p>Đang tải kết quả...</p>}
       </>
     )
   }
 
   return (
     <>
-      <div className="breadcrumb" aria-label="Đường dẫn trang">
-        <Link to={`/courses/${result.courseId}`}>Khóa học</Link>
+      <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
+        <Link to="/courses">Khóa học</Link>
+        <span aria-hidden="true"> / </span>
+        <Link to={`/courses/${result.courseId}`}>{result.courseTitle}</Link>
         <span aria-hidden="true"> / </span>
         <Link to={`/quizzes/${result.quizId}`}>{result.quizTitle}</Link>
         <span aria-hidden="true"> / </span>
@@ -90,26 +92,53 @@ function QuizResultContent({ id }) {
         <span className="eyebrow">KẾT QUẢ LƯỢT {result.attemptNumber}</span>
         <h1>{result.quizTitle}</h1>
       </div>
-      <section className={`card quiz-score-card ${result.passed ? 'quiz-score-pass' : 'quiz-score-fail'}`}>
+      {/* Cùng bố cục với trang kết quả đăng ký: notice + details + result-actions. */}
+      <section className="card result-card quiz-result-card">
+        <div className={`notice ${result.passed ? 'notice-success' : 'notice-neutral'}`}>
+          <span className="notice-icon">{result.passed ? '✓' : '✗'}</span>
+          <div>
+            <h2>{result.passed ? 'Bạn đã đạt bài quiz' : 'Bạn chưa đạt bài quiz'}</h2>
+            <p>
+              {result.passed
+                ? 'Chúc mừng! Điểm của bạn đã đạt yêu cầu.'
+                : 'Xem lại các câu sai bên dưới rồi thử làm lại nhé.'}
+            </p>
+          </div>
+        </div>
         <div className="quiz-score">
           <strong>{formatScore(result.score)}</strong>
           <span>/ 10</span>
         </div>
-        <div>
-          <span className={`quiz-badge quiz-badge-${result.passed ? 'pass' : 'fail'}`}>
-            {result.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
-          </span>
-          <p>
-            Đúng {result.correctCount} / {result.totalQuestions} câu · Điểm đạt {formatScore(result.passingScore)}
-          </p>
-          <p className="muted">Nộp lúc {formatDateTime(result.submittedAt)}</p>
-        </div>
-        <div className="quiz-score-actions">
-          <Link className="button" to={`/quizzes/${result.quizId}`}>
-            Làm lại / xem lượt khác
-          </Link>
+        <dl className="details">
+          <div className="detail-field">
+            <dt>Kết quả</dt>
+            <dd>
+              <span className={`status-badge ${result.passed ? 'status-success' : 'status-failed'}`}>
+                {result.passed ? 'Đạt' : 'Chưa đạt'}
+              </span>
+            </dd>
+          </div>
+          <div className="detail-field">
+            <dt>Số câu đúng</dt>
+            <dd>
+              {result.correctCount} / {result.totalQuestions}
+            </dd>
+          </div>
+          <div className="detail-field">
+            <dt>Điểm đạt</dt>
+            <dd>{formatScore(result.passingScore)} / 10</dd>
+          </div>
+          <div className="detail-field">
+            <dt>Nộp lúc</dt>
+            <dd>{formatDateTime(result.submittedAt)}</dd>
+          </div>
+        </dl>
+        <div className="result-actions">
           <Link className="button button-secondary" to={`/courses/${result.courseId}`}>
-            Về khóa học
+            ← Về khóa học
+          </Link>
+          <Link className="button" to={`/quizzes/${result.quizId}`}>
+            Làm lại / xem lượt khác →
           </Link>
         </div>
       </section>
@@ -121,7 +150,9 @@ function QuizResultContent({ id }) {
             <article key={question.questionId} className={`card quiz-review-item quiz-review-${status}`}>
               <div className="quiz-review-head">
                 <span className="eyebrow">CÂU {question.order}</span>
-                <span className={`quiz-badge quiz-badge-${question.correct ? 'pass' : 'fail'}`}>
+                <span
+                  className={`status-badge ${status === 'correct' ? 'status-success' : status === 'wrong' ? 'status-failed' : ''}`}
+                >
                   {status === 'correct' ? 'Đúng' : status === 'wrong' ? 'Sai' : 'Bỏ trống'}
                 </span>
               </div>

@@ -5,11 +5,12 @@ import { getQuiz, startAttempt } from '../services/quizService.js'
 import { formatDateTime, formatScore } from '../utils/quizFormat.js'
 import '../styles/quiz.css'
 
-function resultLabel(attempt) {
-  if (attempt.status === 'IN_PROGRESS') return 'Đang làm'
-  if (attempt.passed === true) return 'Đạt'
-  if (attempt.passed === false) return 'Chưa đạt'
-  return attempt.status
+// Dùng chung kiểu nhãn trạng thái (status-badge) với các trang đăng ký.
+function resultBadge(attempt) {
+  if (attempt.status === 'IN_PROGRESS') return ['status-pending', 'Đang làm']
+  if (attempt.passed === true) return ['status-success', 'Đạt']
+  if (attempt.passed === false) return ['status-failed', 'Chưa đạt']
+  return ['', attempt.status]
 }
 
 export default function QuizStartPage() {
@@ -48,7 +49,7 @@ function QuizStartContent({ id }) {
 
   return (
     <>
-      <div className="breadcrumb" aria-label="Đường dẫn trang">
+      <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
         <Link to="/courses">Khóa học</Link>
         {quiz && (
           <>
@@ -60,36 +61,36 @@ function QuizStartContent({ id }) {
         )}
       </div>
       <div className="page-heading">
-        <span className="eyebrow">PRACTICE QUIZ</span>
+        <span className="eyebrow">QUIZ ÔN TẬP</span>
         <h1>{quiz ? quiz.title : 'Bài quiz'}</h1>
-        {quiz && <p className="muted">{quiz.moduleTitle}</p>}
+        {quiz && <p>{quiz.moduleTitle}</p>}
       </div>
       <QuizErrorNotice error={error} />
-      {!quiz && !error && <p className="muted">Đang tải bài quiz...</p>}
+      {!quiz && !error && <p>Đang tải bài quiz...</p>}
       {quiz && (
-        <div className="quiz-start-layout">
+        <div className="two-columns quiz-start-layout">
           <section className="card">
             <h2>Thông tin bài quiz</h2>
-            <dl className="quiz-facts">
-              <div>
+            <dl className="details">
+              <div className="detail-field">
                 <dt>Số câu hỏi</dt>
                 <dd>{quiz.questionCount}</dd>
               </div>
-              <div>
+              <div className="detail-field">
                 <dt>Thời gian</dt>
                 <dd>{quiz.durationMinutes} phút</dd>
               </div>
-              <div>
+              <div className="detail-field">
                 <dt>Điểm đạt</dt>
                 <dd>{formatScore(quiz.passingScore)} / 10</dd>
               </div>
-              <div>
+              <div className="detail-field">
                 <dt>Số lượt đã làm</dt>
                 <dd>
                   {quiz.attemptsUsed} / {quiz.maxAttempts}
                 </dd>
               </div>
-              <div>
+              <div className="detail-field">
                 <dt>Điểm cao nhất</dt>
                 <dd>{quiz.bestScore === null ? 'Chưa có' : `${formatScore(quiz.bestScore)} / 10`}</dd>
               </div>
@@ -125,7 +126,7 @@ function QuizStartContent({ id }) {
         </div>
       )}
       {quiz && quiz.attempts.length > 0 && (
-        <section className="card quiz-history">
+        <section className="quiz-history">
           <h2>Các lần làm trước</h2>
           <div className="table-wrap">
             <table>
@@ -145,8 +146,8 @@ function QuizStartContent({ id }) {
                     <td>{formatDateTime(attempt.submittedAt)}</td>
                     <td>{formatScore(attempt.score)}</td>
                     <td>
-                      <span className={`quiz-badge quiz-badge-${attempt.passed === true ? 'pass' : attempt.passed === false ? 'fail' : 'neutral'}`}>
-                        {resultLabel(attempt)}
+                      <span className={`status-badge ${resultBadge(attempt)[0]}`}>
+                        {resultBadge(attempt)[1]}
                       </span>
                     </td>
                     <td>

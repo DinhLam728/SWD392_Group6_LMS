@@ -1,37 +1,18 @@
-/* Practice quiz: dùng lại màu và card/button/notice của app (enrollment.css). */
-.quiz-start-layout,
-.quiz-taking-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  margin-top: 20px;
-}
-.quiz-facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
-  margin: 0 0 18px;
-}
-.quiz-facts div {
-  background: #f8fafc;
-  border: 1px solid #e5e7ef;
-  border-radius: 12px;
-  padding: 12px 14px;
-}
-.quiz-facts dt {
-  color: var(--muted);
-  font-size: 13px;
-}
-.quiz-facts dd {
-  margin: 2px 0 0;
-  font-size: 20px;
-  font-weight: 700;
+/*
+ * Practice quiz. Bố cục, card, nút, notice, details, bảng và nhãn trạng thái dùng class chung
+ * trong assets/enrollment.css (two-columns, card, notice, details, table-wrap, status-badge).
+ * File này chỉ chứa phần riêng của quiz: làm bài, đồng hồ, xem lại đáp án.
+ */
+
+/* Thông tin quiz */
+.quiz-start-layout .details {
+  margin-bottom: 24px;
 }
 .quiz-instructions {
   margin: 0;
   padding-left: 20px;
   color: #475569;
+  font-size: 14px;
 }
 .quiz-start-card {
   display: flex;
@@ -40,39 +21,11 @@
 }
 .quiz-start-card p {
   margin: 0;
+  color: #64748b;
+  font-size: 14px;
 }
 .quiz-history {
-  margin-top: 24px;
-}
-.quiz-history table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.quiz-history th,
-.quiz-history td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #eef0f5;
-  white-space: nowrap;
-}
-.quiz-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-.quiz-badge-pass {
-  background: #dcfce7;
-  color: #166534;
-}
-.quiz-badge-fail {
-  background: #fee2e2;
-  color: #991b1b;
-}
-.quiz-badge-neutral {
-  background: #e2e8f0;
-  color: #334155;
+  margin-top: 32px;
 }
 .quiz-error-hint {
   margin-top: 10px !important;
@@ -89,6 +42,17 @@
 .quiz-taking-header h1 {
   margin: 4px 0;
 }
+.quiz-taking-header p {
+  margin: 0;
+  color: #64748b;
+}
+.quiz-taking-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin-top: 26px;
+}
 .quiz-timer {
   display: flex;
   flex-direction: column;
@@ -100,21 +64,22 @@
 }
 .quiz-timer span {
   font-size: 12px;
-  color: var(--muted);
+  color: #64748b;
 }
 .quiz-timer strong {
   font-size: 28px;
   font-variant-numeric: tabular-nums;
 }
 .quiz-timer-warning {
-  border-color: #fca5a5;
-  background: #fef2f2;
-  color: #b91c1c;
+  border-color: #f5c2c2;
+  background: #feecec;
+  color: #b33333;
 }
 .quiz-question-content {
   font-size: 20px;
   margin: 6px 0 18px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .quiz-options {
   border: 0;
@@ -122,6 +87,7 @@
   padding: 0;
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 .quiz-options .sr-only {
   position: absolute;
@@ -130,7 +96,12 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
-.quiz-option {
+/*
+ * assets/enrollment.css có .lms-app label { display: grid; font-size: 12px } và
+ * .lms-app input { width: 100%; min-height: 45px } (nạp sau file này), nên các selector
+ * dưới đây thêm .lms-app để ưu tiên hơn.
+ */
+.lms-app .quiz-option {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -139,17 +110,24 @@
   border-radius: 12px;
   cursor: pointer;
   background: white;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink);
 }
-.quiz-option:hover {
+.lms-app .quiz-option:hover {
   border-color: #a5b4fc;
 }
-.quiz-option input {
-  width: auto;
+.lms-app .quiz-option input {
+  flex: none;
+  width: 18px;
+  height: 18px;
   min-height: 0;
+  padding: 0;
   margin: 0;
   accent-color: var(--accent);
 }
-.quiz-option-selected {
+.lms-app .quiz-option-selected {
   border-color: var(--accent);
   background: #eef2ff;
 }
@@ -181,7 +159,8 @@
 .quiz-side p {
   margin: 0;
 }
-.quiz-navigator {
+/* Là thẻ <nav>: thắng .lms-app nav { display: flex } của header. */
+.lms-app .quiz-navigator {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
   gap: 8px;
@@ -194,8 +173,9 @@
   border: 1px solid #dce1ec;
 }
 .lms-app .quiz-nav-answered {
-  background: #dcfce7;
-  border-color: #86efac;
+  background: #e8f8ef;
+  border-color: #bbebd7;
+  color: #15724b;
 }
 .lms-app .quiz-nav-current {
   background: var(--accent);
@@ -223,68 +203,54 @@
   margin-top: 18px;
 }
 
-/* Kết quả */
-.quiz-score-card {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  flex-wrap: wrap;
-  margin-top: 20px;
-  border-width: 2px;
-}
-.quiz-score-pass {
-  border-color: #86efac;
-}
-.quiz-score-fail {
-  border-color: #fca5a5;
+/* Kết quả: khung ngoài là result-card + notice + details + result-actions của trang đăng ký */
+.quiz-result-card .notice {
+  margin: 0 0 24px;
 }
 .quiz-score {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
 }
 .quiz-score strong {
-  font-size: 52px;
+  font-size: 48px;
   line-height: 1;
+  color: var(--accent);
 }
 .quiz-score span {
-  color: var(--muted);
-}
-.quiz-score-card p {
-  margin: 6px 0 0;
-}
-.quiz-score-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  color: #64748b;
 }
 .quiz-review {
-  margin-top: 28px;
+  max-width: 920px;
+  margin: 8px auto 0;
   display: grid;
   gap: 16px;
 }
-.quiz-review h2 {
+.quiz-review > h2 {
   margin: 0;
 }
 .quiz-review-item {
   border-left-width: 4px;
 }
 .quiz-review-item.quiz-review-correct {
-  border-left-color: #22c55e;
+  border-left-color: #bbebd7;
 }
-.quiz-review-item.quiz-review-wrong,
+.quiz-review-item.quiz-review-wrong {
+  border-left-color: #f5c2c2;
+}
 .quiz-review-item.quiz-review-empty {
-  border-left-color: #ef4444;
+  border-left-color: #dce1ec;
 }
 .quiz-review-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 .quiz-review-item h3 {
   margin: 6px 0 12px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .quiz-review-options {
   list-style: none;
@@ -300,24 +266,27 @@
   padding: 10px 12px;
   border: 1px solid #e5e7ef;
   border-radius: 10px;
+  overflow-wrap: anywhere;
 }
 .quiz-review-options li small {
   margin-left: auto;
   font-weight: 700;
+  white-space: nowrap;
 }
 .quiz-review-options li.quiz-review-correct {
-  border-color: #86efac;
-  background: #f0fdf4;
-  color: #166534;
+  border-color: #bbebd7;
+  background: #ecfdf5;
+  color: #15724b;
 }
 .quiz-review-options li.quiz-review-picked {
-  border-color: #fca5a5;
-  background: #fef2f2;
-  color: #991b1b;
+  border-color: #f5c2c2;
+  background: #feecec;
+  color: #b33333;
 }
 .quiz-explanation {
   margin: 12px 0 0;
   color: #475569;
+  font-size: 14px;
 }
 .quiz-ai {
   margin-top: 12px;
@@ -332,23 +301,27 @@
   white-space: pre-wrap;
 }
 .quiz-ai-error {
-  color: #b91c1c;
+  color: #b33333;
   margin: 8px 0 0;
 }
 
-@media (max-width: 800px) {
-  .quiz-start-layout,
+/* Cùng mốc responsive với assets/enrollment.css (1000px, 700px) */
+@media (max-width: 1000px) {
+  .quiz-taking-layout {
+    gap: 20px;
+  }
+}
+@media (max-width: 700px) {
   .quiz-taking-layout {
     grid-template-columns: minmax(0, 1fr);
   }
   .quiz-side {
     position: static;
   }
-  .quiz-score-actions {
-    margin-left: 0;
+  .quiz-result-card .result-actions {
+    flex-direction: column-reverse;
   }
-  .quiz-history th,
-  .quiz-history td {
-    white-space: normal;
+  .quiz-score strong {
+    font-size: 40px;
   }
 }
