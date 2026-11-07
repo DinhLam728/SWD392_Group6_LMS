@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 import QuizErrorNotice from '../components/QuizErrorNotice.jsx'
 import { explainQuestion, getResult } from '../services/quizService.js'
 import { formatDateTime, formatScore } from '../utils/quizFormat.js'
@@ -41,7 +42,14 @@ function AiExplanation({ attemptId, questionId }) {
   )
 }
 
-export default function QuizResultPage({ id }) {
+export default function QuizResultPage() {
+  const { attemptId } = useParams()
+  if (!/^\d+$/.test(attemptId)) return <p>Không tìm thấy trang.</p>
+  return <QuizResultContent key={attemptId} id={attemptId} />
+}
+
+function QuizResultContent({ id }) {
+  const navigate = useNavigate()
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
 
@@ -52,13 +60,13 @@ export default function QuizResultPage({ id }) {
       .catch((e) => {
         if (e.name === 'AbortError') return
         if (e.code === 'ATTEMPT_NOT_GRADED') {
-          window.location.hash = `/quiz-attempts/${id}`
+          navigate(`/quiz-attempts/${id}`, { replace: true })
           return
         }
         setError(e)
       })
     return () => controller.abort()
-  }, [id])
+  }, [id, navigate])
 
   if (!result) {
     return (
@@ -72,9 +80,9 @@ export default function QuizResultPage({ id }) {
   return (
     <>
       <div className="breadcrumb" aria-label="Đường dẫn trang">
-        <a href={`#/courses/${result.courseId}`}>Khóa học</a>
+        <Link to={`/courses/${result.courseId}`}>Khóa học</Link>
         <span aria-hidden="true"> / </span>
-        <a href={`#/quizzes/${result.quizId}`}>{result.quizTitle}</a>
+        <Link to={`/quizzes/${result.quizId}`}>{result.quizTitle}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">Kết quả</span>
       </div>
@@ -97,12 +105,12 @@ export default function QuizResultPage({ id }) {
           <p className="muted">Nộp lúc {formatDateTime(result.submittedAt)}</p>
         </div>
         <div className="quiz-score-actions">
-          <a className="button" href={`#/quizzes/${result.quizId}`}>
+          <Link className="button" to={`/quizzes/${result.quizId}`}>
             Làm lại / xem lượt khác
-          </a>
-          <a className="button button-secondary" href={`#/courses/${result.courseId}`}>
+          </Link>
+          <Link className="button button-secondary" to={`/courses/${result.courseId}`}>
             Về khóa học
-          </a>
+          </Link>
         </div>
       </section>
       <section className="quiz-review">

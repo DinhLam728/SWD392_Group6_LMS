@@ -1,11 +1,13 @@
+import { Link } from 'react-router'
+
 // Hiển thị lỗi API theo status/code, không dựa vào nội dung message.
 export default function QuizErrorNotice({ error }) {
   if (!error) return null
   let hint = null
   if (error.status === 401) {
-    hint = <a className="button" href="#/login">Đăng nhập</a>
+    hint = <Link className="button" to="/login">Đăng nhập</Link>
   } else if (error.code === 'NOT_ENROLLED' || error.status === 403) {
-    hint = <a className="button button-secondary" href="#/courses">Xem khóa học</a>
+    hint = <Link className="button button-secondary" to="/courses">Xem khóa học</Link>
   } else if (error.status === 0) {
     hint = <span>Không kết nối được máy chủ. Vui lòng thử lại sau.</span>
   }

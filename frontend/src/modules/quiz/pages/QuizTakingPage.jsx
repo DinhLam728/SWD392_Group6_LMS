@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 import CountdownTimer from '../components/CountdownTimer.jsx'
 import QuestionCard from '../components/QuestionCard.jsx'
 import QuestionNavigator from '../components/QuestionNavigator.jsx'
@@ -8,7 +9,14 @@ import { getAttempt, submitAttempt } from '../services/quizService.js'
 import { clearDraft, formatDateTime, loadDraft, parseServerTime, saveDraft } from '../utils/quizFormat.js'
 import '../styles/quiz.css'
 
-export default function QuizTakingPage({ id }) {
+export default function QuizTakingPage() {
+  const { attemptId } = useParams()
+  if (!/^\d+$/.test(attemptId)) return <p>Không tìm thấy trang.</p>
+  return <QuizTakingContent key={attemptId} id={attemptId} />
+}
+
+function QuizTakingContent({ id }) {
+  const navigate = useNavigate()
   const [attempt, setAttempt] = useState(null)
   const [answers, setAnswers] = useState({})
   const [endAt, setEndAt] = useState(null)
@@ -24,7 +32,7 @@ export default function QuizTakingPage({ id }) {
     getAttempt(id, controller.signal)
       .then(({ data }) => {
         if (data.status !== 'IN_PROGRESS') {
-          window.location.hash = `/quiz-attempts/${id}/result`
+          navigate(`/quiz-attempts/${id}/result`, { replace: true })
           return
         }
         const validIds = new Set(data.questions.map((q) => String(q.questionId)))
@@ -41,7 +49,7 @@ export default function QuizTakingPage({ id }) {
         if (e.name !== 'AbortError') setError(e)
       })
     return () => controller.abort()
-  }, [id])
+  }, [id, navigate])
 
   function handleSelect(questionId, key) {
     const next = { ...answersRef.current, [questionId]: key }
@@ -62,11 +70,11 @@ export default function QuizTakingPage({ id }) {
     try {
       await submitAttempt(id, payload)
       clearDraft(id)
-      window.location.hash = `/quiz-attempts/${id}/result`
+      navigate(`/quiz-attempts/${id}/result`, { replace: true })
     } catch (e) {
       if (e.code === 'ATTEMPT_ALREADY_SUBMITTED' || e.code === 'ATTEMPT_EXPIRED') {
         clearDraft(id)
-        window.location.hash = `/quiz-attempts/${id}/result`
+        navigate(`/quiz-attempts/${id}/result`, { replace: true })
         return
       }
       setError(e)
@@ -74,7 +82,7 @@ export default function QuizTakingPage({ id }) {
       setSubmitting(false)
       submittingRef.current = false
     }
-  }, [attempt, id])
+  }, [attempt, id, navigate])
 
   if (!attempt) {
     return (
@@ -92,9 +100,9 @@ export default function QuizTakingPage({ id }) {
   return (
     <>
       <div className="breadcrumb" aria-label="Đường dẫn trang">
-        <a href={`#/courses/${attempt.courseId}`}>Khóa học</a>
+        <Link to={`/courses/${attempt.courseId}`}>Khóa học</Link>
         <span aria-hidden="true"> / </span>
-        <a href={`#/quizzes/${attempt.quizId}`}>{attempt.quizTitle}</a>
+        <Link to={`/quizzes/${attempt.quizId}`}>{attempt.quizTitle}</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">Làm bài</span>
       </div>

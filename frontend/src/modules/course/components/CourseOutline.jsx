@@ -1,4 +1,5 @@
 import { BookOpen, ClipboardList, Plus, Minus } from 'lucide-react'
+import { Link } from 'react-router'
 
 export default function CourseOutline({ modules }) {
   if (!modules.length) return <p>Nội dung khóa học đang được cập nhật.</p>
@@ -26,11 +27,22 @@ export default function CourseOutline({ modules }) {
                 <small>Bài học</small>
               </li>
             ))}
-            <li>
-              <ClipboardList size={18} aria-hidden="true" />
-              <span>Tạo quiz ôn tập</span>
-              <small>Quiz</small>
-            </li>
+            {(module.quizzes || []).map((quiz) => (
+              <li key={`quiz-${quiz.quizId}`}>
+                <ClipboardList size={18} aria-hidden="true" />
+                <Link to={`/quizzes/${quiz.quizId}`}>
+                  Tạo quiz ôn tập: {quiz.title}
+                </Link>
+                <small>Quiz</small>
+              </li>
+            ))}
+            {!module.quizzes?.length && (
+              <li aria-disabled="true">
+                <ClipboardList size={18} aria-hidden="true" />
+                <span>Tạo quiz ôn tập · Chưa có quiz</span>
+                <small>Quiz</small>
+              </li>
+            )}
           </ul>
         </details>
       ))}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 import QuizErrorNotice from '../components/QuizErrorNotice.jsx'
 import { getQuiz, startAttempt } from '../services/quizService.js'
 import { formatDateTime, formatScore } from '../utils/quizFormat.js'
@@ -11,7 +12,14 @@ function resultLabel(attempt) {
   return attempt.status
 }
 
-export default function QuizStartPage({ id }) {
+export default function QuizStartPage() {
+  const { quizId } = useParams()
+  if (!/^\d+$/.test(quizId)) return <p>Không tìm thấy trang.</p>
+  return <QuizStartContent key={quizId} id={quizId} />
+}
+
+function QuizStartContent({ id }) {
+  const navigate = useNavigate()
   const [quiz, setQuiz] = useState(null)
   const [error, setError] = useState(null)
   const [starting, setStarting] = useState(false)
@@ -31,7 +39,7 @@ export default function QuizStartPage({ id }) {
     setError(null)
     try {
       const { data } = await startAttempt(id)
-      window.location.hash = `/quiz-attempts/${data.attemptId}`
+      navigate(`/quiz-attempts/${data.attemptId}`)
     } catch (e) {
       setError(e)
       setStarting(false)
@@ -41,11 +49,11 @@ export default function QuizStartPage({ id }) {
   return (
     <>
       <div className="breadcrumb" aria-label="Đường dẫn trang">
-        <a href="#/courses">Khóa học</a>
+        <Link to="/courses">Khóa học</Link>
         {quiz && (
           <>
             <span aria-hidden="true"> / </span>
-            <a href={`#/courses/${quiz.courseId}`}>{quiz.courseTitle}</a>
+            <Link to={`/courses/${quiz.courseId}`}>{quiz.courseTitle}</Link>
             <span aria-hidden="true"> / </span>
             <span aria-current="page">{quiz.title}</span>
           </>
@@ -110,9 +118,9 @@ export default function QuizStartPage({ id }) {
                   ? 'Tiếp tục làm bài'
                   : 'Bắt đầu làm bài'}
             </button>
-            <a className="button button-secondary" href={`#/courses/${quiz.courseId}`}>
+            <Link className="button button-secondary" to={`/courses/${quiz.courseId}`}>
               Về khóa học
-            </a>
+            </Link>
           </aside>
         </div>
       )}
@@ -143,7 +151,7 @@ export default function QuizStartPage({ id }) {
                     </td>
                     <td>
                       {attempt.status === 'GRADED' && (
-                        <a href={`#/quiz-attempts/${attempt.attemptId}/result`}>Xem kết quả</a>
+                        <Link to={`/quiz-attempts/${attempt.attemptId}/result`}>Xem kết quả</Link>
                       )}
                     </td>
                   </tr>
