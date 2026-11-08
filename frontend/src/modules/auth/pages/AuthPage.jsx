@@ -15,9 +15,9 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const { state } = useLocation()
 
-  function handleLoginSuccess(authData) {
-    login(authData)
-    const role = authData.user?.role
+  function handleLoginSuccess(user) {
+    login(user)
+    const role = user?.role
     const destination = state?.role === role && state?.from
       ? state.from
       : roleHome[role] || '/courses'

@@ -1,16 +1,10 @@
 import { apiClient } from '../../../shared/api/apiClient.js'
 
 async function teacherApi(path, options = {}) {
-  const headers = new Headers(options.headers)
-  const token = localStorage.getItem('lms_token')
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
-  }
   try {
-    return await apiClient(`teacher/${path}`, { ...options, headers })
+    return await apiClient(`teacher/${path}`, options)
   } catch (error) {
     if (error?.status === 401) {
-      localStorage.removeItem('lms_token')
       localStorage.removeItem('lms_user')
       window.location.assign('/login')
     }

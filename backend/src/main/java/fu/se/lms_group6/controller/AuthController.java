@@ -76,21 +76,21 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         ResponseCookie cookie = createAuthCookie(response.token(), COOKIE_EXPIRY);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(ResponseBuilder.ok(response, "Đăng nhập thành công").getBody());
+                .body(ResponseBuilder.ok(response.user(), "Đăng nhập thành công").getBody());
     }
 
     @PostMapping("/google")
-    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
         AuthResponse response = authService.loginWithGoogle(request);
         ResponseCookie cookie = createAuthCookie(response.token(), COOKIE_EXPIRY);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(ResponseBuilder.ok(response, "Đăng nhập với Google thành công").getBody());
+                .body(ResponseBuilder.ok(response.user(), "Đăng nhập với Google thành công").getBody());
     }
 
     @GetMapping("/me")
