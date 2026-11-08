@@ -9,6 +9,7 @@ public record CourseSummaryResponse(
         String description,
         String thumbnailUrl,
         BigDecimal price,
+        Long teacherId,
         String teacherName,
         LocalDateTime createdAt
 ) {}

@@ -1,15 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getCourseModules } from '../services/questionBankService.js'
 
 export function BulkAssignModal({
   isOpen,
   onClose,
+  courseId,
   selectedCount,
   onConfirm,
 }) {
-  const [quizId, setQuizId] = useState('1')
-  const [quizTitle, setQuizTitle] = useState('')
+  const [modules, setModules] = useState([])
+  const [moduleId, setModuleId] = useState('')
   const [actionType, setActionType] = useState('assign')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen || !courseId) return
+    getCourseModules(courseId)
+      .then((items) => {
+        setModules(items)
+        setModuleId(items[0] ? String(items[0].moduleId) : '')
+      })
+      .catch(() => setModules([]))
+  }, [isOpen, courseId])
 
   if (!isOpen) return null
 
@@ -20,7 +32,8 @@ export function BulkAssignModal({
       if (actionType === 'unassign') {
         await onConfirm(null, null)
       } else {
-        await onConfirm(Number(quizId), quizTitle.trim() || `Quiz #${quizId}`)
+        const module = modules.find((m) => String(m.moduleId) === moduleId)
+        await onConfirm(Number(moduleId), module?.title)
       }
       onClose()
     } finally {
@@ -75,7 +88,7 @@ export function BulkAssignModal({
                     onChange={() => setActionType('assign')}
                     style={{ accentColor: '#2563eb' }}
                   />
-                  Assign to a Quiz
+                  Assign to a Module
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13.5px', cursor: 'pointer' }}>
                   <input
@@ -91,38 +104,28 @@ export function BulkAssignModal({
             </div>
 
             {actionType === 'assign' && (
-              <>
-                <div className="lms-form-group">
-                  <label className="lms-form-label">
-                    Quiz ID <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="number"
+              <div className="lms-form-group">
+                <label className="lms-form-label">
+                  Module <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                {modules.length === 0 ? (
+                  <p style={{ fontSize: '13px', color: '#b91c1c' }}>
+                    This course has no modules yet. Add a module in course management first.
+                  </p>
+                ) : (
+                  <select
                     required
-                    min="1"
-                    className="lms-form-control"
+                    className="lms-form-select"
                     style={{ width: '100%' }}
-                    value={quizId}
-                    onChange={(e) => setQuizId(e.target.value)}
-                    placeholder="e.g. 1"
-                  />
-                </div>
-
-                <div className="lms-form-group">
-                  <label className="lms-form-label">
-                    Quiz Title
-                    <span className="lms-form-label-hint">Optional</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="lms-form-control"
-                    style={{ width: '100%' }}
-                    value={quizTitle}
-                    onChange={(e) => setQuizTitle(e.target.value)}
-                    placeholder="e.g. Week 5 OOP Progress Test"
-                  />
-                </div>
-              </>
+                    value={moduleId}
+                    onChange={(e) => setModuleId(e.target.value)}
+                  >
+                    {modules.map((m) => (
+                      <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             )}
           </div>
 
@@ -130,7 +133,7 @@ export function BulkAssignModal({
             <button type="button" className="btn-lms btn-lms-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-lms btn-lms-primary">
+            <button type="submit" disabled={loading || (actionType === 'assign' && !moduleId)} className="btn-lms btn-lms-primary">
               {loading ? 'Updating...' : 'Apply Changes'}
             </button>
           </div>

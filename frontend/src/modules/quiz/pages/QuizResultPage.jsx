@@ -158,8 +158,8 @@ function QuizResultContent({ id }) {
               <h3>{question.content}</h3>
               <ul className="quiz-review-options">
                 {question.options.map((option) => {
-                  const isCorrect = option.key === question.correctAnswer
-                  const isSelected = option.key === question.selectedAnswer
+                  const isCorrect = (question.correctAnswer || '').split(',').includes(option.key)
+                  const isSelected = (question.selectedAnswer || '').split(',').includes(option.key)
                   return (
                     <li
                       key={option.key}

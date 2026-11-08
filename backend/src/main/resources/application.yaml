@@ -47,3 +47,4 @@ app:
     qr-base-url: ${SEPAY_QR_BASE_URL:https://qr.sepay.vn/img}
     transfer-prefix: ${SEPAY_TRANSFER_PREFIX:}
     sub-account: ${SEPAY_SUB_ACCOUNT:}
+    demo-payment: ${SEPAY_DEMO_PAYMENT:false}

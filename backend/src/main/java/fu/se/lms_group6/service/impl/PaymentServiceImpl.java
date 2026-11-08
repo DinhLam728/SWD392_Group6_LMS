@@ -2,6 +2,7 @@ package fu.se.lms_group6.service.impl;
 
 import fu.se.lms_group6.common.exception.BusinessException;
 import fu.se.lms_group6.common.exception.ErrorCode;
+import fu.se.lms_group6.common.exception.NotFoundException;
 import fu.se.lms_group6.dto.payment.PaymentInfoResponse;
 import fu.se.lms_group6.dto.payment.SePayWebhookRequest;
 import fu.se.lms_group6.entity.Registration;
@@ -36,6 +37,16 @@ public class PaymentServiceImpl implements PaymentService {
         this.sePayProxy = sePayProxy;
         this.properties = properties;
         this.clock = enrollmentClock;
+    }
+
+    @Override
+    public SePayWebhookRequest createDemoTransaction(Registration registration) {
+        if (!properties.isDemoPayment()) {
+            throw new NotFoundException();
+        }
+        return new SePayWebhookRequest(System.currentTimeMillis(), properties.getAccountNumber(),
+                properties.getSubAccount(), registration.getPaymentCode(), registration.getPaymentCode() + " chuyen tien",
+                "in", registration.getAmount(), LocalDateTime.now(clock).format(BANK_TIME_FORMAT));
     }
 
     @Override

@@ -86,7 +86,7 @@ export function QuestionBankTable({
     if (q.quizId) {
       return (
         <span className="badge-lms badge-quiz-assigned" title={q.quizTitle || `Quiz #${q.quizId}`}>
-          Quiz #{q.quizId}
+          {q.quizTitle || `Quiz #${q.quizId}`}
         </span>
       )
     }
@@ -161,7 +161,7 @@ export function QuestionBankTable({
                       </button>
 
                       <span style={{ color: '#64748b' }}>
-                        Correct answer: <strong style={{ color: '#15803d', fontWeight: 700 }}>Choice {q.correctAnswer}</strong>
+                        {q.questionType === 'MULTIPLE_ANSWER' ? 'Correct answers' : 'Correct answer'}: <strong style={{ color: '#15803d', fontWeight: 700 }}>Choice {q.correctAnswer}</strong>
                       </span>
                     </div>
 
@@ -169,7 +169,7 @@ export function QuestionBankTable({
                       <div className="lms-options-box">
                         <div className="lms-options-grid">
                           {q.options?.map((opt) => {
-                            const isCorrect = String(opt.key).trim().toUpperCase() === String(q.correctAnswer).trim().toUpperCase()
+                            const isCorrect = String(q.correctAnswer).toUpperCase().split(',').map((key) => key.trim()).includes(String(opt.key).trim().toUpperCase())
                             return (
                               <div
                                 key={opt.key}

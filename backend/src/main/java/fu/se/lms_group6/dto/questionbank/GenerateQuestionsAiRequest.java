@@ -20,5 +20,6 @@ public record GenerateQuestionsAiRequest(
         @Max(value = 20, message = "Số lượng câu hỏi tối đa là 20")
         Integer numberOfQuestions,
 
-        String difficultyLevel
+        String difficultyLevel,
+        String questionType
 ) {}

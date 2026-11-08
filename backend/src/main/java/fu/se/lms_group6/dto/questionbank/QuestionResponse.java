@@ -8,6 +8,7 @@ public record QuestionResponse(
         String courseTitle,
         Long quizId,
         String quizTitle,
+        Long moduleId,
         String topic,
         String difficulty,
         String content,

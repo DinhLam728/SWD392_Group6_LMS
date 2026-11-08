@@ -27,14 +27,18 @@ import fu.se.lms_group6.dto.questionbank.BatchSaveQuestionsRequest;
 import fu.se.lms_group6.dto.questionbank.CreateQuestionRequest;
 import fu.se.lms_group6.dto.questionbank.GenerateQuestionsAiRequest;
 import fu.se.lms_group6.dto.questionbank.GeneratedQuestionItemDto;
+import fu.se.lms_group6.dto.questionbank.ModuleOptionResponse;
 import fu.se.lms_group6.dto.questionbank.QuestionBankStatsDto;
 import fu.se.lms_group6.dto.questionbank.QuestionOptionDto;
 import fu.se.lms_group6.dto.questionbank.QuestionResponse;
 import fu.se.lms_group6.dto.questionbank.UpdateQuestionRequest;
 import fu.se.lms_group6.entity.Course;
+import fu.se.lms_group6.entity.CourseModule;
+import fu.se.lms_group6.entity.enums.QuizStatus;
 import fu.se.lms_group6.entity.Question;
 import fu.se.lms_group6.entity.Quiz;
 import fu.se.lms_group6.externalclient.gemini.GeminiClient;
+import fu.se.lms_group6.repository.CourseModuleRepository;
 import fu.se.lms_group6.repository.CourseRepository;
 import fu.se.lms_group6.repository.QuestionRepository;
 import fu.se.lms_group6.repository.QuizRepository;
@@ -49,6 +53,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     private final QuestionRepository questionRepository;
     private final CourseRepository courseRepository;
     private final QuizRepository quizRepository;
+    private final CourseModuleRepository courseModuleRepository;
     private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
     private final CurrentTeacher currentTeacher;
@@ -57,6 +62,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             QuestionRepository questionRepository,
             CourseRepository courseRepository,
             QuizRepository quizRepository,
+            CourseModuleRepository courseModuleRepository,
             GeminiClient geminiClient,
             CurrentTeacher currentTeacher,
             @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper
@@ -64,6 +70,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         this.questionRepository = questionRepository;
         this.courseRepository = courseRepository;
         this.quizRepository = quizRepository;
+        this.courseModuleRepository = courseModuleRepository;
         this.geminiClient = geminiClient;
         this.currentTeacher = currentTeacher;
         this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
@@ -73,7 +80,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     @Transactional(readOnly = true)
     public PageResponse<QuestionResponse> getQuestions(
             Long courseId,
-            Long quizId,
+            Long moduleId,
+            Boolean assignedOnly,
             Boolean unassignedOnly,
             String topic,
             String difficulty,
@@ -92,7 +100,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         PageRequest pageable = PageRequestFactory.create(page, size, sort, ALLOWED_SORT_FIELDS);
         Page<Question> questionPage = questionRepository.searchQuestions(
                 courseId,
-                quizId,
+                moduleId,
+                Boolean.TRUE.equals(assignedOnly),
                 onlyUnassigned,
                 topicFilter,
                 difficultyFilter,
@@ -142,10 +151,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     public QuestionResponse createQuestion(CreateQuestionRequest request) {
         Course course = ownCourse(request.courseId());
 
-        Quiz quiz = null;
-        if (request.quizId() != null) {
-            quiz = quizOfCourse(request.quizId(), course);
-        }
+        Quiz quiz = request.moduleId() == null ? null : moduleQuiz(request.moduleId(), course);
 
         String optionsJson = buildOptionsJson(
                 request.options(),
@@ -160,7 +166,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 .content(request.content().trim())
                 .questionType(request.questionType().trim())
                 .optionsJson(optionsJson)
-                .correctAnswer(request.correctAnswer().trim())
+                .correctAnswer(normalizeAnswer(request.correctAnswer()))
                 .build();
 
         Question saved = questionRepository.save(question);
@@ -173,10 +179,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 .orElseThrow(NotFoundException::new);
         Course course = ownCourse(question.getCourse().getCourseId());
 
-        Quiz quiz = null;
-        if (request.quizId() != null) {
-            quiz = quizOfCourse(request.quizId(), course);
-        }
+        Quiz quiz = request.moduleId() == null ? null : moduleQuiz(request.moduleId(), course);
 
         ExtractedQuestionMetadata existingMeta = parseOptionsJson(question.getOptionsJson());
         String topic = request.topic() != null ? request.topic().trim() : existingMeta.topic();
@@ -190,7 +193,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         question.setContent(request.content().trim());
         question.setQuestionType(request.questionType().trim());
         question.setOptionsJson(optionsJson);
-        question.setCorrectAnswer(request.correctAnswer().trim());
+        question.setCorrectAnswer(normalizeAnswer(request.correctAnswer()));
 
         Question updated = questionRepository.save(question);
         return toResponse(updated);
@@ -213,15 +216,42 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     }
 
     @Override
-    public void bulkAssignQuiz(List<Long> questionIds, Long quizId) {
+    @Transactional(readOnly = true)
+    public List<ModuleOptionResponse> getCourseModules(Long courseId) {
+        ownCourse(courseId);
+        return courseModuleRepository.findByCourseCourseIdOrderByPositionAsc(courseId).stream()
+                .map(module -> new ModuleOptionResponse(module.getModuleId(), module.getTitle()))
+                .toList();
+    }
+
+    @Override
+    public void bulkAssignModule(List<Long> questionIds, Long moduleId) {
         if (questionIds == null || questionIds.isEmpty()) {
             return;
         }
         List<Question> questions = ownQuestions(questionIds);
+        Course course = questions.get(0).getCourse();
+        Quiz quiz = moduleId == null ? null : moduleQuiz(moduleId, course);
         for (Question q : questions) {
-            q.setQuiz(quizId == null ? null : quizOfCourse(quizId, q.getCourse()));
+            if (!q.getCourse().getCourseId().equals(course.getCourseId())) {
+                throw new BadRequestException();
+            }
+            q.setQuiz(quiz);
         }
         questionRepository.saveAll(questions);
+    }
+
+    private Quiz moduleQuiz(Long moduleId, Course course) {
+        CourseModule module = courseModuleRepository.findById(moduleId).orElseThrow(NotFoundException::new);
+        if (!module.getCourse().getCourseId().equals(course.getCourseId())) {
+            throw new BadRequestException();
+        }
+        return quizRepository.findFirstByModuleModuleIdAndCreatedByIsNullAndStatusOrderByQuizIdAsc(moduleId, QuizStatus.ACTIVE)
+                .orElseGet(() -> {
+                    Quiz quiz = new Quiz(module, "Ôn tập: " + module.getTitle());
+                    quiz.setStatus(QuizStatus.ACTIVE);
+                    return quizRepository.save(quiz);
+                });
     }
 
     private List<Question> ownQuestions(List<Long> questionIds) {
@@ -246,10 +276,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     public List<QuestionResponse> batchSaveQuestions(BatchSaveQuestionsRequest request) {
         Course course = ownCourse(request.courseId());
 
-        Quiz quiz = null;
-        if (request.quizId() != null) {
-            quiz = quizOfCourse(request.quizId(), course);
-        }
+        Quiz quiz = request.moduleId() == null ? null : moduleQuiz(request.moduleId(), course);
 
         List<QuestionResponse> responses = new ArrayList<>();
         for (CreateQuestionRequest item : request.questions()) {
@@ -266,7 +293,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                     .content(item.content().trim())
                     .questionType(item.questionType().trim())
                     .optionsJson(optionsJson)
-                    .correctAnswer(item.correctAnswer().trim())
+                    .correctAnswer(normalizeAnswer(item.correctAnswer()))
                     .build();
 
             Question saved = questionRepository.save(question);
@@ -276,21 +303,21 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         return responses;
     }
 
+    private static String normalizeAnswer(String answer) {
+        return java.util.Arrays.stream(answer.split(","))
+                .map(key -> key.trim().toUpperCase(java.util.Locale.ROOT))
+                .filter(key -> !key.isEmpty())
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.joining(","));
+    }
+
     private Course ownCourse(Long courseId) {
         Course course = courseRepository.findById(courseId).orElseThrow(NotFoundException::new);
         if (!course.getTeacher().getUserId().equals(currentTeacher.requireId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
         return course;
-    }
-
-    private Quiz quizOfCourse(Long quizId, Course course) {
-        Quiz quiz = quizRepository.findById(quizId).orElseThrow(NotFoundException::new);
-        if (quiz.getCreatedBy() != null
-                || !quiz.getModule().getCourse().getCourseId().equals(course.getCourseId())) {
-            throw new BadRequestException();
-        }
-        return quiz;
     }
 
     private String buildOptionsJson(
@@ -356,6 +383,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 question.getCourse() != null ? question.getCourse().getTitle() : null,
                 question.getQuiz() != null ? question.getQuiz().getQuizId() : null,
                 question.getQuiz() != null ? question.getQuiz().getTitle() : null,
+                question.getQuiz() != null ? question.getQuiz().getModule().getModuleId() : null,
                 meta.topic(),
                 meta.difficulty(),
                 question.getContent(),

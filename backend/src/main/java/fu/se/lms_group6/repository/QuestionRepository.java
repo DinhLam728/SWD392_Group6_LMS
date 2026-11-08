@@ -17,7 +17,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
         SELECT q FROM Question q
         LEFT JOIN q.quiz qz
         WHERE q.course.courseId = :courseId
-          AND (:quizId IS NULL OR (qz IS NOT NULL AND qz.quizId = :quizId))
+          AND (:moduleId IS NULL OR (qz IS NOT NULL AND qz.module.moduleId = :moduleId))
+          AND (:assignedOnly = FALSE OR qz IS NOT NULL)
           AND (:unassignedOnly = FALSE OR qz IS NULL)
           AND (:topic IS NULL OR :topic = '' OR :topic = 'ALL' OR LOWER(q.optionsJson) LIKE LOWER(CONCAT('%', :topic, '%')))
           AND (:difficulty IS NULL OR :difficulty = '' OR :difficulty = 'ALL' OR LOWER(q.optionsJson) LIKE LOWER(CONCAT('%"difficulty":"', :difficulty, '"%')) OR LOWER(q.optionsJson) LIKE LOWER(CONCAT('%', :difficulty, '%')))
@@ -25,7 +26,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     """)
     Page<Question> searchQuestions(
             @Param("courseId") Long courseId,
-            @Param("quizId") Long quizId,
+            @Param("moduleId") Long moduleId,
+            @Param("assignedOnly") boolean assignedOnly,
             @Param("unassignedOnly") boolean unassignedOnly,
             @Param("topic") String topic,
             @Param("difficulty") String difficulty,

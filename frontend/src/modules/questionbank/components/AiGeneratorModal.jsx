@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { generateAiQuestions, batchSaveQuestions } from '../services/questionBankService.js'
+import { useEffect, useState } from 'react'
+import { generateAiQuestions, batchSaveQuestions, getCourseModules } from '../services/questionBankService.js'
 
 const QUICK_TOPICS = [
   'OOP Inheritance and Polymorphism',
@@ -14,13 +14,20 @@ export function AiGeneratorModal({ isOpen, onClose, courseId, onSavedSuccess }) 
   const [contextMaterial, setContextMaterial] = useState('')
   const [numberOfQuestions, setNumberOfQuestions] = useState(5)
   const [difficultyLevel, setDifficultyLevel] = useState('MIXED')
-  const [targetQuizId, setTargetQuizId] = useState('')
+  const [targetModuleId, setTargetModuleId] = useState('')
+  const [modules, setModules] = useState([])
+  const [questionType, setQuestionType] = useState('MULTIPLE_CHOICE')
 
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [generatedItems, setGeneratedItems] = useState([])
   const [selectedIndices, setSelectedIndices] = useState(new Set())
+
+  useEffect(() => {
+    if (!isOpen || !courseId) return
+    getCourseModules(courseId).then(setModules).catch(() => setModules([]))
+  }, [isOpen, courseId])
 
   if (!isOpen) return null
 
@@ -40,6 +47,7 @@ export function AiGeneratorModal({ isOpen, onClose, courseId, onSavedSuccess }) 
         contextMaterial: contextMaterial.trim() || undefined,
         numberOfQuestions: Number(numberOfQuestions),
         difficultyLevel,
+        questionType,
       })
       const list = response.data || []
       setGeneratedItems(list)
@@ -77,11 +85,11 @@ export function AiGeneratorModal({ isOpen, onClose, courseId, onSavedSuccess }) 
       .filter((_, i) => selectedIndices.has(i))
       .map((q) => ({
         courseId: Number(courseId),
-        quizId: targetQuizId.trim() ? Number(targetQuizId) : null,
+        moduleId: targetModuleId ? Number(targetModuleId) : null,
         content: q.content,
         topic: q.topic || topic,
         difficulty: q.difficulty || 'MEDIUM',
-        questionType: 'MULTIPLE_CHOICE',
+        questionType: q.questionType || questionType,
         correctAnswer: q.correctAnswer,
         explanation: q.explanation,
         options: q.options || [],
@@ -211,6 +219,19 @@ export function AiGeneratorModal({ isOpen, onClose, courseId, onSavedSuccess }) 
             </div>
 
             <div className="lms-form-group">
+              <label className="lms-form-label">Question Type</label>
+              <select
+                className="lms-form-select"
+                style={{ width: '100%' }}
+                value={questionType}
+                onChange={(e) => setQuestionType(e.target.value)}
+              >
+                <option value="MULTIPLE_CHOICE">Multiple Choice (Single Answer)</option>
+                <option value="MULTIPLE_ANSWER">Multiple Choice (Multiple Answers)</option>
+              </select>
+            </div>
+
+            <div className="lms-form-group">
               <label className="lms-form-label">
                 Context or Lecture Material
                 <span className="lms-form-label-hint">Optional</span>
@@ -281,19 +302,19 @@ export function AiGeneratorModal({ isOpen, onClose, courseId, onSavedSuccess }) 
                 }}
               >
                 <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                  Destination Quiz ID:
+                  Save to Module:
                 </span>
-                <input
-                  type="number"
-                  className="lms-form-control"
-                  style={{ width: '80px', padding: '4px 8px', textAlign: 'center' }}
-                  placeholder="ID"
-                  value={targetQuizId}
-                  onChange={(e) => setTargetQuizId(e.target.value)}
-                />
-                <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  (Leave blank to keep in Reserve Bank)
-                </span>
+                <select
+                  className="lms-form-select"
+                  style={{ flex: 1, minWidth: '180px' }}
+                  value={targetModuleId}
+                  onChange={(e) => setTargetModuleId(e.target.value)}
+                >
+                  <option value="">Reserve Bank (not assigned)</option>
+                  {modules.map((m) => (
+                    <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
+                  ))}
+                </select>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '340px', overflowY: 'auto' }}>
@@ -328,8 +349,8 @@ export function AiGeneratorModal({ isOpen, onClose, courseId, onSavedSuccess }) 
                             <div
                               key={opt.key}
                               style={{
-                                color: opt.key === item.correctAnswer ? '#15803d' : '#334155',
-                                fontWeight: opt.key === item.correctAnswer ? 600 : 400,
+                                color: String(item.correctAnswer).split(',').map((key) => key.trim()).includes(opt.key) ? '#15803d' : '#334155',
+                                fontWeight: String(item.correctAnswer).split(',').map((key) => key.trim()).includes(opt.key) ? 600 : 400,
                               }}
                             >
                               <strong>{opt.key}.</strong> {opt.text}

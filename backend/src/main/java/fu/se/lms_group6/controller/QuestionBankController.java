@@ -28,6 +28,7 @@ import fu.se.lms_group6.dto.questionbank.GeneratedQuestionItemDto;
 import fu.se.lms_group6.dto.questionbank.QuestionBankStatsDto;
 import fu.se.lms_group6.dto.questionbank.QuestionResponse;
 import fu.se.lms_group6.dto.questionbank.UpdateQuestionRequest;
+import fu.se.lms_group6.dto.questionbank.ModuleOptionResponse;
 import fu.se.lms_group6.service.QuestionBankService;
 
 @RestController
@@ -47,7 +48,8 @@ public class QuestionBankController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Long quizId,
+            @RequestParam(required = false) Long moduleId,
+            @RequestParam(required = false) Boolean assignedOnly,
             @RequestParam(required = false) Boolean unassignedOnly,
             @RequestParam(required = false) String topic,
             @RequestParam(required = false) String difficulty,
@@ -55,7 +57,8 @@ public class QuestionBankController {
     ) {
         PageResponse<QuestionResponse> response = questionBankService.getQuestions(
                 courseId,
-                quizId,
+                moduleId,
+                assignedOnly,
                 unassignedOnly,
                 topic,
                 difficulty,
@@ -116,11 +119,16 @@ public class QuestionBankController {
         return ResponseBuilder.noContent();
     }
 
+    @GetMapping("/courses/{courseId}/question-bank/modules")
+    public ResponseEntity<ApiResponse<java.util.List<ModuleOptionResponse>>> getCourseModules(@PathVariable Long courseId) {
+        return ResponseBuilder.ok(questionBankService.getCourseModules(courseId));
+    }
+
     @PostMapping("/question-bank/bulk-assign")
-    public ResponseEntity<Void> bulkAssignQuiz(
+    public ResponseEntity<Void> bulkAssignModule(
             @Valid @RequestBody BulkAssignQuizRequest request
     ) {
-        questionBankService.bulkAssignQuiz(request.questionIds(), request.quizId());
+        questionBankService.bulkAssignModule(request.questionIds(), request.moduleId());
         return ResponseBuilder.noContent();
     }
 

@@ -75,15 +75,17 @@ public class GeminiClient {
         String difficulty = request.difficultyLevel() != null && !request.difficultyLevel().isBlank()
                 ? request.difficultyLevel() : "MEDIUM";
 
+        boolean multipleAnswers = "MULTIPLE_ANSWER".equals(request.questionType());
+        String type = multipleAnswers ? "MULTIPLE_ANSWER" : "MULTIPLE_CHOICE";
         String text;
         try {
-            text = requestText(buildQuestionPrompt(request.topic(), request.contextMaterial(), count, difficulty),
+            text = requestText(buildQuestionPrompt(request.topic(), request.contextMaterial(), count, difficulty, multipleAnswers),
                     0.4, true);
         } catch (AIException ex) {
             log.warn("Gemini is unavailable ({}); falling back to the simulated question generator", ex.getMessage());
-            return generateMockQuestions(request.topic(), count, difficulty);
+            return generateMockQuestions(request.topic(), count, difficulty, multipleAnswers);
         }
-        return parseQuestions(text);
+        return parseQuestions(text, type);
     }
 
     public Optional<String> generateText(String prompt) {
@@ -96,11 +98,16 @@ public class GeminiClient {
         }
     }
 
-    private String buildQuestionPrompt(String topic, String context, int count, String difficulty) {
+    private String buildQuestionPrompt(String topic, String context, int count, String difficulty, boolean multipleAnswers) {
+        String type = multipleAnswers ? "MULTIPLE_ANSWER" : "MULTIPLE_CHOICE";
+        String exampleAnswer = multipleAnswers ? "A,C" : "A";
         StringBuilder sb = new StringBuilder();
         sb.append("Bạn là một chuyên gia khảo thí và giáo dục. Hãy tạo đúng ").append(count)
-                .append(" câu hỏi trắc nghiệm (MULTIPLE_CHOICE) về chủ đề: \"").append(topic).append("\".\n")
-                .append("Độ khó: ").append(difficulty).append(".\n");
+                .append(" câu hỏi trắc nghiệm (").append(type).append(") về chủ đề: \"").append(topic).append("\".\n")
+                .append("Độ khó: ").append(difficulty).append(".\n")
+                .append(multipleAnswers
+                        ? "Mỗi câu có từ 2 đến 3 đáp án đúng. correctAnswer liệt kê các key đúng, cách nhau bằng dấu phẩy, ví dụ \"A,C\".\n"
+                        : "Mỗi câu chỉ có đúng 1 đáp án đúng.\n");
 
         if (context != null && !context.isBlank()) {
             sb.append("Tài liệu / ngữ cảnh tham khảo:\n").append(context).append("\n");
@@ -110,22 +117,22 @@ public class GeminiClient {
                 .append("[\n")
                 .append("  {\n")
                 .append("    \"content\": \"Nội dung câu hỏi?\",\n")
-                .append("    \"questionType\": \"MULTIPLE_CHOICE\",\n")
+                .append("    \"questionType\": \"").append(type).append("\",\n")
                 .append("    \"options\": [\n")
                 .append("      {\"key\": \"A\", \"text\": \"Lựa chọn A\"},\n")
                 .append("      {\"key\": \"B\", \"text\": \"Lựa chọn B\"},\n")
                 .append("      {\"key\": \"C\", \"text\": \"Lựa chọn C\"},\n")
                 .append("      {\"key\": \"D\", \"text\": \"Lựa chọn D\"}\n")
                 .append("    ],\n")
-                .append("    \"correctAnswer\": \"A\",\n")
-                .append("    \"explanation\": \"Giải thích tại sao A là đáp án đúng\"\n")
+                .append("    \"correctAnswer\": \"").append(exampleAnswer).append("\",\n")
+                .append("    \"explanation\": \"Giải thích vì sao các đáp án đúng là đúng\"\n")
                 .append("  }\n")
                 .append("]\n");
 
         return sb.toString();
     }
 
-    private List<GeneratedQuestionItemDto> parseQuestions(String text) {
+    private List<GeneratedQuestionItemDto> parseQuestions(String text, String type) {
         String cleaned = text.trim();
         if (cleaned.startsWith("```json")) {
             cleaned = cleaned.substring(7);
@@ -158,10 +165,9 @@ public class GeminiClient {
                         options.add(new QuestionOptionDto(key, optionText));
                     }
                 }
-                String type = item.path("questionType").textValue();
                 questions.add(new GeneratedQuestionItemDto(
                         content,
-                        type == null || type.isBlank() ? "MULTIPLE_CHOICE" : type,
+                        type,
                         options,
                         item.path("correctAnswer").textValue(),
                         item.path("explanation").textValue()));
@@ -247,7 +253,7 @@ public class GeminiClient {
         return text.toString();
     }
 
-    private List<GeneratedQuestionItemDto> generateMockQuestions(String topic, int count, String difficulty) {
+    private List<GeneratedQuestionItemDto> generateMockQuestions(String topic, int count, String difficulty, boolean multipleAnswers) {
         List<GeneratedQuestionItemDto> list = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
             List<QuestionOptionDto> options = List.of(
@@ -258,9 +264,9 @@ public class GeminiClient {
             );
             list.add(new GeneratedQuestionItemDto(
                     "Câu hỏi " + i + " [" + difficulty + "]: Khái niệm cốt lõi nào sau đây mô tả đúng nhất về " + topic + "?",
-                    "MULTIPLE_CHOICE",
+                    multipleAnswers ? "MULTIPLE_ANSWER" : "MULTIPLE_CHOICE",
                     options,
-                    "A",
+                    multipleAnswers ? "A,B" : "A",
                     "Phương án A là câu trả lời chuẩn xác dựa trên lý thuyết và tài liệu học tập của chủ đề " + topic
             ));
         }

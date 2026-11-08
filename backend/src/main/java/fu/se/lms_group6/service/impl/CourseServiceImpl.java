@@ -118,6 +118,6 @@ public class CourseServiceImpl implements CourseService {
 
     private CourseSummaryResponse toSummary(Course course) {
         return new CourseSummaryResponse(course.getCourseId(), course.getTitle(), course.getDescription(),
-                course.getThumbnailUrl(), course.getPrice(), course.getTeacher().getFullName(), course.getCreatedAt());
+                course.getThumbnailUrl(), course.getPrice(), course.getTeacher().getUserId(), course.getTeacher().getFullName(), course.getCreatedAt());
     }
 }

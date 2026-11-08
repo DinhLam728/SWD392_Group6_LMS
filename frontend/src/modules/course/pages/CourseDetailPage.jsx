@@ -3,7 +3,8 @@ import { Link } from 'react-router'
 import { useNavigate, useParams } from 'react-router'
 import CourseOutline from '../components/CourseOutline.jsx'
 import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
+import { AuthContext } from '../../../app/provider/AuthContext.js'
 import { getCourse } from '../services/courseService.js'
 import { registerCourse } from '../../enrollment/services/registrationService.js'
 
@@ -15,6 +16,7 @@ export default function CourseDetailPage() {
 
 function CourseDetailPageContent({ id }) {
   const navigate = useNavigate()
+  const { user } = useContext(AuthContext)
   const [detail, setDetail] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -86,6 +88,9 @@ function CourseDetailPageContent({ id }) {
                 canLearn={detail.registrationStatus === 'ACTIVE'}
               />
             </section>
+            {user?.role === 'TEACHER' ? (
+              <TeacherCourseCard course={detail.course} isOwner={detail.course.teacherId === user.userId} />
+            ) : (
             <aside className="card enrollment-card">
               <span className="eyebrow">BẮT ĐẦU HÀNH TRÌNH</span>
               <h2>
@@ -132,9 +137,37 @@ function CourseDetailPageContent({ id }) {
                   : 'Thanh toán bằng QR SePay. Thời hạn 24 giờ.'}
               </p>
             </aside>
+            )}
           </div>
         </>
       )}
     </>
+  )
+}
+
+function TeacherCourseCard({ course, isOwner }) {
+  const price = <p className="price">{Number(course.price).toLocaleString('vi-VN')} ₫</p>
+
+  if (!isOwner) {
+    return (
+      <aside className="card enrollment-card">
+        {price}
+        <Link className="button" to="/teacher/courses">
+          Về khóa học của tôi
+        </Link>
+      </aside>
+    )
+  }
+
+  return (
+    <aside className="card enrollment-card">
+      <span className="eyebrow">KHÓA HỌC CỦA BẠN</span>
+      <h2>Bạn là giảng viên khóa học này</h2>
+      {price}
+      <Link className="button" to={'/teacher/courses/' + course.courseId + '/content'}>
+        Quản lý khóa học
+      </Link>
+      <p>Chỉnh sửa thông tin, module và bài học của khóa học.</p>
+    </aside>
   )
 }

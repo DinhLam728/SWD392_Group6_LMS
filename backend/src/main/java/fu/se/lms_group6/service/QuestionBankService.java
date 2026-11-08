@@ -1,5 +1,6 @@
 package fu.se.lms_group6.service;
 
+import fu.se.lms_group6.dto.questionbank.ModuleOptionResponse;
 import java.util.List;
 import fu.se.lms_group6.common.http.PageResponse;
 import fu.se.lms_group6.dto.questionbank.BatchSaveQuestionsRequest;
@@ -14,7 +15,8 @@ public interface QuestionBankService {
 
     PageResponse<QuestionResponse> getQuestions(
             Long courseId,
-            Long quizId,
+            Long moduleId,
+            Boolean assignedOnly,
             Boolean unassignedOnly,
             String topic,
             String difficulty,
@@ -36,7 +38,9 @@ public interface QuestionBankService {
 
     void bulkDeleteQuestions(List<Long> questionIds);
 
-    void bulkAssignQuiz(List<Long> questionIds, Long quizId);
+    List<ModuleOptionResponse> getCourseModules(Long courseId);
+
+    void bulkAssignModule(List<Long> questionIds, Long moduleId);
 
     List<GeneratedQuestionItemDto> generateQuestionsWithAi(GenerateQuestionsAiRequest request);
 
