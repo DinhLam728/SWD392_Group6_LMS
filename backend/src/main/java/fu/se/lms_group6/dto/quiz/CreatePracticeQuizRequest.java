@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
-/** Lựa chọn của sinh viên khi tự tạo quiz ôn tập, lưu vào quiz_configs. */
 public record CreatePracticeQuizRequest(
         @Size(max = 150, message = "Tên quiz tối đa 150 ký tự")
         String title,

@@ -6,7 +6,6 @@ import org.springframework.data.domain.Sort;
 import fu.se.lms_group6.common.exception.BusinessException;
 import fu.se.lms_group6.common.exception.ErrorCode;
 
-/** Controllers provide defaults page=0, size=10 and an endpoint-specific sort whitelist. */
 public final class PageRequestFactory {
     private PageRequestFactory() {}
 

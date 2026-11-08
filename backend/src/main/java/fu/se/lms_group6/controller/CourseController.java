@@ -40,7 +40,6 @@ public class CourseController {
             @RequestParam(defaultValue = "9") int size,
             @RequestParam(defaultValue = "courseId,desc") String sort) {
         var pageable = PageRequestFactory.create(page, size, sort, Set.of("courseId", "price", "title", "createdAt"));
-        // Stable page boundaries when courses share the same creation time or price.
         if (pageable.getSort().getOrderFor("courseId") == null) {
             pageable = PageRequest.of(page, size, pageable.getSort().and(Sort.by(Sort.Direction.DESC, "courseId")));
         }

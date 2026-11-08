@@ -43,29 +43,24 @@ export function QuestionBankPage() {
     reserve: 0,
   })
 
-  // Filters
   const [keywordInput, setKeywordInput] = useState('')
   const [searchFilter, setSearchFilter] = useState('')
   const [topicFilter, setTopicFilter] = useState('ALL')
   const [difficultyFilter, setDifficultyFilter] = useState('ALL')
-  const [statusFilter, setStatusFilter] = useState('ALL') // 'ALL', 'ASSIGNED', 'RESERVE'
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [sortOption, setSortOption] = useState('questionId,desc')
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // Bulk Selection
   const [selectedIds, setSelectedIds] = useState(new Set())
 
-  // Feedback Notifications
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Popups / Modals State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState(null)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
 
-  // Load stats
   useEffect(() => {
     let active = true
     getQuestionBankStats(activeCourseId).then((realStats) => {
@@ -78,7 +73,6 @@ export function QuestionBankPage() {
     }
   }, [activeCourseId, refreshKey])
 
-  // Load questions
   useEffect(() => {
     let active = true
 
@@ -137,7 +131,6 @@ export function QuestionBankPage() {
     setRefreshKey((k) => k + 1)
   }
 
-  // Live Instant Search on keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchFilter(keywordInput)
@@ -175,7 +168,6 @@ export function QuestionBankPage() {
   const hasActiveFilters =
     searchFilter !== '' || topicFilter !== 'ALL' || difficultyFilter !== 'ALL' || statusFilter !== 'ALL'
 
-  // Toggle selection
   const handleToggleSelect = (id) => {
     const next = new Set(selectedIds)
     if (next.has(id)) {
@@ -194,7 +186,6 @@ export function QuestionBankPage() {
     }
   }
 
-  // Popup Triggers
   const handleOpenCreateModal = () => {
     setEditingQuestion(null)
     setIsFormModalOpen(true)
@@ -266,9 +257,7 @@ export function QuestionBankPage() {
         <Link to="/courses">Khóa học</Link><span aria-hidden="true"> / </span><span aria-current="page">Ngân hàng câu hỏi</span>
       </div>
 
-      {/* MAIN CONTAINER */}
       <div className="lms-container">
-        {/* COMPACT HEADER */}
         <div className="lms-compact-header">
           <div className="lms-header-info">
             <h1 className="lms-title-main">Question Bank</h1>
@@ -301,7 +290,6 @@ export function QuestionBankPage() {
           </div>
         </div>
 
-        {/* Feedback Notifications */}
         {message && (
           <div
             style={{
@@ -334,9 +322,7 @@ export function QuestionBankPage() {
           </div>
         )}
 
-        {/* 4 POLISHED KPI SUMMARY CARDS */}
         <div className="lms-compact-kpi-row">
-          {/* 1. Total Questions */}
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
               <span className="lms-compact-kpi-label">Total Questions</span>
@@ -355,7 +341,6 @@ export function QuestionBankPage() {
             </div>
           </div>
 
-          {/* 2. Difficulty Breakdown */}
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
               <span className="lms-compact-kpi-label">Difficulty Spread</span>
@@ -381,7 +366,6 @@ export function QuestionBankPage() {
             </div>
           </div>
 
-          {/* 3. In Quiz */}
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
               <span className="lms-compact-kpi-label">In Quiz</span>
@@ -400,7 +384,6 @@ export function QuestionBankPage() {
             </div>
           </div>
 
-          {/* 4. In Bank */}
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
               <span className="lms-compact-kpi-label">In Bank</span>
@@ -421,12 +404,9 @@ export function QuestionBankPage() {
           </div>
         </div>
 
-        {/* UNIFIED TABLE WORKSPACE CARD */}
         <div className="lms-table-workspace">
-          {/* Integrated 1-Row Toolbar */}
           <div className="lms-table-toolbar">
             <div className="lms-toolbar-left">
-              {/* Search */}
               <div className="lms-search-wrapper">
                 <span className="lms-search-icon">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -454,7 +434,6 @@ export function QuestionBankPage() {
                 )}
               </div>
 
-              {/* Dropdown Filters */}
               <div className="lms-toolbar-filters">
                 <select
                   className="lms-form-select"
@@ -515,7 +494,6 @@ export function QuestionBankPage() {
               </div>
             </div>
 
-            {/* Course Switcher */}
             <div className="lms-toolbar-right">
               <form onSubmit={handleApplyCourse} className="lms-course-switcher">
                 <label htmlFor="question-bank-course">Mã khóa học</label>
@@ -536,7 +514,6 @@ export function QuestionBankPage() {
             </div>
           </div>
 
-          {/* Bulk Banner */}
           {selectedIds.size > 0 && (
             <div className="lms-bulk-banner">
               <div>
@@ -563,7 +540,6 @@ export function QuestionBankPage() {
             </div>
           )}
 
-          {/* SCROLLABLE TABLE WITH STICKY HEADER */}
           <QuestionBankTable
             questions={questions}
             loading={loading}
@@ -576,7 +552,6 @@ export function QuestionBankPage() {
             onOpenAi={() => setIsAiModalOpen(true)}
           />
 
-          {/* INTEGRATED FOOTER WITH PAGINATION */}
           {totalElements > 0 && (
             <div className="lms-table-footer">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -649,7 +624,6 @@ export function QuestionBankPage() {
         </div>
       </div>
 
-      {/* POPUP 1: Manual Create / Edit Modal */}
       <QuestionFormModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
@@ -658,7 +632,6 @@ export function QuestionBankPage() {
         courseId={activeCourseId}
       />
 
-      {/* POPUP 2: Gemini AI Generator Modal */}
       <AiGeneratorModal
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
@@ -670,7 +643,6 @@ export function QuestionBankPage() {
         }}
       />
 
-      {/* POPUP 3: Bulk Assign Modal */}
       <BulkAssignModal
         isOpen={isBulkAssignOpen}
         onClose={() => setIsBulkAssignOpen(false)}

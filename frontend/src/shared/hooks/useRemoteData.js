@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 
-/**
- * Loads data with `loader` (wrap it in useCallback) and loads again when `key` changes or
- * `reload()` is called. The previous data stays visible while the next request runs.
- */
 export function useRemoteData(key, loader) {
   const [version, setVersion] = useState(0)
   const requestKey = `${key}#${version}`

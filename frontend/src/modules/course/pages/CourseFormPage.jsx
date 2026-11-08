@@ -14,7 +14,6 @@ function validate(values) {
   const description = values.description.trim()
   if (!description) errors.description = 'Description is required.'
   else if (description.length > 2000) errors.description = 'Description must be at most 2000 characters.'
-  // The database requires price > 0.
   if (!/^\d+$/.test(values.price.trim()) || Number(values.price) < 1) {
     errors.price = 'Price must be a whole number of 1 or more.'
   }

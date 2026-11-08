@@ -139,7 +139,6 @@ export default function AvailableCoursesPage() {
             >
               Trước
             </button>
-            {/* First, last and 2 pages around the current one; "…" marks skipped pages. */}
             {Array.from({ length: result.totalPages }, (_, page) => page)
               .filter((page) => page === 0 || page === result.totalPages - 1 || Math.abs(page - query.page) <= 2)
               .map((page, index, shown) => (

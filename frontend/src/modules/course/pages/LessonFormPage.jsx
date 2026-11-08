@@ -30,7 +30,6 @@ function validate({ title, content }) {
   return errors
 }
 
-// context: { courseId, moduleId, moduleTitle, order }; lesson: { lessonId, title, content } when editing.
 function LessonForm({ context, lesson }) {
   const navigate = useNavigate()
   const ids = { title: useId(), content: useId() }
@@ -43,9 +42,7 @@ function LessonForm({ context, lesson }) {
   const [aiNotice, setAiNotice] = useState(false)
   const [aiDialog, setAiDialog] = useState(false)
   const [replaceDialog, setReplaceDialog] = useState(false)
-  // Retry sends the title of the failed request again, even if the field was edited meanwhile.
   const requestedTitle = useRef('')
-  // The request in flight; it is cancelled when the Teacher leaves the page.
   const pending = useRef(null)
   const contentUrl = `/teacher/courses/${context.courseId}/content`
 
@@ -95,7 +92,6 @@ function LessonForm({ context, lesson }) {
     }
     setErrors((current) => ({ ...current, title: undefined }))
     if (values.content.trim()) {
-      // A draft replaces the text, so ask before throwing away what the Teacher wrote.
       setReplaceDialog(true)
       return
     }

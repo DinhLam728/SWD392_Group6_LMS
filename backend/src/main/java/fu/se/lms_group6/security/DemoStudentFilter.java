@@ -15,7 +15,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-// Constructed only inside the enrollment-demo security chain, never a servlet-wide filter.
 public class DemoStudentFilter extends OncePerRequestFilter {
     private final UserRepository users;
     private final RestAuthenticationEntryPoint entryPoint;

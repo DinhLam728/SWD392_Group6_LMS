@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Practice quiz của sinh viên: xem quiz, bắt đầu, làm bài, nộp và xem kết quả. */
 @RestController
 @RequestMapping("/api/v1")
 @PreAuthorize("hasRole('STUDENT')")
@@ -54,7 +53,6 @@ public class QuizController {
     @PostMapping("/quizzes/{quizId}/attempts")
     public ResponseEntity<ApiResponse<AttemptResponse>> start(@PathVariable Long quizId) {
         QuizService.StartResult result = quizzes.startAttempt(student.requireId(), quizId);
-        // 201 khi tạo lượt mới, 200 khi tiếp tục lượt đang làm dở.
         return result.created()
                 ? ResponseBuilder.created(result.attempt(), "Đã tạo lượt làm bài")
                 : ResponseBuilder.ok(result.attempt(), "Tiếp tục lượt làm bài đang dở");

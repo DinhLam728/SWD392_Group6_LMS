@@ -68,11 +68,9 @@ import tools.jackson.databind.json.JsonMapper;
 public class QuizServiceImpl implements QuizService {
     private static final Logger log = LoggerFactory.getLogger(QuizServiceImpl.class);
 
-    // Giá trị mặc định khi quiz chưa có dòng quiz_configs (khớp DEFAULT trong schema).
     private static final int DEFAULT_DURATION_MINUTES = 30;
     private static final int DEFAULT_MAX_ATTEMPTS = 1;
     private static final BigDecimal DEFAULT_PASSING_SCORE = new BigDecimal("5.00");
-    // Cho phép nộp trễ một chút để bù độ trễ mạng khi hết giờ.
     private static final Duration SUBMIT_GRACE = Duration.ofSeconds(60);
     private static final BigDecimal MAX_SCORE = BigDecimal.TEN;
     private static final int MAX_AI_TEXT_LENGTH = 3000;
@@ -193,7 +191,6 @@ public class QuizServiceImpl implements QuizService {
     public StartResult startAttempt(Long studentId, Long quizId) {
         Quiz quiz = requireActiveQuiz(studentId, quizId);
         Long courseId = quiz.getModule().getCourse().getCourseId();
-        // Khóa các dòng đăng ký của sinh viên với khóa học để các request bắt đầu song song chạy tuần tự.
         List<Registration> studentRegistrations =
                 registrations.findByStudentUserIdAndCourseCourseIdOrderByRegisteredAtDesc(studentId, courseId);
         boolean enrolled = studentRegistrations.stream()
@@ -207,7 +204,6 @@ public class QuizServiceImpl implements QuizService {
         List<QuizAttempt> history = attempts.lockByQuizAndStudent(quizId, studentId);
         for (QuizAttempt attempt : history) {
             if (attempt.getStatus() == QuizAttemptStatus.IN_PROGRESS && !closeIfExpired(attempt, settings, now)) {
-                // Đang có lượt làm dở còn hạn: cho làm tiếp, không tạo lượt mới.
                 return new StartResult(toAttemptResponse(attempt, loadRows(attempt), settings, now), false);
             }
         }
@@ -223,7 +219,6 @@ public class QuizServiceImpl implements QuizService {
         attempt.setStatus(QuizAttemptStatus.IN_PROGRESS);
         attempt.setStartedAt(now);
         attempts.save(attempt);
-        // Lưu theo đúng thứ tự hiển thị; answer_id tăng dần giữ thứ tự này khi tải lại.
         List<AttemptAnswer> rows = new ArrayList<>();
         for (Question question : selectQuestions(pool, settings)) {
             rows.add(answers.save(new AttemptAnswer(attempt, question)));
@@ -245,7 +240,6 @@ public class QuizServiceImpl implements QuizService {
     @Override
     @Transactional(noRollbackFor = AttemptExpiredException.class)
     public AttemptResultResponse submitAttempt(Long studentId, Long attemptId, SubmitAttemptRequest request) {
-        // Đọc có khóa là lần tải đầu tiên của lượt làm bài, nên trạng thái luôn là mới nhất.
         QuizAttempt attempt = attempts.lockByIdAndStudent(attemptId, studentId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.ATTEMPT_NOT_FOUND));
         if (attempt.getStatus() != QuizAttemptStatus.IN_PROGRESS) {
@@ -255,7 +249,6 @@ public class QuizServiceImpl implements QuizService {
         List<AttemptAnswer> rows = loadRows(attempt);
         LocalDateTime now = now();
         if (closeIfExpired(attempt, settings, now, rows)) {
-            // Đã quá hạn + thời gian ân hạn: lượt làm được đóng với các câu chưa trả lời.
             throw new AttemptExpiredException();
         }
 
@@ -264,7 +257,6 @@ public class QuizServiceImpl implements QuizService {
         Set<Long> seen = new HashSet<>();
         for (SubmittedAnswerItem item : request.answers()) {
             if (!seen.add(item.questionId()) || !rowsByQuestion.containsKey(item.questionId())) {
-                // Câu hỏi trùng hoặc không thuộc lượt làm bài này.
                 throw new BadRequestException(ErrorCode.INVALID_REQUEST);
             }
         }
@@ -290,7 +282,6 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public AiExplanationResponse explainQuestion(Long studentId, Long attemptId, Long questionId) {
-        // Đọc dữ liệu trong transaction ngắn, gọi Gemini bên ngoài để không giữ kết nối DB khi chờ AI.
         String prompt = readOnlyTx.execute(status -> {
             QuizAttempt attempt = requireOwnedAttempt(studentId, attemptId);
             if (attempt.getStatus() != QuizAttemptStatus.GRADED) {
@@ -310,11 +301,8 @@ public class QuizServiceImpl implements QuizService {
         return new AiExplanationResponse(questionId, text);
     }
 
-    // ---- Kiểm tra điều kiện ----
-
     private Quiz requireActiveQuiz(Long studentId, Long quizId) {
         Quiz quiz = quizzes.findById(quizId).orElseThrow(() -> new NotFoundException(ErrorCode.QUIZ_NOT_FOUND));
-        // Quiz ôn tập của sinh viên khác cũng trả 404.
         if (quiz.getCreatedBy() != null && !quiz.getCreatedBy().getUserId().equals(studentId)) {
             throw new NotFoundException(ErrorCode.QUIZ_NOT_FOUND);
         }
@@ -333,7 +321,6 @@ public class QuizServiceImpl implements QuizService {
         return module;
     }
 
-    // Quiz của giảng viên dùng câu hỏi đã gán vào nó; quiz sinh viên tự tạo dùng câu hỏi của module.
     private List<Question> questionPool(Quiz quiz) {
         return quiz.getCreatedBy() == null
                 ? questions.findByQuizQuizIdOrderByQuestionIdAsc(quiz.getQuizId())
@@ -341,7 +328,6 @@ public class QuizServiceImpl implements QuizService {
     }
 
     private QuizAttempt requireOwnedAttempt(Long studentId, Long attemptId) {
-        // Lượt làm của người khác cũng trả 404 để không lộ việc nó tồn tại.
         return attempts.findByAttemptIdAndStudentUserId(attemptId, studentId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.ATTEMPT_NOT_FOUND));
     }
@@ -357,8 +343,6 @@ public class QuizServiceImpl implements QuizService {
                 Boolean.TRUE.equals(c.getRandomQuestions()), Boolean.TRUE.equals(c.getShuffleQuestions()),
                 Boolean.TRUE.equals(c.getShuffleOptions()));
     }
-
-    // ---- Tạo đề và chấm điểm ----
 
     private List<Question> selectQuestions(List<Question> pool, Settings settings) {
         Random random = ThreadLocalRandom.current();
@@ -405,7 +389,6 @@ public class QuizServiceImpl implements QuizService {
         return closeIfExpired(attempt, settings, now, loadRows(attempt));
     }
 
-    /** Đóng lượt làm quá hạn: chấm với các câu đã lưu (thường là chưa trả lời). */
     private boolean closeIfExpired(QuizAttempt attempt, Settings settings, LocalDateTime now, List<AttemptAnswer> rows) {
         if (!isExpired(attempt, settings, now)) {
             return false;
@@ -429,8 +412,6 @@ public class QuizServiceImpl implements QuizService {
         }
         return selected.trim().toUpperCase(Locale.ROOT);
     }
-
-    // ---- Chuyển đổi entity -> DTO ----
 
     private List<AttemptAnswer> loadRows(QuizAttempt attempt) {
         return answers.findByAttemptAttemptIdOrderByAnswerIdAsc(attempt.getAttemptId());
@@ -494,7 +475,6 @@ public class QuizServiceImpl implements QuizService {
         return attempt.getScore().compareTo(settings.passingScore()) >= 0;
     }
 
-    /** Xáo phương án cố định theo lượt làm và câu hỏi, nên tải lại trang vẫn giữ thứ tự. */
     private static List<QuizOptionResponse> shuffledOptions(List<QuizOptionResponse> options, Long attemptId,
             Long questionId) {
         List<QuizOptionResponse> shuffled = new ArrayList<>(options);
@@ -502,7 +482,6 @@ public class QuizServiceImpl implements QuizService {
         return shuffled;
     }
 
-    /** Đọc options_json theo định dạng của Question Bank: {"options":[{key,text}], "explanation": ...}. */
     private ParsedQuestion parseQuestion(Question question) {
         String raw = question.getOptionsJson();
         if (raw == null || raw.isBlank()) {
@@ -545,7 +524,6 @@ public class QuizServiceImpl implements QuizService {
     }
 
     private LocalDateTime now() {
-        // Cột DATETIME không lưu phần lẻ giây; cắt trước để giá trị trong bộ nhớ khớp với DB.
         return LocalDateTime.now(clock).truncatedTo(ChronoUnit.SECONDS);
     }
 
@@ -554,7 +532,6 @@ public class QuizServiceImpl implements QuizService {
 
     private record ParsedQuestion(List<QuizOptionResponse> options, String explanation) {}
 
-    /** Hết giờ: transaction vẫn commit việc đóng lượt làm bài trước khi trả lỗi. */
     static class AttemptExpiredException extends ConflictException {
         AttemptExpiredException() {
             super(ErrorCode.ATTEMPT_EXPIRED);

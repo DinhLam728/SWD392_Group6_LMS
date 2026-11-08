@@ -12,7 +12,6 @@ import fu.se.lms_group6.entity.CourseModule;
 
 public interface TeacherModuleRepository extends JpaRepository<CourseModule, Long> {
 
-    // Course and teacher are fetched so ownership and the AI prompt context need no open session.
     @Query("""
             select m from CourseModule m
             join fetch m.course c
@@ -32,7 +31,6 @@ public interface TeacherModuleRepository extends JpaRepository<CourseModule, Lon
     @Query("select coalesce(max(m.position), 0) from CourseModule m where m.course.courseId = :courseId")
     int maxPosition(@Param("courseId") Long courseId);
 
-    // Quizzes belong to another feature and have no entity here.
     @Query(value = "select count(*) from quizzes where module_id = :moduleId", nativeQuery = true)
     long countQuizzes(@Param("moduleId") Long moduleId);
 

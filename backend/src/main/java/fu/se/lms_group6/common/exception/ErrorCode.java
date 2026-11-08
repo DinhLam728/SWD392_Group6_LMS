@@ -20,7 +20,6 @@ public enum ErrorCode {
     INVALID_OTP(HttpStatus.BAD_REQUEST, "Mã OTP không chính xác hoặc đã hết hạn"),
     ACCOUNT_ALREADY_ACTIVATED(HttpStatus.BAD_REQUEST, "Tài khoản đã được kích hoạt trước đó"),
 
-    // Practice quiz
     QUIZ_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bài quiz"),
     QUIZ_NOT_AVAILABLE(HttpStatus.CONFLICT, "Bài quiz hiện chưa được mở"),
     QUIZ_HAS_NO_QUESTIONS(HttpStatus.CONFLICT, "Bài quiz chưa có câu hỏi"),

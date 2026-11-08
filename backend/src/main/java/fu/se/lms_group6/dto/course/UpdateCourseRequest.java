@@ -16,7 +16,6 @@ public record UpdateCourseRequest(
         String description,
 
         @NotNull(message = "Giá không được để trống")
-        // lms_g6_v4.sql has CHECK (price > 0), so a price of 0 would be rejected by the database.
         @Positive(message = "Giá phải lớn hơn 0")
         @Max(value = 9_999_999_999L, message = "Giá vượt quá giới hạn cho phép")
         Long price,

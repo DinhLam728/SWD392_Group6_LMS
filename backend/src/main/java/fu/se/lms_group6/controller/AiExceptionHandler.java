@@ -14,11 +14,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import fu.se.lms_group6.common.http.ApiErrorResponse;
 import fu.se.lms_group6.externalclient.gemini.AIException;
 
-/**
- * Maps Gemini failures to 502 Bad Gateway as in the sequence diagram. ErrorCode has no
- * bad-gateway entry and common/** belongs to the whole team, so this handler is limited to
- * TeacherCourseController and runs before the shared catch-all handler.
- */
 @RestControllerAdvice(assignableTypes = TeacherCourseController.class)
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class AiExceptionHandler {

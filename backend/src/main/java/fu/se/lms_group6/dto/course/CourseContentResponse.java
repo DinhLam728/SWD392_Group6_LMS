@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Modules and lessons of a course in display order, for the Course Content screen. */
 public record CourseContentResponse(
         Long courseId,
         String title,
@@ -17,7 +16,6 @@ public record CourseContentResponse(
         long questionCount,
         List<ModuleContent> modules
 ) {
-    // quizCount: practice quizzes of the module; they belong to the module in the schema.
     public record ModuleContent(Long moduleId, String title, Integer position, long quizCount,
             List<LessonItem> lessons) {}
 

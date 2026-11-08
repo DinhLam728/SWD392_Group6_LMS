@@ -3,7 +3,6 @@ package fu.se.lms_group6.common.http;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-/** Helpers for successful controller responses. Errors go through exceptions. */
 public final class ResponseBuilder {
     private ResponseBuilder() {}
 

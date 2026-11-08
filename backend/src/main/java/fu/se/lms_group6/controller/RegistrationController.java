@@ -42,7 +42,6 @@ public class RegistrationController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<RegistrationResponse>> register(@Valid @RequestBody CreateRegistrationRequest request) {
-        // 200 also covers reopening an existing pending registration.
         return ResponseBuilder.ok(registrations.registerCourse(student.requireId(), request.courseId()));
     }
 
@@ -72,7 +71,6 @@ public class RegistrationController {
             @Valid @RequestBody SePayWebhookRequest request) {
         payments.authenticateWebhook(authorization);
         registrations.handlePaymentWebhook(request);
-        // Acknowledgement means received, not necessarily that enrollment was activated.
         return Map.of("success", true);
     }
 }

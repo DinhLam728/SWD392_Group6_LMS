@@ -52,7 +52,6 @@ public class Course {
     @Builder.Default
     private Boolean isPublished = false;
 
-    // Database-generated; historical rows may not have a recorded creation date.
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 

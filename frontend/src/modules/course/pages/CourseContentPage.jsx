@@ -23,7 +23,6 @@ export function CourseContentPage({ courseId }) {
   const [message, setMessage] = useState(() => peekFlash() || '')
   const [moving, setMoving] = useState(false)
   const [moveError, setMoveError] = useState('')
-  // dialog: { type: 'module-form' | 'delete-module' | 'delete-lesson', module?, lesson? }
   const [dialog, setDialog] = useState(null)
   const [action, setAction] = useState({ busy: false, error: '' })
 

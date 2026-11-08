@@ -608,7 +608,6 @@ body {
   }
 }
 
-/* Result details use two columns; payment details retain table-like rows. */
 .lms-app .details {
   grid-template-columns: 1fr;
 }

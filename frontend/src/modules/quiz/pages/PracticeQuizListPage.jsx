@@ -5,7 +5,6 @@ import { getPracticeQuizSetup } from '../services/quizService.js'
 import { formatScore } from '../utils/quizFormat.js'
 import '../styles/quiz.css'
 
-// Các quiz ôn tập sinh viên đã tự tạo trong một module.
 export default function PracticeQuizListPage() {
   const { moduleId } = useParams()
   const [setup, setSetup] = useState(null)

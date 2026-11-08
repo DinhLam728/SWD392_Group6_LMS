@@ -24,7 +24,6 @@ function PaymentQrPageContent({ id }) {
       if (!signal || signal.aborted) {
         return
       }
-      // Manual checks share any pending background request instead of sending another.
       const request = inFlight.current || getRegistration(id, signal)
       inFlight.current = request
       if (manual) {

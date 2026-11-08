@@ -4,7 +4,6 @@ import QuizErrorNotice from '../components/QuizErrorNotice.jsx'
 import { createPracticeQuiz, getPracticeQuizSetup } from '../services/quizService.js'
 import '../styles/quiz.css'
 
-// Sinh viên tự tạo quiz ôn tập cho một module, các lựa chọn được lưu vào quiz_configs.
 export default function PracticeQuizCreatePage() {
   const { moduleId } = useParams()
   const navigate = useNavigate()

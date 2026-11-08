@@ -12,10 +12,8 @@ import org.springframework.data.repository.query.Param;
 
 import fu.se.lms_group6.entity.Course;
 
-/** Teacher-side queries on Course, kept apart from CourseRepository that the enrollment feature uses. */
 public interface TeacherCourseRepository extends JpaRepository<Course, Long>, JpaSpecificationExecutor<Course> {
 
-    // The teacher is fetched so the ownership check works without an open session.
     @Query("select c from Course c join fetch c.teacher where c.courseId = :courseId")
     Optional<Course> findWithTeacher(@Param("courseId") Long courseId);
 
@@ -35,12 +33,9 @@ public interface TeacherCourseRepository extends JpaRepository<Course, Long>, Jp
             """)
     List<TeacherCourseCount> countLessons(@Param("courseIds") Collection<Long> courseIds);
 
-    // Registrations, questions and quizzes belong to other features and have no entity here.
-    // These counts let the service refuse a delete that the foreign keys would reject anyway.
     @Query(value = "select count(*) from registrations where course_id = :courseId", nativeQuery = true)
     long countRegistrations(@Param("courseId") Long courseId);
 
-    // Students of a course are its ACTIVE registrations (PENDING is unpaid, EXPIRED is over).
     @Query(value = "select count(*) from registrations where course_id = :courseId and status = 'ACTIVE'",
             nativeQuery = true)
     long countActiveStudents(@Param("courseId") Long courseId);

@@ -41,7 +41,6 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     SecurityFilterChain sePayWebhookChain(HttpSecurity http) throws Exception {
-        // The controller verifies the SePay API key; browser credentials do not apply.
         return http.securityMatcher("/api/v1/registrations/webhooks/sepay")
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -77,7 +76,6 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http,
             RestAuthenticationEntryPoint entryPoint, RestAccessDeniedHandler deniedHandler,
             JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
-        // JWT protects application APIs; SePay uses its separate API key chain.
         return http.cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))

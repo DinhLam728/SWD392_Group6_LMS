@@ -140,7 +140,6 @@ export function QuestionBankTable({
 
                 <td className="lms-col-prompt">
                   <div className="lms-question-cell">
-                    {/* Integrated badges for mobile/tablet */}
                     <div className="lms-mobile-badges">
                       <span className="lms-mobile-id-badge">#{q.questionId}</span>
                       {renderDifficultyBadge(q.difficulty)}

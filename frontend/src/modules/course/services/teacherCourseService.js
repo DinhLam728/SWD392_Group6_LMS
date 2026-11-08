@@ -1,6 +1,5 @@
 import { apiClient } from '../../../shared/api/apiClient.js'
 
-// Teacher endpoints always need the logged-in user's token; there is no demo-user fallback here.
 async function teacherApi(path, options = {}) {
   const headers = new Headers(options.headers)
   const token = localStorage.getItem('lms_token')
@@ -11,7 +10,6 @@ async function teacherApi(path, options = {}) {
     return await apiClient(`teacher/${path}`, { ...options, headers })
   } catch (error) {
     if (error?.status === 401) {
-      // The token is missing or expired: forget it and let the Teacher log in again.
       localStorage.removeItem('lms_token')
       localStorage.removeItem('lms_user')
       window.location.assign('/login')
@@ -56,6 +54,5 @@ export const deleteLesson = (lessonId) => teacherApi(`lessons/${lessonId}`, { me
 export const moveLesson = (lessonId, direction) =>
   teacherApi(`lessons/${lessonId}/move`, { method: 'PATCH', query: { direction } })
 
-// Returns a draft only; the lesson is stored when the Teacher saves the form.
 export const generateLessonContent = (body, signal) =>
   teacherApi('ai-lesson', { method: 'POST', body, signal })

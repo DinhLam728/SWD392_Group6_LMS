@@ -1,6 +1,5 @@
 import Dialog from './Dialog.jsx'
 
-// Shown when Gemini fails (activity diagram: "Display AI Service Unavailable", then Retry?).
 export default function AiUnavailableDialog({ onRetry, onCancel }) {
   return (
     <Dialog

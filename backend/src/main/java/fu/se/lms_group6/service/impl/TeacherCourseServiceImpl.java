@@ -54,7 +54,6 @@ import fu.se.lms_group6.service.TeacherCourseService;
 public class TeacherCourseServiceImpl implements TeacherCourseService {
     private static final String STATUS_DRAFT = "DRAFT";
     private static final String STATUS_PUBLISHED = "PUBLISHED";
-    // Positions are never negative, so -1 is free while two siblings swap under the unique key.
     private static final int TEMPORARY_POSITION = -1;
 
     private final TeacherCourseRepository courses;
@@ -72,8 +71,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         this.gemini = gemini;
     }
 
-    // ---------------------------------------------------------------- courses
-
     @Override
     @Transactional(readOnly = true)
     public PageResponse<TeacherCourseSummaryResponse> listCourses(Long teacherId, String keyword, String status,
@@ -89,7 +86,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
             boolean published = parsePublished(status);
             filter = filter.and((root, query, cb) -> cb.equal(root.get("isPublished"), published));
         }
-        // Equal titles or prices would otherwise let rows move between pages.
         Pageable stable = pageable;
         if (pageable.getSort().getOrderFor("courseId") == null) {
             stable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
@@ -177,8 +173,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         return toCourseResponse(course);
     }
 
-    // ---------------------------------------------------------------- content
-
     @Override
     @Transactional(readOnly = true)
     public CourseContentResponse getContent(Long teacherId, Long courseId) {
@@ -208,8 +202,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
                 courses.countActiveStudents(courseId), courses.countQuestions(courseId), moduleItems);
     }
 
-    // ---------------------------------------------------------------- modules
-
     @Override
     public TeacherModuleResponse addModule(Long teacherId, Long courseId, ModuleRequest request) {
         Course course = ownedCourse(teacherId, courseId);
@@ -237,8 +229,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         lessons.deleteByModuleId(moduleId);
         modules.deleteById(moduleId);
         modules.flush();
-        // Close the gap so the stored position always equals the displayed number. Ascending order
-        // with a flush per row keeps (course_id, position) unique at every step.
         for (CourseModule following : modules
                 .findByCourseCourseIdAndPositionGreaterThanOrderByPositionAsc(courseId, deletedPosition)) {
             following.setPosition(following.getPosition() - 1);
@@ -263,8 +253,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         module.setPosition(other);
         modules.saveAndFlush(module);
     }
-
-    // ---------------------------------------------------------------- lessons
 
     @Override
     public LessonResponse addLesson(Long teacherId, Long moduleId, LessonRequest request) {
@@ -320,10 +308,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         lessons.saveAndFlush(lesson);
     }
 
-    // ---------------------------------------------------------------- AI
-
-    // No database transaction is held while waiting for Gemini; the module is read in its own
-    // short call, with the course and teacher fetched so no lazy loading is needed afterwards.
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public AiLessonResponse generateLessonContent(Long teacherId, AiLessonRequest request) {
@@ -352,8 +336,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
                 """.formatted(course.getTitle(), description, module.getTitle(), lessonTitle);
     }
 
-    // ---------------------------------------------------------------- ownership and mapping
-
     private Course ownedCourse(Long teacherId, Long courseId) {
         Course course = courses.findWithTeacher(courseId).orElseThrow(NotFoundException::new);
         requireOwner(course, teacherId);
@@ -366,7 +348,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         return module;
     }
 
-    // lesson -> module -> course -> teacher_id
     private Lesson ownedLesson(Long teacherId, Long lessonId) {
         Lesson lesson = lessons.findWithOwner(lessonId).orElseThrow(NotFoundException::new);
         requireOwner(lesson.getModule().getCourse(), teacherId);
@@ -379,7 +360,6 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         }
     }
 
-    // Two concurrent adds can pick the same next position; the unique key then rejects the second one.
     private <T> T translateConflict(Supplier<T> save) {
         try {
             return save.get();

@@ -50,7 +50,6 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     public RegistrationResponse registerCourse(Long studentId, Long courseId) {
-        // Lock the existing user row even when no registration exists yet.
         User student = users.findByIdForUpdate(studentId).orElseThrow(NotFoundException::new);
         requireStudent(student);
         var course = courses.findById(courseId).filter(c -> Boolean.TRUE.equals(c.getIsPublished()))
@@ -133,7 +132,6 @@ public class RegistrationServiceImpl implements RegistrationService {
             log.info("Ignoring SePay transaction {}: registration not found", request.id());
             return;
         }
-        // Same lock order as registration creation: user first, then registration rows.
         users.findByIdForUpdate(owner.get()).orElseThrow(NotFoundException::new);
         Registration registration = registrations.findByPaymentCodeForUpdate(code).orElseThrow(NotFoundException::new);
         if (registration.getPaymentStatus() == PaymentStatus.SUCCESS
@@ -152,7 +150,6 @@ public class RegistrationServiceImpl implements RegistrationService {
         registration.setPaymentStatus(PaymentStatus.SUCCESS);
         registration.setTransactionRef(request.transactionRef());
         registration.setPaidAt(paidAt);
-        // A valid late receipt is retained, but never grants a second enrollment.
         registration.setStatus(alreadyEnrolled ? RegistrationStatus.EXPIRED : RegistrationStatus.ACTIVE);
         for (Registration other : related) {
             if (!other.getRegistrationId().equals(registration.getRegistrationId())

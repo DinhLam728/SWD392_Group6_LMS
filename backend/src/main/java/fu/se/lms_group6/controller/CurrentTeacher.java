@@ -9,10 +9,6 @@ import fu.se.lms_group6.common.exception.BusinessException;
 import fu.se.lms_group6.common.exception.ErrorCode;
 import fu.se.lms_group6.repository.UserRepository;
 
-/**
- * Resolves the logged-in Teacher from the JWT identity. Not logged in gives 401 and any other
- * role gives 403, as in the Generate Lesson with AI activity diagram. The id never comes from the client.
- */
 @Component
 public class CurrentTeacher {
     private static final String TEACHER_AUTHORITY = "ROLE_TEACHER";

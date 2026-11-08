@@ -80,11 +80,9 @@ public class CourseServiceImpl implements CourseService {
     public CourseDetailResponse getCourse(Long courseId, Long studentId) {
         Course course = courses.findById(courseId).filter(c -> Boolean.TRUE.equals(c.getIsPublished()))
                 .orElseThrow(NotFoundException::new);
-        // Fetch titles in two batches; never expose lesson bodies or quiz answers here.
         var lessonTitles = lessons.findByModuleCourseCourseIdOrderByModulePositionAscPositionAsc(courseId).stream()
                 .collect(Collectors.groupingBy(lesson -> lesson.getModule().getModuleId(),
                         Collectors.mapping(lesson -> new LessonSummaryResponse(lesson.getLessonId(), lesson.getTitle(), lesson.getPosition()), Collectors.toList())));
-        // Quiz trong ngân hàng chỉ là nguồn câu hỏi; sinh viên chỉ thấy quiz ôn tập do chính mình tạo.
         var quizTitles = quizzes.findByModuleCourseCourseIdAndStatusOrderByQuizIdAsc(courseId, QuizStatus.ACTIVE).stream()
                 .filter(quiz -> quiz.getCreatedBy() != null && quiz.getCreatedBy().getUserId().equals(studentId))
                 .collect(Collectors.groupingBy(quiz -> quiz.getModule().getModuleId(),
@@ -105,7 +103,6 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public LessonResponse getLesson(Long courseId, Long lessonId, Long studentId) {
-        // Lesson bodies are only for students with an active enrollment in the course.
         if (registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
                 studentId, courseId, RegistrationStatus.ACTIVE).isEmpty()) {
             throw new BusinessException(ErrorCode.LESSON_NOT_ENROLLED);

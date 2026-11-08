@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1")
-// Questions include correct answers, so only teachers may read or change them.
 @PreAuthorize("hasRole('TEACHER')")
 public class QuestionBankController {
 

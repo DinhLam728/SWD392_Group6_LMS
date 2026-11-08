@@ -30,7 +30,6 @@ function LessonLearningContent({ courseId, lessonId }) {
     return () => controller.abort()
   }, [courseId])
 
-  // Lessons in outline order, so previous/next can cross module boundaries.
   const lessons = detail
     ? detail.modules.flatMap((module) => module.lessons)
     : []

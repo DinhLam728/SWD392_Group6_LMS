@@ -49,7 +49,6 @@ export default function AuthPage() {
 
   const handleVerifyResetOtpSuccess = (validOtp) => {
     setResetOtp(validOtp)
-    // Sau khi nhập OTP đúng, mới chuyển sang màn hình đặt mật khẩu mới
     setCurrentView('reset-password')
   }
 
@@ -79,7 +78,6 @@ export default function AuthPage() {
           />
         )}
 
-        {/* Màn nhập OTP khi Đăng ký */}
         {currentView === 'verify-otp-register' && (
           <VerifyOtpForm
             email={authEmail}
@@ -93,7 +91,6 @@ export default function AuthPage() {
           <ForgotPasswordForm onNavigate={handleNavigate} />
         )}
 
-        {/* Tái sử dụng màn nhập OTP khi Quên mật khẩu */}
         {currentView === 'verify-otp-reset' && (
           <VerifyOtpForm
             email={authEmail}
@@ -103,7 +100,6 @@ export default function AuthPage() {
           />
         )}
 
-        {/* Màn hình chỉ nhập mật khẩu mới và xác nhận mật khẩu mới */}
         {currentView === 'reset-password' && (
           <ResetPasswordForm
             email={authEmail}

@@ -5,7 +5,6 @@ import { getCourse } from '../services/courseService.js'
 
 const PAGE_SIZE = 5
 
-// Courses the student can learn: registrations whose enrollment is active.
 export default function MyCoursesPage() {
   const [query, setQuery] = useState({
     page: 0,
@@ -16,7 +15,6 @@ export default function MyCoursesPage() {
   const navigate = useNavigate()
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
-  // Open the first lesson of module 1; without lessons, open the course detail page.
   async function explore(courseId) {
     try {
       const { data } = await getCourse(courseId)
@@ -139,7 +137,6 @@ export default function MyCoursesPage() {
               >
                 Trước
               </button>
-              {/* First, last and 2 pages around the current one; "…" marks skipped pages. */}
               {Array.from({ length: result.totalPages }, (_, page) => page)
                 .filter((page) => page === 0 || page === result.totalPages - 1 || Math.abs(page - query.page) <= 2)
                 .map((page, index, shown) => (

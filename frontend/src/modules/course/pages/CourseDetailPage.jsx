@@ -98,7 +98,6 @@ function CourseDetailPageContent({ id }) {
               {detail.registrationStatus === 'ACTIVE' ? (
                 <button
                   onClick={() => {
-                    // Go to the first lesson of module 1; without lessons, show the outline instead.
                     const firstLesson = detail.modules[0]?.lessons[0]
                     if (firstLesson) {
                       navigate(`/courses/${id}/lessons/${firstLesson.lessonId}`)

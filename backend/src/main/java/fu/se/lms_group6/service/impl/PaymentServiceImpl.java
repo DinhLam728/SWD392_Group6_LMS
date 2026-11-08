@@ -60,7 +60,6 @@ public class PaymentServiceImpl implements PaymentService {
             return null;
         }
         String match = matcher.group();
-        // Ambiguous contents must not match two registrations.
         return matcher.find() ? null : match;
     }
 
@@ -75,7 +74,6 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             LocalDateTime bankTime = LocalDateTime.parse(request.transactionDate(), TRANSACTION_TIME);
             LocalDateTime receivedAt = LocalDateTime.now(clock).withNano(0);
-            // Some bank timestamps are rounded down to the minute by SePay.
             LocalDateTime registeredAt = registration.getRegisteredAt();
             boolean sameRoundedMinute = bankTime.getSecond() == 0
                     && bankTime.equals(registeredAt.truncatedTo(ChronoUnit.MINUTES));
@@ -83,7 +81,6 @@ public class PaymentServiceImpl implements PaymentService {
                     || bankTime.isAfter(receivedAt)) {
                 return null;
             }
-            // Bank time is only minute-precise, so record when the payment was confirmed instead.
             return receivedAt;
         } catch (DateTimeParseException exception) {
             return null;

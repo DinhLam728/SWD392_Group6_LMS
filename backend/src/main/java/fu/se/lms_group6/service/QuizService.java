@@ -11,12 +11,10 @@ import fu.se.lms_group6.dto.quiz.SubmitAttemptRequest;
 public interface QuizService {
     PracticeQuizSetupResponse getPracticeQuizSetup(Long studentId, Long moduleId);
 
-    /** Sinh viên tự tạo quiz ôn tập cho một module với cấu hình của mình. */
     QuizInfoResponse createPracticeQuiz(Long studentId, Long moduleId, CreatePracticeQuizRequest request);
 
     QuizInfoResponse getQuizInfo(Long studentId, Long quizId);
 
-    /** Tạo lượt làm bài mới, hoặc trả lại lượt đang làm dở nếu còn hạn. */
     StartResult startAttempt(Long studentId, Long quizId);
 
     AttemptResponse getAttempt(Long studentId, Long attemptId);

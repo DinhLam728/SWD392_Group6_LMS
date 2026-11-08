@@ -1,4 +1,3 @@
-// "Showing 1–10 of 23 courses", the same line as the student course list.
 export function ResultCount({ page, size, totalElements, noun }) {
   const first = totalElements === 0 ? 0 : page * size + 1
   const last = Math.min((page + 1) * size, totalElements)
@@ -13,7 +12,6 @@ export function ResultCount({ page, size, totalElements, noun }) {
   )
 }
 
-// Same markup as the shared pagination: Previous, one button per page, Next.
 export default function Pagination({ page, totalPages, onPageChange }) {
   if (totalPages <= 0) {
     return null

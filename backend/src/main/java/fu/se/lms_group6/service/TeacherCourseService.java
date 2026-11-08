@@ -16,7 +16,6 @@ import fu.se.lms_group6.dto.course.TeacherCourseSummaryResponse;
 import fu.se.lms_group6.dto.course.TeacherModuleResponse;
 import fu.se.lms_group6.dto.course.UpdateCourseRequest;
 
-/** Manage Courses for the logged-in Teacher. Every method refuses data owned by another Teacher (403). */
 public interface TeacherCourseService {
 
     PageResponse<TeacherCourseSummaryResponse> listCourses(Long teacherId, String keyword, String status, Pageable pageable);
@@ -53,6 +52,5 @@ public interface TeacherCourseService {
 
     void moveLesson(Long teacherId, Long lessonId, MoveDirection direction);
 
-    /** Asks Gemini for a draft. Nothing is stored: the lesson is saved only when the Teacher saves the form. */
     AiLessonResponse generateLessonContent(Long teacherId, AiLessonRequest request);
 }

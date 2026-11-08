@@ -44,7 +44,6 @@ public class Quiz {
     @Builder.Default
     private QuizStatus status = QuizStatus.DRAFT;
 
-    // null = quiz của giảng viên; có giá trị = quiz ôn tập do sinh viên này tự tạo.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;

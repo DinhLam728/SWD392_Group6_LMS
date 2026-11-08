@@ -5,7 +5,6 @@ export function createApiClient({
   fetchImpl = globalThis.fetch,
 } = {}) {
   return async function apiClient(path, { query, body, headers, ...options } = {}) {
-    // Only accept paths relative to our API base; never silently switch API hosts.
     if (typeof path !== 'string' || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(path)) {
       throw new TypeError('API path must be relative')
     }

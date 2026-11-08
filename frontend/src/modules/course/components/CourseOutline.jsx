@@ -1,7 +1,6 @@
 import { BookOpen, ClipboardList, Plus, Minus } from 'lucide-react'
 import { Link } from 'react-router'
 
-// canLearn: the viewer has an active enrollment, so lesson titles open the lesson page.
 export default function CourseOutline({ modules, courseId, canLearn = false }) {
   if (!modules.length) return <p>Nội dung khóa học đang được cập nhật.</p>
 
@@ -34,7 +33,6 @@ export default function CourseOutline({ modules, courseId, canLearn = false }) {
                 <small>Bài học</small>
               </li>
             ))}
-            {/* Quiz ôn tập do sinh viên tự tạo, gom vào một dòng để mục lục không bị dài. */}
             {canLearn && (
               <li>
                 <ClipboardList size={18} aria-hidden="true" />

@@ -1,10 +1,4 @@
-/*
- * Practice quiz. Bố cục, card, nút, notice, details, bảng và nhãn trạng thái dùng class chung
- * trong assets/enrollment.css (two-columns, card, notice, details, table-wrap, status-badge).
- * File này chỉ chứa phần riêng của quiz: làm bài, đồng hồ, xem lại đáp án.
- */
 
-/* Thông tin quiz */
 .quiz-start-layout .details {
   margin-bottom: 24px;
 }
@@ -31,7 +25,6 @@
   margin-top: 10px !important;
 }
 
-/* Làm bài */
 .quiz-taking-header {
   display: flex;
   align-items: flex-end;
@@ -96,11 +89,6 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
-/*
- * assets/enrollment.css có .lms-app label { display: grid; font-size: 12px } và
- * .lms-app input { width: 100%; min-height: 45px } (nạp sau file này), nên các selector
- * dưới đây thêm .lms-app để ưu tiên hơn.
- */
 .lms-app .quiz-option {
   display: flex;
   align-items: center;
@@ -159,7 +147,6 @@
 .quiz-side p {
   margin: 0;
 }
-/* Là thẻ <nav>: thắng .lms-app nav { display: flex } của header. */
 .lms-app .quiz-navigator {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
@@ -203,7 +190,6 @@
   margin-top: 18px;
 }
 
-/* Kết quả: khung ngoài là result-card + notice + details + result-actions của trang đăng ký */
 .quiz-result-card .notice {
   margin: 0 0 24px;
 }
@@ -305,7 +291,6 @@
   margin: 8px 0 0;
 }
 
-/* Cùng mốc responsive với assets/enrollment.css (1000px, 700px) */
 @media (max-width: 1000px) {
   .quiz-taking-layout {
     gap: 20px;
@@ -326,7 +311,6 @@
   }
 }
 
-/* Form sinh viên tự tạo quiz ôn tập */
 .practice-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

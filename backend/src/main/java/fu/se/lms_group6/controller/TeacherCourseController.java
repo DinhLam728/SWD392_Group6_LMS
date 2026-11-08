@@ -38,7 +38,6 @@ import fu.se.lms_group6.dto.course.TeacherModuleResponse;
 import fu.se.lms_group6.dto.course.UpdateCourseRequest;
 import fu.se.lms_group6.service.TeacherCourseService;
 
-/** Manage Courses and Generate Lesson with AI. /api/v1/courses stays free for the public catalog. */
 @RestController
 @RequestMapping("/api/v1/teacher")
 public class TeacherCourseController {
@@ -159,8 +158,6 @@ public class TeacherCourseController {
 
     @PostMapping("/ai-lesson")
     public ResponseEntity<ApiResponse<AiLessonResponse>> generateLesson(@RequestBody AiLessonRequest request) {
-        // Activity diagram order: JWT and role first (401 / 403), then the title (400). @Valid would
-        // validate before this method runs, so a student sending a bad title would see 400 instead of 403.
         Long teacherId = teacher.requireId();
         if (request == null) {
             throw new BadRequestException();
