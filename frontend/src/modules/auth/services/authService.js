@@ -55,3 +55,15 @@ export function resetPasswordApi(data) {
     body: data,
   })
 }
+
+export function getMeApi() {
+  return apiClient('auth/me', {
+    method: 'GET',
+  })
+}
+
+export function logoutApi() {
+  return apiClient('auth/logout', {
+    method: 'POST',
+  })
+}

@@ -103,8 +103,8 @@ public class SecurityConfig {
         if (environment.acceptsProfiles(Profiles.of("enrollment-demo"))) {
             cors.addAllowedHeader("X-User-Id");
         }
-        cors.setExposedHeaders(List.of("Location"));
-        cors.setAllowCredentials(false);
+        cors.setExposedHeaders(List.of("Location", "Set-Cookie"));
+        cors.setAllowCredentials(true);
         cors.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cors);

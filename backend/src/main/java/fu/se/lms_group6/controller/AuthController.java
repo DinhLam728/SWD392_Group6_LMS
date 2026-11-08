@@ -14,15 +14,24 @@ import fu.se.lms_group6.dto.auth.ValidateResetOtpRequest;
 import fu.se.lms_group6.dto.auth.VerifyOtpRequest;
 import fu.se.lms_group6.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final String COOKIE_NAME = "access_token";
+    private static final Duration COOKIE_EXPIRY = Duration.ofDays(7);
 
     private final AuthService authService;
 
@@ -69,12 +78,43 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return ResponseBuilder.ok(response, "Đăng nhập thành công");
+        ResponseCookie cookie = createAuthCookie(response.token(), COOKIE_EXPIRY);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(ResponseBuilder.ok(response, "Đăng nhập thành công").getBody());
     }
 
     @PostMapping("/google")
     public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
         AuthResponse response = authService.loginWithGoogle(request);
-        return ResponseBuilder.ok(response, "Đăng nhập với Google thành công");
+        ResponseCookie cookie = createAuthCookie(response.token(), COOKIE_EXPIRY);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(ResponseBuilder.ok(response, "Đăng nhập với Google thành công").getBody());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getMe(@AuthenticationPrincipal String email) {
+        UserResponse response = authService.getCurrentUser(email);
+        return ResponseBuilder.ok(response, "Lấy thông tin người dùng thành công");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout() {
+        ResponseCookie cookie = createAuthCookie("", Duration.ZERO);
+        ApiResponse<Void> body = ApiResponse.success("Đăng xuất thành công", null);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(body);
+    }
+
+    private ResponseCookie createAuthCookie(String token, Duration maxAge) {
+        return ResponseCookie.from(COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(false) // Đặt true khi deploy HTTPS
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(maxAge)
+                .build();
     }
 }
