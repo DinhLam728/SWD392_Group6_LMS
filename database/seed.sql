@@ -1,15 +1,21 @@
--- LMS Group 6 - Enrollment demo seed. Run AFTER lms_g6_v4.sql.
--- Adds 1 course-owner teacher, 1 test-login teacher, 18 paid published courses, 24 modules, 72 lessons,
--- and 24 quiz TITLES for the course outline. Quiz configs are not seeded.
--- The 6 lessons of 'Git và GitHub cho làm việc nhóm' get real content for the student lesson page,
--- and its 2 practice quizzes get 5 questions each (default quiz settings, no quiz_configs row).
--- Does not reset the DB or modify existing accounts, courses, dates or payments.
--- Safe to rerun serially: inserts missing demo records only.
--- Includes a separate local TEACHER login; no student credentials or fake payments.
--- Register/verify a STUDENT through the app (or Google login) to test enrollment.
--- The sample teacher has no password and is only for course ownership.
+-- =====================================================================
+-- LMS Group 6 - Demo data (run after schema.sql)
+--   mysql -u root -p < database/seed.sql
+--
+-- Demo accounts (no email OTP needed):
+--   Teacher (owns all sample courses): teacher.enrollment@example.test / Teacher@123
+--   Teacher (no courses yet):          teacher.test@example.test       / Teacher@123
+--   Student:                           student.demo@example.test       / Student@123
+--
+-- 18 published courses, 24 modules, 72 lessons, 24 teacher quizzes, course cover images.
+-- Course "Git và GitHub cho làm việc nhóm": real lesson content and 10 questions;
+-- the demo student is already enrolled (paid) in this course.
+-- =====================================================================
+
 SET NAMES utf8mb4;
 USE lms_g6;
+SET @old_safe_updates = @@SQL_SAFE_UPDATES;
+SET SQL_SAFE_UPDATES = 0;
 
 START TRANSACTION;
 -- Local demo login only: teacher.test@example.test / Teacher@123
@@ -440,4 +446,58 @@ AND NOT EXISTS (SELECT 1 FROM questions x WHERE x.quiz_id = q.quiz_id AND x.cont
 -- END quiz questions
 COMMIT;
 
-SELECT c.course_id, c.title, c.price, c.is_published FROM courses c JOIN users u ON u.user_id = c.teacher_id WHERE u.email = 'teacher.enrollment@example.test' ORDER BY c.price;
+
+-- ---------------------------------------------------------------------
+-- DEMO ACCOUNTS FOR GRADING (no email OTP needed)
+--   Teacher (owns all sample courses): teacher.enrollment@example.test / Teacher@123
+--   Teacher (no courses yet):          teacher.test@example.test       / Teacher@123
+--   Student:                           student.demo@example.test       / Student@123
+-- The demo student is already enrolled (paid) in "Git và GitHub cho làm việc nhóm"
+-- so lessons and practice quizzes can be tried without making a payment.
+-- ---------------------------------------------------------------------
+
+START TRANSACTION;
+UPDATE users
+SET password_hash = '$2a$10$6Zo1eya9JbH3.a0PZz21a.78E/rvgDvLTXJWD95D.9zm76UmyN4PG'
+WHERE email = 'teacher.enrollment@example.test';
+
+INSERT INTO users (full_name, email, password_hash, role, status)
+SELECT 'Sinh viên Demo', 'student.demo@example.test',
+       '$2a$10$647wNRSlLYDzXYTPzpXI2eSS3DnS623k/6TWUiLHsl8l71Y4IlS3K', 'STUDENT', 'ACTIVE'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'student.demo@example.test');
+
+INSERT INTO registrations (student_id, course_id, status, registered_at, expires_at, amount,
+                           payment_code, transaction_ref, payment_status, paid_at)
+SELECT u.user_id, c.course_id, 'ACTIVE', '2026-11-01 09:00:00', '2026-11-02 09:00:00', c.price,
+       'LMS00000000000000000000000000000001', 'SEPAY:DEMO-1', 'SUCCESS', '2026-11-01 09:05:00'
+FROM users u
+JOIN courses c ON c.title = 'Git và GitHub cho làm việc nhóm'
+WHERE u.email = 'student.demo@example.test'
+  AND NOT EXISTS (SELECT 1 FROM registrations WHERE payment_code = 'LMS00000000000000000000000000000001');
+COMMIT;
+
+-- ---------------------------------------------------------------------
+-- COURSE COVER IMAGES (files in frontend/public/images/courses)
+-- ---------------------------------------------------------------------
+START TRANSACTION;
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-1.svg' WHERE title='Java căn bản cho người mới bắt đầu' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-2.svg' WHERE title='ReactJS: xây dựng giao diện web' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-3.svg' WHERE title='Spring Boot REST API cơ bản' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-4.svg' WHERE title='MySQL và thiết kế cơ sở dữ liệu' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-5.svg' WHERE title='Git và GitHub cho làm việc nhóm' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-6.svg' WHERE title='JavaScript thực hành cho frontend' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-7.svg' WHERE title='HTML và CSS: thiết kế web responsive' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-8.svg' WHERE title='TypeScript cho lập trình viên JavaScript' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-9.svg' WHERE title='Node.js và Express REST API' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-10.svg' WHERE title='Kiểm thử phần mềm với JUnit' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-11.svg' WHERE title='Docker cơ bản cho dự án web' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-12.svg' WHERE title='Thiết kế API và xử lý exception' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-13.svg' WHERE title='Spring Security và JWT' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-14.svg' WHERE title='Cấu trúc dữ liệu và giải thuật' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-15.svg' WHERE title='SQL nâng cao và tối ưu truy vấn' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-16.svg' WHERE title='UI UX cơ bản cho lập trình viên' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-17.svg' WHERE title='React Hooks và quản lý state' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-18.svg' WHERE title='Triển khai ứng dụng web thực tế' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+COMMIT;
+
+SET SQL_SAFE_UPDATES = @old_safe_updates;

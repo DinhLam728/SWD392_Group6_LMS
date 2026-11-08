@@ -24,7 +24,6 @@ public class CourseImageServiceImpl implements CourseImageService {
     private final Path directory;
 
     public CourseImageServiceImpl() {
-        // Support starting Spring Boot from either the repository root or backend.
         Path backend = Files.isDirectory(Path.of("backend/src")) ? Path.of("backend") : Path.of(".");
         directory = backend.resolve("uploads/courses").toAbsolutePath().normalize();
     }
@@ -64,7 +63,6 @@ public class CourseImageServiceImpl implements CourseImageService {
         String filename = UUID.randomUUID() + (format.equals("jpeg") ? ".jpg" : ".png");
         Path target = directory.resolve(filename);
         try {
-            // Re-encode the image instead of trusting the uploaded filename or content type.
             ImageIO.write(image, format, target.toFile());
         } catch (IOException exception) {
             Files.deleteIfExists(target);

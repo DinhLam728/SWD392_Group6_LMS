@@ -1,17 +1,20 @@
--- LMS Group 6 - Database v4 (MySQL 8.0+)
--- SCHEMA ONLY. Run this first, then seed_enrollment_demo.sql if sample data is needed.
--- Initial schema only: does not delete an existing database or its data.
--- Existing tables cause CREATE TABLE errors; use reviewed ALTER TABLE scripts for changes.
--- Current schema: 10 tables, courses.created_at, registration expiry and payment fields.
--- Registration expiry (24 hours) is set by application code, not a SQL scheduler.
--- Scores use 0..10; default passing_score is 5.00.
--- quizzes.created_by: students create their own practice quizzes (see alter_quiz_created_by.sql for old DBs).
+-- =====================================================================
+-- LMS Group 6 - Database schema (MySQL 8.0+)
+-- Creates database lms_g6 with 10 tables, no data.
+-- Run first:  mysql -u root -p < database/schema.sql
+-- Then demo data: mysql -u root -p < database/seed.sql
+-- WARNING: drops and recreates database lms_g6.
+-- =====================================================================
 
 SET NAMES utf8mb4;
 
-CREATE DATABASE IF NOT EXISTS lms_g6
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS lms_g6;
+CREATE DATABASE lms_g6 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE lms_g6;
+
+-- ---------------------------------------------------------------------
+-- SCHEMA
+-- ---------------------------------------------------------------------
 
 -- 1. Accounts: login by email/password or Google.
 CREATE TABLE users (
@@ -165,3 +168,4 @@ CREATE TABLE attempt_answers (
         FOREIGN KEY (question_id) REFERENCES questions(question_id),
     CONSTRAINT uq_attempt_question UNIQUE (attempt_id, question_id)
 );
+

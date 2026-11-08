@@ -10,7 +10,7 @@
       - "optional:file:./.env[.properties]"
       - "optional:file:./backend/.env[.properties]"
   datasource:
-    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME:lms_g6}?sslMode=${DB_SSL_MODE:PREFERRED}
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME:lms_g6}?sslMode=${DB_SSL_MODE:PREFERRED}&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:

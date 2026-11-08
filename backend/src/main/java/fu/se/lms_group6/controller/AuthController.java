@@ -111,7 +111,7 @@ public class AuthController {
     private ResponseCookie createAuthCookie(String token, Duration maxAge) {
         return ResponseCookie.from(COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(false) // Đặt true khi deploy HTTPS
+                .secure(false)
                 .sameSite("Lax")
                 .path("/")
                 .maxAge(maxAge)

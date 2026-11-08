@@ -12,7 +12,6 @@ export default function AuthProvider({ children }) {
     }
   })
 
-  // Synchronize user session with backend HttpOnly cookie on mount
   useEffect(() => {
     if (!localStorage.getItem('lms_user')) return
     getMeApi()
@@ -23,7 +22,6 @@ export default function AuthProvider({ children }) {
         }
       })
       .catch(() => {
-        // Cookie is invalid or expired
         localStorage.removeItem('lms_user')
         setUser(null)
       })
@@ -38,7 +36,6 @@ export default function AuthProvider({ children }) {
     try {
       await logoutApi()
     } catch {
-      // Ignore network errors on logout
     } finally {
       localStorage.removeItem('lms_user')
       setUser(null)

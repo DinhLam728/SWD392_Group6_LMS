@@ -279,13 +279,6 @@ function getMockStore() {
   }
 }
 
-function saveMockStore(data) {
-  try {
-    localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(data))
-  } catch {
-  }
-}
-
 export async function getCourseQuestions(courseId, {
   page = 0,
   size = 10,
