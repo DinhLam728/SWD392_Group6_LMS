@@ -7,6 +7,6 @@ public record BulkAssignQuizRequest(
         @NotEmpty(message = "Danh sách câu hỏi không được để trống")
         List<Long> questionIds,
 
-        Long quizId
+        Long moduleId
 ) {}
 

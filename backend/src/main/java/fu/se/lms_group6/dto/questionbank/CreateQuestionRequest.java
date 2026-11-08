@@ -10,7 +10,7 @@ public record CreateQuestionRequest(
         @NotNull(message = "Mã khóa học không được để trống")
         Long courseId,
 
-        Long quizId,
+        Long moduleId,
 
         String topic,
 

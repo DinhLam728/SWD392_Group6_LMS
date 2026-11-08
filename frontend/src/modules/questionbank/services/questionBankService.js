@@ -283,7 +283,8 @@ export async function getCourseQuestions(courseId, {
   page = 0,
   size = 10,
   sort,
-  quizId,
+  moduleId,
+  assignedOnly,
   unassignedOnly,
   keyword,
   difficulty,
@@ -291,7 +292,8 @@ export async function getCourseQuestions(courseId, {
 } = {}) {
   const query = { page, size }
   if (sort) query.sort = sort
-  if (quizId != null && quizId !== '') query.quizId = quizId
+  if (moduleId) query.moduleId = moduleId
+  if (assignedOnly) query.assignedOnly = true
   if (unassignedOnly) query.unassignedOnly = true
   if (topic && topic !== 'ALL') query.topic = topic
   if (difficulty && difficulty !== 'ALL') query.difficulty = difficulty
@@ -323,8 +325,8 @@ export async function getCourseQuestions(courseId, {
 
     if (unassignedOnly) {
       list = list.filter((q) => q.quizId == null)
-    } else if (quizId != null && quizId !== '') {
-      list = list.filter((q) => Number(q.quizId) === Number(quizId))
+    } else if (assignedOnly) {
+      list = list.filter((q) => q.quizId != null)
     }
 
     if (difficulty && difficulty !== 'ALL') {
@@ -434,13 +436,15 @@ export async function bulkDeleteQuestions(questionIds) {
   })
 }
 
-export async function bulkAssignQuiz(questionIds, quizId) {
+export async function getCourseModules(courseId) {
+  const res = await apiClient(`courses/${courseId}/question-bank/modules`)
+  return res?.data || []
+}
+
+export async function bulkAssignModule(questionIds, moduleId) {
   return apiClient('question-bank/bulk-assign', {
     method: 'POST',
-    body: {
-      questionIds,
-      quizId: quizId != null && quizId !== '' ? Number(quizId) : null,
-    },
+    body: { questionIds, moduleId },
   })
 }
 
@@ -456,7 +460,7 @@ export async function batchSaveQuestions(questionsList) {
     method: 'POST',
     body: {
       courseId: questionsList[0]?.courseId || 1,
-      quizId: questionsList[0]?.quizId || null,
+      moduleId: questionsList[0]?.moduleId || null,
       questions: questionsList,
     },
   })

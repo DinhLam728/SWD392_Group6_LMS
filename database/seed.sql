@@ -403,7 +403,7 @@ AND l.content IN ('Nội dung minh họa để xem cấu trúc khóa học. Ch�
 -- BEGIN quiz questions: Git và GitHub cho làm việc nhóm
 -- 5 single-choice questions per practice quiz so students can take the quiz. Inserts missing ones only.
 INSERT INTO questions (course_id, quiz_id, content, question_type, options_json, correct_answer)
-SELECT c.course_id, q.quiz_id, s.content, 'SINGLE_CHOICE', s.options_json, s.correct_answer
+SELECT c.course_id, q.quiz_id, s.content, 'MULTIPLE_CHOICE', s.options_json, s.correct_answer
 FROM courses c
 JOIN users u ON u.user_id = c.teacher_id
 JOIN modules m ON m.course_id = c.course_id

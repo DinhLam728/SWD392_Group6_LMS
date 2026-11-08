@@ -17,4 +17,5 @@ public class SePayProperties {
     private String subAccount = "";
     private String webhookApiKey = "";
     private String qrBaseUrl = "https://qr.sepay.vn/img";
+    private boolean demoPayment = false;
 }

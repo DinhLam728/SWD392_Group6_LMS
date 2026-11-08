@@ -51,6 +51,13 @@ public class RegistrationController {
         return ResponseBuilder.ok(registrationService.getRegistration(currentStudent.requireId(), registrationId));
     }
 
+    @PostMapping("/{registrationId}/demo-payment")
+    public ResponseEntity<ApiResponse<RegistrationResponse>> simulatePayment(@PathVariable Long registrationId) {
+        Long studentId = currentStudent.requireId();
+        registrationService.simulatePayment(studentId, registrationId);
+        return ResponseBuilder.ok(registrationService.getRegistration(studentId, registrationId));
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RegistrationResponse>>> getRegistrations(
             @RequestParam(required = false) String keyword,

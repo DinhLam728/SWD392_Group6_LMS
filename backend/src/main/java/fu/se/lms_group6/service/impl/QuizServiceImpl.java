@@ -44,6 +44,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -385,7 +386,7 @@ public class QuizServiceImpl implements QuizService {
         for (AttemptAnswer row : rows) {
             String expected = row.getQuestion().getCorrectAnswer();
             boolean isCorrect = row.getSubmittedAnswer() != null && expected != null
-                    && row.getSubmittedAnswer().equalsIgnoreCase(expected.trim());
+                    && row.getSubmittedAnswer().equals(normalizeAnswer(expected));
             row.setIsCorrect(isCorrect);
             if (isCorrect) {
                 correct++;
@@ -427,7 +428,13 @@ public class QuizServiceImpl implements QuizService {
         if (selected == null || selected.isBlank()) {
             return null;
         }
-        return selected.trim().toUpperCase(Locale.ROOT);
+        List<String> keys = Arrays.stream(selected.split(","))
+                .map(key -> key.trim().toUpperCase(Locale.ROOT))
+                .filter(key -> !key.isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+        return keys.isEmpty() ? null : String.join(",", keys);
     }
 
     private List<AttemptAnswer> loadRows(QuizAttempt attempt) {
@@ -443,7 +450,8 @@ public class QuizServiceImpl implements QuizService {
             if (settings.shuffleOptions()) {
                 options = shuffledOptions(options, attempt.getAttemptId(), question.getQuestionId());
             }
-            items.add(new AttemptQuestionResponse(question.getQuestionId(), i + 1, question.getContent(), options));
+            items.add(new AttemptQuestionResponse(question.getQuestionId(), i + 1, question.getContent(),
+                    question.getQuestionType(), options));
         }
         Quiz quiz = attempt.getQuiz();
         return new AttemptResponse(attempt.getAttemptId(), quiz.getQuizId(), quiz.getTitle(),

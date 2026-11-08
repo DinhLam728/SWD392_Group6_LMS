@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { getRegistration } from '../../enrollment/services/registrationService.js'
+import { getRegistration, simulatePayment } from '../../enrollment/services/registrationService.js'
 import RegistrationInfo from '../../enrollment/components/RegistrationInfo.jsx'
 
 export default function PaymentQrPage() {
@@ -48,6 +48,19 @@ function PaymentQrPageContent({ id }) {
       controller.abort()
     }
   }, [loadStatus])
+
+  async function payDemo() {
+    setBusy(true)
+    setManualFeedback('')
+    try {
+      await simulatePayment(id)
+      await loadStatus()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function checkNow() {
     setBusy(true)
@@ -123,6 +136,15 @@ function PaymentQrPageContent({ id }) {
               <p className="muted">
                 Mở ứng dụng ngân hàng để quét mã và xác nhận chuyển khoản.
               </p>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #cbd5e1' }}>
+                <p className="muted" style={{ marginTop: 0 }}>
+                  Chạy trên máy local nên SePay không gọi được webhook URL để báo giao dịch về hệ thống.
+                  Bấm nút dưới đây để giả lập SePay đã nhận tiền.
+                </p>
+                <button className="full-width" disabled={busy} onClick={payDemo}>
+                  Giả lập đã chuyển khoản (demo)
+                </button>
+              </div>
             </section>
             <section className="card">
               <h2>Thông tin đăng ký</h2>

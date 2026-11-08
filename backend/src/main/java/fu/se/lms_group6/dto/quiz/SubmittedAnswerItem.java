@@ -6,6 +6,6 @@ import jakarta.validation.constraints.Size;
 public record SubmittedAnswerItem(
         @NotNull(message = "Mã câu hỏi không được để trống")
         Long questionId,
-        @Size(max = 10, message = "Đáp án tối đa 10 ký tự")
+        @Size(max = 30, message = "Đáp án tối đa 30 ký tự")
         String selectedAnswer
 ) {}

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findByModuleCourseCourseIdAndStatusOrderByQuizIdAsc(Long courseId, QuizStatus status);
 
+    Optional<Quiz> findFirstByModuleModuleIdAndCreatedByIsNullAndStatusOrderByQuizIdAsc(Long moduleId, QuizStatus status);
+
     List<Quiz> findByModuleModuleIdAndCreatedByUserIdAndStatusOrderByQuizIdDesc(Long moduleId, Long studentId, QuizStatus status);
 
     @Query(value = "SELECT q.* FROM quizzes q JOIN quiz_configs c ON c.quiz_id = q.quiz_id "

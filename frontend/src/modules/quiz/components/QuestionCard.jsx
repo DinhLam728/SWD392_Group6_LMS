@@ -1,4 +1,16 @@
 export default function QuestionCard({ question, total, selected, onSelect, disabled }) {
+  const multipleAnswers = question.questionType === 'MULTIPLE_ANSWER'
+  const chosen = selected ? selected.split(',') : []
+
+  function choose(key) {
+    if (!multipleAnswers) {
+      onSelect(question.questionId, key)
+      return
+    }
+    const next = chosen.includes(key) ? chosen.filter((k) => k !== key) : [...chosen, key]
+    onSelect(question.questionId, next.sort().join(','))
+  }
+
   return (
     <article className="card quiz-question-card">
       <p className="eyebrow">
@@ -13,14 +25,14 @@ export default function QuestionCard({ question, total, selected, onSelect, disa
         {question.options.map((option) => (
           <label
             key={option.key}
-            className={`quiz-option ${selected === option.key ? 'quiz-option-selected' : ''}`}
+            className={`quiz-option ${chosen.includes(option.key) ? 'quiz-option-selected' : ''}`}
           >
             <input
-              type="radio"
+              type={multipleAnswers ? 'checkbox' : 'radio'}
               name={`question-${question.questionId}`}
               value={option.key}
-              checked={selected === option.key}
-              onChange={() => onSelect(question.questionId, option.key)}
+              checked={chosen.includes(option.key)}
+              onChange={() => choose(option.key)}
             />
             <span className="quiz-option-key">{option.key}</span>
             <span>{option.text}</span>

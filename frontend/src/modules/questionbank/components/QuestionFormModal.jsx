@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getCourseModules } from '../services/questionBankService.js'
 
 const SUGGESTED_TOPICS = [
   'OOP Inheritance & Polymorphism',
@@ -19,7 +20,13 @@ function QuestionFormContent({
   const [topic, setTopic] = useState(initialData?.topic || 'OOP Inheritance & Polymorphism')
   const [difficulty, setDifficulty] = useState(initialData?.difficulty || 'MEDIUM')
   const [questionType, setQuestionType] = useState(initialData?.questionType || 'MULTIPLE_CHOICE')
-  const [quizId, setQuizId] = useState(initialData?.quizId != null ? String(initialData.quizId) : '')
+  const [moduleId, setModuleId] = useState(initialData?.moduleId != null ? String(initialData.moduleId) : '')
+  const [modules, setModules] = useState([])
+
+  useEffect(() => {
+    if (!courseId) return
+    getCourseModules(courseId).then(setModules).catch(() => setModules([]))
+  }, [courseId])
   const [explanation, setExplanation] = useState(initialData?.explanation || '')
   const [options, setOptions] = useState(
     initialData?.options && initialData.options.length > 0
@@ -31,7 +38,27 @@ function QuestionFormContent({
           { key: 'D', text: '' },
         ]
   )
-  const [correctAnswer, setCorrectAnswer] = useState(initialData?.correctAnswer || 'A')
+  const [correctKeys, setCorrectKeys] = useState(
+    (initialData?.correctAnswer || 'A').split(',').map((key) => key.trim()).filter(Boolean),
+  )
+  const multipleAnswers = questionType === 'MULTIPLE_ANSWER'
+
+  const toggleCorrect = (key) => {
+    if (!multipleAnswers) {
+      setCorrectKeys([key])
+    } else if (correctKeys.includes(key)) {
+      setCorrectKeys(correctKeys.filter((k) => k !== key))
+    } else {
+      setCorrectKeys([...correctKeys, key])
+    }
+  }
+
+  const handleTypeChange = (type) => {
+    setQuestionType(type)
+    if (type !== 'MULTIPLE_ANSWER' && correctKeys.length > 1) {
+      setCorrectKeys([correctKeys[0]])
+    }
+  }
   const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -59,14 +86,13 @@ function QuestionFormContent({
     }))
     setOptions(rekeyed)
 
-    if (correctAnswer === removedKey) {
-      setCorrectAnswer(rekeyed[0]?.key || 'A')
-    } else {
-      const oldIndex = options.findIndex((o) => o.key === correctAnswer)
-      if (oldIndex > index && oldIndex - 1 < rekeyed.length) {
-        setCorrectAnswer(rekeyed[oldIndex - 1].key)
-      }
-    }
+    const remaining = correctKeys
+      .filter((key) => key !== removedKey)
+      .map((key) => {
+        const oldIndex = options.findIndex((o) => o.key === key)
+        return rekeyed[oldIndex > index ? oldIndex - 1 : oldIndex].key
+      })
+    setCorrectKeys(remaining.length > 0 ? remaining : [rekeyed[0].key])
   }
 
   const handleSubmit = async (e) => {
@@ -82,18 +108,23 @@ function QuestionFormContent({
       return
     }
 
+    if (correctKeys.length === 0) {
+      setErrorMsg('Please mark at least one correct answer.')
+      return
+    }
+
     setSubmitting(true)
     setErrorMsg('')
 
     try {
       await onSubmit({
         courseId: Number(courseId),
-        quizId: quizId.trim() ? Number(quizId) : null,
+        moduleId: moduleId ? Number(moduleId) : null,
         content: content.trim(),
         topic: topic.trim(),
         difficulty,
         questionType,
-        correctAnswer,
+        correctAnswer: [...correctKeys].sort().join(','),
         explanation: explanation.trim() || undefined,
         options: options.map((opt) => ({
           key: opt.key,
@@ -207,26 +238,26 @@ function QuestionFormContent({
                 className="lms-form-select"
                 style={{ width: '100%' }}
                 value={questionType}
-                onChange={(e) => setQuestionType(e.target.value)}
+                onChange={(e) => handleTypeChange(e.target.value)}
               >
                 <option value="MULTIPLE_CHOICE">Multiple Choice (Single Answer)</option>
+                <option value="MULTIPLE_ANSWER">Multiple Choice (Multiple Answers)</option>
               </select>
             </div>
 
             <div className="lms-form-group">
-              <label className="lms-form-label">
-                Assign to Quiz ID
-                <span className="lms-form-label-hint">Leave empty for Reserve Bank</span>
-              </label>
-              <input
-                type="number"
-                className="lms-form-control"
+              <label className="lms-form-label">Assign to Module</label>
+              <select
+                className="lms-form-select"
                 style={{ width: '100%' }}
-                value={quizId}
-                onChange={(e) => setQuizId(e.target.value)}
-                placeholder="e.g. 1"
-                min="1"
-              />
+                value={moduleId}
+                onChange={(e) => setModuleId(e.target.value)}
+              >
+                <option value="">Reserve Bank (not assigned)</option>
+                {modules.map((m) => (
+                  <option key={m.moduleId} value={m.moduleId}>{m.title}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -237,7 +268,7 @@ function QuestionFormContent({
                   Answer Choices <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  Select the radio button next to the correct answer.
+                  {multipleAnswers ? 'Tick every correct answer.' : 'Select the radio button next to the correct answer.'}
                 </span>
               </div>
               <button
@@ -252,7 +283,7 @@ function QuestionFormContent({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {options.map((opt, idx) => {
-                const isCorrect = correctAnswer === opt.key
+                const isCorrect = correctKeys.includes(opt.key)
                 return (
                   <div
                     key={opt.key}
@@ -263,10 +294,10 @@ function QuestionFormContent({
                       title={`Mark ${opt.key} as correct answer`}
                     >
                       <input
-                        type="radio"
+                        type={multipleAnswers ? 'checkbox' : 'radio'}
                         name="correctAnswerOption"
                         checked={isCorrect}
-                        onChange={() => setCorrectAnswer(opt.key)}
+                        onChange={() => toggleCorrect(opt.key)}
                         style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#16a34a' }}
                       />
                       <span className="lms-choice-key-badge">{opt.key}</span>

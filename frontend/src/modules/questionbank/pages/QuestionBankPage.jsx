@@ -8,7 +8,8 @@ import {
   updateQuestion,
   deleteQuestion,
   bulkDeleteQuestions,
-  bulkAssignQuiz,
+  bulkAssignModule,
+  getCourseModules,
   exportBankToJson,
 } from '../services/questionBankService.js'
 import { QuestionBankTable } from '../components/QuestionBankTable.jsx'
@@ -61,6 +62,12 @@ export function QuestionBankPage() {
   const [editingQuestion, setEditingQuestion] = useState(null)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
+  const [modules, setModules] = useState([])
+
+  useEffect(() => {
+    if (!activeCourseId) return
+    getCourseModules(activeCourseId).then(setModules).catch(() => setModules([]))
+  }, [activeCourseId])
 
   useEffect(() => {
     listMyCourses({ page: 0, size: 100 }).then((res) => {
@@ -92,18 +99,16 @@ export function QuestionBankPage() {
       page,
       size: pageSize,
       sort: sortOption,
+      assignedOnly: statusFilter === 'ASSIGNED',
       unassignedOnly: statusFilter === 'RESERVE',
+      moduleId: /^\d+$/.test(statusFilter) ? statusFilter : undefined,
       topic: topicFilter,
       difficulty: difficultyFilter,
       keyword: searchFilter.trim() || undefined,
     })
       .then((response) => {
         if (!active) return
-        let items = response?.data?.items || []
-        if (statusFilter === 'ASSIGNED') {
-          items = items.filter((q) => q.quizId != null)
-        }
-        setQuestions(items)
+        setQuestions(response?.data?.items || [])
         setTotalPages(response?.data?.totalPages || 0)
         setTotalElements(response?.data?.totalElements || 0)
         if (response?.data?.stats) {
@@ -153,6 +158,7 @@ export function QuestionBankPage() {
 
   const handleChangeCourse = (e) => {
     setActiveCourseId(Number(e.target.value))
+    setStatusFilter('ALL')
     setPage(0)
     setLoading(true)
   }
@@ -264,12 +270,12 @@ export function QuestionBankPage() {
     }
   }
 
-  const handleBulkAssignConfirm = async (quizId, quizTitle) => {
+  const handleBulkAssignConfirm = async (moduleId, moduleTitle) => {
     try {
-      await bulkAssignQuiz(Array.from(selectedIds), quizId, quizTitle)
+      await bulkAssignModule(Array.from(selectedIds), moduleId)
       setMessage(
-        quizId
-          ? `Successfully assigned ${selectedIds.size} questions to Quiz #${quizId}!`
+        moduleId
+          ? `Successfully assigned ${selectedIds.size} questions to ${moduleTitle}!`
           : `Moved ${selectedIds.size} questions to the Reserve Bank!`
       )
       setSelectedIds(new Set())
@@ -373,7 +379,7 @@ export function QuestionBankPage() {
             </div>
             <div className="lms-compact-kpi-val">{stats.total}</div>
             <div className="lms-compact-kpi-sub">
-              <span>{stats.assigned} in Quiz</span>
+              <span>{stats.assigned} in Module</span>
               <span>•</span>
               <span>{stats.reserve} in Bank</span>
             </div>
@@ -406,7 +412,7 @@ export function QuestionBankPage() {
 
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
-              <span className="lms-compact-kpi-label">In Quiz</span>
+              <span className="lms-compact-kpi-label">In Module</span>
               <span className="lms-compact-kpi-icon blue">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 11l3 3L22 4" />
@@ -418,7 +424,7 @@ export function QuestionBankPage() {
               {stats.assigned}
             </div>
             <div className="lms-compact-kpi-sub">
-              <span>Assigned to quizzes</span>
+              <span>Assigned to modules</span>
             </div>
           </div>
 
@@ -437,7 +443,7 @@ export function QuestionBankPage() {
               {stats.reserve}
             </div>
             <div className="lms-compact-kpi-sub">
-              <span>Available for quizzes</span>
+              <span>Not assigned to any module</span>
             </div>
           </div>
         </div>
@@ -515,8 +521,11 @@ export function QuestionBankPage() {
                   }}
                 >
                   <option value="ALL">All Statuses</option>
-                  <option value="ASSIGNED">In Quiz</option>
-                  <option value="RESERVE">In Bank</option>
+                  <option value="ASSIGNED">Assigned to a module</option>
+                  <option value="RESERVE">Not assigned (In Bank)</option>
+                  {modules.map((m) => (
+                    <option key={m.moduleId} value={m.moduleId}>Module: {m.title}</option>
+                  ))}
                 </select>
 
                 {hasActiveFilters && (
@@ -564,7 +573,7 @@ export function QuestionBankPage() {
                   style={{ padding: '4px 10px', fontSize: '12px' }}
                   onClick={() => setIsBulkAssignOpen(true)}
                 >
-                  Assign to Quiz
+                  Assign to Module
                 </button>
                 <button
                   type="button"
@@ -684,6 +693,7 @@ export function QuestionBankPage() {
       <BulkAssignModal
         isOpen={isBulkAssignOpen}
         onClose={() => setIsBulkAssignOpen(false)}
+        courseId={activeCourseId}
         selectedCount={selectedIds.size}
         onConfirm={handleBulkAssignConfirm}
       />

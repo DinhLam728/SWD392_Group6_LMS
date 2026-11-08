@@ -9,7 +9,7 @@ public record BatchSaveQuestionsRequest(
         @NotNull(message = "Mã khóa học không được để trống")
         Long courseId,
 
-        Long quizId,
+        Long moduleId,
 
         @NotEmpty(message = "Danh sách câu hỏi không được rỗng")
         @Valid

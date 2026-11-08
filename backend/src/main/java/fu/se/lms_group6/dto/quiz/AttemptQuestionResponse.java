@@ -6,5 +6,6 @@ public record AttemptQuestionResponse(
         Long questionId,
         Integer order,
         String content,
+        String questionType,
         List<QuizOptionResponse> options
 ) {}
