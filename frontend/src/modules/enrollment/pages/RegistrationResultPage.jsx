@@ -1,6 +1,5 @@
-import { Link } from 'react-router'
-import { useParams } from 'react-router'
 import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router'
 import { getRegistration } from '../services/registrationService.js'
 import RegistrationInfo from '../components/RegistrationInfo.jsx'
 
@@ -8,6 +7,19 @@ export default function RegistrationResultPage() {
   const { id } = useParams()
   if (!/^\d+$/.test(id)) return <p>Không tìm thấy trang.</p>
   return <RegistrationResultPageContent key={id} id={id} />
+}
+
+function resultTitle(registration) {
+  if (registration.status === 'ACTIVE') return 'Đăng ký thành công'
+  if (registration.enrolledRegistrationId) return 'Khóa học đã được kích hoạt từ đăng ký khác'
+  if (registration.status === 'EXPIRED') return 'Đăng ký đã hết hạn'
+  return 'Đang chờ thanh toán'
+}
+
+function noticeClass(status) {
+  if (status === 'ACTIVE') return 'notice-success'
+  if (status === 'PENDING') return 'notice-pending'
+  return 'notice-neutral'
 }
 
 function RegistrationResultPageContent({ id }) {
@@ -40,22 +52,12 @@ function RegistrationResultPageContent({ id }) {
       {error && <p role="alert">{error}</p>}
       {registration && (
         <section className="card result-card">
-          <div
-            className={`notice ${registration.status === 'ACTIVE' ? 'notice-success' : registration.status === 'PENDING' ? 'notice-pending' : 'notice-neutral'}`}
-          >
+          <div className={`notice ${noticeClass(registration.status)}`}>
             <span className="notice-icon">
               {registration.status === 'ACTIVE' ? '✓' : '◷'}
             </span>
             <div>
-              <h2>
-                {registration.status === 'ACTIVE'
-                  ? 'Đăng ký thành công'
-                  : registration.activeRegistrationId
-                    ? 'Khóa học đã được kích hoạt từ đăng ký khác'
-                    : registration.status === 'EXPIRED'
-                      ? 'Đăng ký đã hết hạn'
-                      : 'Đang chờ thanh toán'}
-              </h2>
+              <h2>{resultTitle(registration)}</h2>
               <p>
                 {registration.status === 'ACTIVE'
                   ? 'Thanh toán đã được xác nhận. Đăng ký khóa học của bạn đã được kích hoạt.'
@@ -64,7 +66,7 @@ function RegistrationResultPageContent({ id }) {
             </div>
           </div>
           {registration.status !== 'ACTIVE' &&
-            registration.activeRegistrationId && (
+            registration.enrolledRegistrationId && (
               <>
                 <p>Không cần thanh toán thêm cho đăng ký này.</p>
                 {registration.paymentStatus === 'SUCCESS' && (
@@ -75,7 +77,7 @@ function RegistrationResultPageContent({ id }) {
                 )}
                 <Link
                   className="button"
-                  to={`/registrations/${registration.activeRegistrationId}`}
+                  to={`/registrations/${registration.enrolledRegistrationId}`}
                 >
                   Xem đăng ký đang hoạt động
                 </Link>
@@ -89,7 +91,7 @@ function RegistrationResultPageContent({ id }) {
             </Link>
           )}
           {registration.status === 'EXPIRED' &&
-            !registration.activeRegistrationId && (
+            !registration.enrolledRegistrationId && (
               <Link className="button" to={`/courses/${registration.courseId}`}>
                 Đăng ký lại
               </Link>

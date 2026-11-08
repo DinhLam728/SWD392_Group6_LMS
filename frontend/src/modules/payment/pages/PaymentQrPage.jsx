@@ -1,6 +1,5 @@
-import { Link } from 'react-router'
-import { useNavigate, useParams } from 'react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
 import { getRegistration } from '../../enrollment/services/registrationService.js'
 import RegistrationInfo from '../../enrollment/components/RegistrationInfo.jsx'
 
@@ -16,69 +15,56 @@ function PaymentQrPageContent({ id }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [manualFeedback, setManualFeedback] = useState('')
-  const inFlight = useRef(null)
-  const controllerRef = useRef(null)
-  const check = useCallback(
-    async (manual = false) => {
-      const signal = controllerRef.current?.signal
-      if (!signal || signal.aborted) {
-        return
-      }
-      const request = inFlight.current || getRegistration(id, signal)
-      inFlight.current = request
-      if (manual) {
-        setBusy(true)
-        setManualFeedback('')
-      }
-      try {
-        const { data } = await request
-        if (signal.aborted) {
-          return
-        }
-        setRegistration((previous) =>
-          JSON.stringify(previous) === JSON.stringify(data) ? previous : data,
-        )
+
+  const loadStatus = useCallback(
+    async (signal) => {
+      const { data } = await getRegistration(id, signal)
+      if (data.status !== 'PENDING') {
+        navigate(`/registrations/${id}`)
+      } else {
+        setRegistration(data)
         setError('')
-        if (manual && data.status === 'PENDING') {
-          const time = new Date().toLocaleTimeString('vi-VN')
-          setManualFeedback(
-            `Chưa ghi nhận thanh toán · Đã kiểm tra lúc ${time}.`,
-          )
-        }
-        if (data.status !== 'PENDING') {
-          navigate(`/registrations/${id}`)
-        }
-      } catch (e) {
-        if (!signal.aborted) {
-          setError(e.message)
-        }
-      } finally {
-        if (inFlight.current === request) inFlight.current = null
-        if (manual && !signal.aborted) setBusy(false)
       }
+      return data
     },
     [id, navigate],
   )
+
   useEffect(() => {
     const controller = new AbortController()
-    controllerRef.current = controller
-    const initial = setTimeout(() => check(), 0)
-    const timer = setInterval(() => {
-      if (!document.hidden) {
-        check()
-      }
-    }, 5000)
-    const checkOnReturn = () => {
-      if (!document.hidden) check()
+    const refresh = () => {
+      if (document.hidden) return
+      loadStatus(controller.signal).catch((e) => {
+        if (e.name !== 'AbortError') setError(e.message)
+      })
     }
-    document.addEventListener('visibilitychange', checkOnReturn)
+    const first = setTimeout(refresh, 0)
+    const timer = setInterval(refresh, 5000)
+    document.addEventListener('visibilitychange', refresh)
     return () => {
-      document.removeEventListener('visibilitychange', checkOnReturn)
-      clearTimeout(initial)
+      clearTimeout(first)
       clearInterval(timer)
+      document.removeEventListener('visibilitychange', refresh)
       controller.abort()
     }
-  }, [check])
+  }, [loadStatus])
+
+  async function checkNow() {
+    setBusy(true)
+    setManualFeedback('')
+    try {
+      const data = await loadStatus()
+      if (data.status === 'PENDING') {
+        const time = new Date().toLocaleTimeString('vi-VN')
+        setManualFeedback(`Chưa ghi nhận thanh toán · Đã kiểm tra lúc ${time}.`)
+      }
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <>
       <div className="breadcrumb registration-breadcrumb" aria-label="Đường dẫn trang">
@@ -145,7 +131,7 @@ function PaymentQrPageContent({ id }) {
                 className="full-width"
                 disabled={busy}
                 aria-busy={busy}
-                onClick={() => check(true)}
+                onClick={checkNow}
               >
                 {busy ? 'Đang kiểm tra...' : 'Kiểm tra trạng thái thanh toán'}
               </button>

@@ -61,4 +61,9 @@ public class Course {
         this.price = price;
         this.isPublished = false;
     }
+
+    public boolean isAvailableForEnrollment() {
+        boolean wholeVndPrice = price.signum() > 0 && price.remainder(BigDecimal.ONE).signum() == 0;
+        return Boolean.TRUE.equals(isPublished) && wholeVndPrice;
+    }
 }

@@ -1,13 +1,14 @@
 package fu.se.lms_group6.service.impl;
 
-import fu.se.lms_group6.common.exception.BadRequestException;
 import fu.se.lms_group6.common.exception.BusinessException;
 import fu.se.lms_group6.common.exception.ConflictException;
 import fu.se.lms_group6.common.exception.ErrorCode;
 import fu.se.lms_group6.common.exception.NotFoundException;
 import fu.se.lms_group6.common.http.PageResponse;
 import fu.se.lms_group6.dto.enrollment.RegistrationResponse;
+import fu.se.lms_group6.dto.payment.PaymentInfoResponse;
 import fu.se.lms_group6.dto.payment.SePayWebhookRequest;
+import fu.se.lms_group6.entity.Course;
 import fu.se.lms_group6.entity.Registration;
 import fu.se.lms_group6.entity.User;
 import fu.se.lms_group6.entity.enums.PaymentStatus;
@@ -21,6 +22,8 @@ import fu.se.lms_group6.service.PaymentService;
 import fu.se.lms_group6.service.RegistrationService;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,86 +36,109 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class RegistrationServiceImpl implements RegistrationService {
     private static final Logger log = LoggerFactory.getLogger(RegistrationServiceImpl.class);
-    private final Clock clock;
+    private static final int PAYMENT_TIMEOUT_HOURS = 24;
+
     private final RegistrationRepository registrations;
     private final CourseRepository courses;
     private final UserRepository users;
     private final PaymentService payments;
+    private final Clock clock;
 
     public RegistrationServiceImpl(RegistrationRepository registrations, CourseRepository courses,
             UserRepository users, PaymentService payments, Clock enrollmentClock) {
-        this.clock = enrollmentClock;
         this.registrations = registrations;
         this.courses = courses;
         this.users = users;
         this.payments = payments;
+        this.clock = enrollmentClock;
     }
 
     @Override
     public RegistrationResponse registerCourse(Long studentId, Long courseId) {
-        User student = users.findByIdForUpdate(studentId).orElseThrow(NotFoundException::new);
-        requireStudent(student);
-        var course = courses.findById(courseId).filter(c -> Boolean.TRUE.equals(c.getIsPublished()))
+        User student = lockStudent(studentId);
+        requireActiveStudent(student);
+        Course course = courses.findById(courseId)
+                .filter(Course::isAvailableForEnrollment)
                 .orElseThrow(NotFoundException::new);
-        if (course.getPrice().signum() <= 0 || course.getPrice().stripTrailingZeros().scale() > 0) {
-            throw new BadRequestException();
+
+        List<Registration> previous = registrations.lockByStudentAndCourse(studentId, courseId);
+        if (hasActive(previous)) {
+            throw new ConflictException(ErrorCode.ALREADY_ENROLLED);
         }
+
         LocalDateTime now = now();
-        var previous = registrations.findByStudentUserIdAndCourseCourseIdOrderByRegisteredAtDesc(studentId, courseId);
-        if (previous.stream().anyMatch(r -> r.getStatus() == RegistrationStatus.ACTIVE)) {
-            throw new ConflictException();
-        }
-        for (Registration registration : previous) {
-            if (registration.getStatus() == RegistrationStatus.PENDING) {
-                if (registration.getExpiresAt().isAfter(now)) {
-                    return toResponse(registration, true);
-                }
-                registration.setStatus(RegistrationStatus.EXPIRED);
+        for (Registration old : previous) {
+            if (old.getStatus() != RegistrationStatus.PENDING) {
+                continue;
             }
+            if (old.getExpiresAt().isAfter(now)) {
+                return toResponse(old, payments.createPayment(old));
+            }
+            old.setStatus(RegistrationStatus.EXPIRED);
         }
+
         Registration registration = new Registration(student, course, course.getPrice());
         registration.setRegisteredAt(now);
-        registration.setExpiresAt(now.plusHours(24));
-        registration.setPaymentCode("LMS" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
+        registration.setExpiresAt(now.plusHours(PAYMENT_TIMEOUT_HOURS));
+        registration.setPaymentCode(newPaymentCode());
         registrations.save(registration);
-        return toResponse(registration, true);
+        return toResponse(registration, payments.createPayment(registration));
     }
 
     @Override
     @Transactional(readOnly = true)
     public RegistrationResponse getRegistration(Long studentId, Long registrationId) {
-        requireStudent(users.findById(studentId).orElseThrow(NotFoundException::new));
+        requireActiveStudent(users.findById(studentId).orElseThrow(NotFoundException::new));
         Registration registration = registrations.findByRegistrationIdAndStudentUserId(registrationId, studentId)
                 .orElseThrow(NotFoundException::new);
-        return toResponse(registration, true);
+        PaymentInfoResponse payment = isWaitingForPayment(registration) ? payments.createPayment(registration) : null;
+        return toResponse(registration, payment);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<RegistrationResponse> getRegistrations(Long studentId, String keyword,
             RegistrationStatus status, PaymentStatus paymentStatus, Pageable pageable) {
-        requireStudent(users.findById(studentId).orElseThrow(NotFoundException::new));
-        LocalDateTime now = now();
+        requireActiveStudent(users.findById(studentId).orElseThrow(NotFoundException::new));
         Specification<Registration> filter = (root, query, cb) -> cb.equal(root.get("student").get("userId"), studentId);
-        if (status == RegistrationStatus.PENDING) {
-            filter = filter.and((root, query, cb) -> cb.and(cb.equal(root.get("status"), status), cb.greaterThan(root.get("expiresAt"), now)));
-        } else if (status == RegistrationStatus.EXPIRED) {
-            filter = filter.and((root, query, cb) -> cb.or(cb.equal(root.get("status"), status),
-                    cb.and(cb.equal(root.get("status"), RegistrationStatus.PENDING), cb.lessThanOrEqualTo(root.get("expiresAt"), now))));
-        } else if (status != null) {
-            filter = filter.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        if (status != null) {
+            filter = filter.and(statusFilter(status));
         }
         if (paymentStatus != null) {
             filter = filter.and((root, query, cb) -> cb.equal(root.get("paymentStatus"), paymentStatus));
         }
         if (keyword != null && !keyword.isBlank()) {
-            String text = keyword.strip().toLowerCase().replace("!", "!!").replace("%", "!%").replace("_", "!_");
-            Long id = parseId(keyword.strip());
-            filter = filter.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("course").get("title")), "%" + text + "%", '!'),
-                    cb.equal(root.get("registrationId"), id == null ? -1L : id)));
+            filter = filter.and(keywordFilter(keyword.strip()));
         }
-        return PageResponse.from(registrations.findAll(filter, pageable).map(r -> toResponse(r, false)));
+        return PageResponse.from(registrations.findAll(filter, pageable).map(r -> toResponse(r, null)));
+    }
+
+    @Override
+    public void handlePaymentWebhook(SePayWebhookRequest request) {
+        String paymentCode = payments.extractPaymentCode(request);
+        if (paymentCode == null) {
+            log.info("Ignoring SePay transaction {}: no payment code", request.id());
+            return;
+        }
+        Optional<Long> studentId = registrations.findStudentIdByPaymentCode(paymentCode);
+        if (studentId.isEmpty()) {
+            log.info("Ignoring SePay transaction {}: registration not found", request.id());
+            return;
+        }
+
+        lockStudent(studentId.get());
+        Registration registration = registrations.lockByPaymentCode(paymentCode).orElseThrow(NotFoundException::new);
+        if (isDuplicatePayment(registration, request)) {
+            log.info("Ignoring SePay transaction {}: already recorded", request.id());
+            return;
+        }
+        if (!payments.verifyPayment(registration, request)) {
+            log.warn("Ignoring SePay transaction {}: account, amount or time does not match", request.id());
+            return;
+        }
+
+        activateRegistration(registration, request.transactionRef());
+        log.info("Recorded SePay transaction {} for registration {}", request.id(), registration.getRegistrationId());
     }
 
     @Override
@@ -120,67 +146,102 @@ public class RegistrationServiceImpl implements RegistrationService {
         return registrations.expirePending(now());
     }
 
-    @Override
-    public void handlePaymentWebhook(SePayWebhookRequest request) {
-        String code = payments.extractPaymentCode(request);
-        if (code == null) {
-            log.info("Ignoring SePay transaction {}: no unique payment code", request.id());
-            return;
+    private void activateRegistration(Registration registration, String transactionRef) {
+        List<Registration> sameCourse = registrations.lockByStudentAndCourse(
+                registration.getStudent().getUserId(), registration.getCourse().getCourseId());
+        boolean alreadyEnrolled = hasActive(sameCourse);
+
+        registration.markPaymentSuccess(transactionRef, now());
+        if (alreadyEnrolled) {
+            registration.setStatus(RegistrationStatus.EXPIRED);
         }
-        var owner = registrations.findStudentIdByPaymentCode(code);
-        if (owner.isEmpty()) {
-            log.info("Ignoring SePay transaction {}: registration not found", request.id());
-            return;
-        }
-        users.findByIdForUpdate(owner.get()).orElseThrow(NotFoundException::new);
-        Registration registration = registrations.findByPaymentCodeForUpdate(code).orElseThrow(NotFoundException::new);
-        if (registration.getPaymentStatus() == PaymentStatus.SUCCESS
-                || registrations.existsByTransactionRef(request.transactionRef())) {
-            log.info("Ignoring repeated payment for registration {}, transaction {}", registration.getRegistrationId(), request.id());
-            return;
-        }
-        LocalDateTime paidAt = payments.verifyPayment(registration, request);
-        if (paidAt == null) {
-            log.warn("Ignoring SePay transaction {}: account, amount or payment time does not match", request.id());
-            return;
-        }
-        var related = registrations.findByStudentUserIdAndCourseCourseIdOrderByRegisteredAtDesc(
-                owner.get(), registration.getCourse().getCourseId());
-        boolean alreadyEnrolled = related.stream().anyMatch(r -> r.getStatus() == RegistrationStatus.ACTIVE);
-        registration.setPaymentStatus(PaymentStatus.SUCCESS);
-        registration.setTransactionRef(request.transactionRef());
-        registration.setPaidAt(paidAt);
-        registration.setStatus(alreadyEnrolled ? RegistrationStatus.EXPIRED : RegistrationStatus.ACTIVE);
-        for (Registration other : related) {
-            if (!other.getRegistrationId().equals(registration.getRegistrationId())
-                    && other.getStatus() == RegistrationStatus.PENDING) {
+
+        for (Registration other : sameCourse) {
+            boolean isOther = !other.getRegistrationId().equals(registration.getRegistrationId());
+            if (isOther && other.getStatus() == RegistrationStatus.PENDING) {
                 other.setStatus(RegistrationStatus.EXPIRED);
             }
         }
-        log.info("Recorded SePay transaction {} for registration {}, activated={}",
-                request.id(), registration.getRegistrationId(), !alreadyEnrolled);
     }
 
-    private RegistrationResponse toResponse(Registration registration, boolean includePayment) {
-        RegistrationStatus status = registration.getStatus();
-        if (status == RegistrationStatus.PENDING && !registration.getExpiresAt().isAfter(now())) {
-            status = RegistrationStatus.EXPIRED;
+    private boolean isDuplicatePayment(Registration registration, SePayWebhookRequest request) {
+        return registration.getPaymentStatus() == PaymentStatus.SUCCESS
+                || registrations.existsByTransactionRef(request.transactionRef());
+    }
+
+    private boolean isWaitingForPayment(Registration registration) {
+        return displayStatus(registration) == RegistrationStatus.PENDING;
+    }
+
+    private RegistrationStatus displayStatus(Registration registration) {
+        boolean expiredButNotUpdated = registration.getStatus() == RegistrationStatus.PENDING
+                && !registration.getExpiresAt().isAfter(now());
+        return expiredButNotUpdated ? RegistrationStatus.EXPIRED : registration.getStatus();
+    }
+
+    private RegistrationResponse toResponse(Registration registration, PaymentInfoResponse payment) {
+        Course course = registration.getCourse();
+        Long enrolledRegistrationId = registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
+                        registration.getStudent().getUserId(), course.getCourseId(), RegistrationStatus.ACTIVE)
+                .map(Registration::getRegistrationId)
+                .orElse(null);
+        return new RegistrationResponse(
+                registration.getRegistrationId(),
+                course.getCourseId(),
+                course.getTitle(),
+                course.getTeacher().getFullName(),
+                registration.getAmount(),
+                displayStatus(registration),
+                registration.getPaymentStatus(),
+                registration.getRegisteredAt(),
+                registration.getExpiresAt(),
+                registration.getPaidAt(),
+                registration.getTransactionRef(),
+                payment,
+                enrolledRegistrationId);
+    }
+
+    private Specification<Registration> statusFilter(RegistrationStatus status) {
+        LocalDateTime now = now();
+        if (status == RegistrationStatus.PENDING) {
+            return (root, query, cb) -> cb.and(
+                    cb.equal(root.get("status"), RegistrationStatus.PENDING),
+                    cb.greaterThan(root.get("expiresAt"), now));
         }
-        var payment = includePayment && status == RegistrationStatus.PENDING
-                ? payments.createPayment(registration) : null;
-        return new RegistrationResponse(registration.getRegistrationId(), registration.getCourse().getCourseId(),
-                registration.getCourse().getTitle(), registration.getCourse().getTeacher().getFullName(),
-                registration.getAmount(), status, registration.getPaymentStatus(),
-                registration.getRegisteredAt(), registration.getExpiresAt(), registration.getPaidAt(), registration.getTransactionRef(), payment,
-                registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
-                        registration.getStudent().getUserId(), registration.getCourse().getCourseId(), RegistrationStatus.ACTIVE)
-                        .map(Registration::getRegistrationId).orElse(null));
+        if (status == RegistrationStatus.EXPIRED) {
+            return (root, query, cb) -> cb.or(
+                    cb.equal(root.get("status"), RegistrationStatus.EXPIRED),
+                    cb.and(cb.equal(root.get("status"), RegistrationStatus.PENDING),
+                            cb.lessThanOrEqualTo(root.get("expiresAt"), now)));
+        }
+        return (root, query, cb) -> cb.equal(root.get("status"), status);
     }
 
-    private void requireStudent(User user) {
+    private Specification<Registration> keywordFilter(String keyword) {
+        String pattern = "%" + keyword.toLowerCase()
+                .replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+        Long registrationId = parseId(keyword);
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("course").get("title")), pattern, '!'),
+                cb.equal(root.get("registrationId"), registrationId == null ? -1L : registrationId));
+    }
+
+    private boolean hasActive(List<Registration> list) {
+        return list.stream().anyMatch(r -> r.getStatus() == RegistrationStatus.ACTIVE);
+    }
+
+    private User lockStudent(Long studentId) {
+        return users.findByIdForUpdate(studentId).orElseThrow(NotFoundException::new);
+    }
+
+    private void requireActiveStudent(User user) {
         if (user.getRole() != UserRole.STUDENT || user.getStatus() != UserStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
+    }
+
+    private String newPaymentCode() {
+        return "LMS" + UUID.randomUUID().toString().replace("-", "").toUpperCase();
     }
 
     private Long parseId(String value) {

@@ -13,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -83,13 +82,10 @@ public class Registration {
         this.amount = amount;
     }
 
-    @PrePersist
-    protected void initializeTimestamps() {
-        if (registeredAt == null) {
-            registeredAt = LocalDateTime.now();
-        }
-        if (expiresAt == null) {
-            expiresAt = registeredAt.plusHours(24);
-        }
+    public void markPaymentSuccess(String transactionRef, LocalDateTime paidAt) {
+        this.paymentStatus = PaymentStatus.SUCCESS;
+        this.transactionRef = transactionRef;
+        this.paidAt = paidAt;
+        this.status = RegistrationStatus.ACTIVE;
     }
 }

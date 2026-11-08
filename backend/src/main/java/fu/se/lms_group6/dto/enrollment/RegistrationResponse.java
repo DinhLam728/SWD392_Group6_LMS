@@ -19,5 +19,5 @@ public record RegistrationResponse(
         LocalDateTime paidAt,
         String transactionRef,
         PaymentInfoResponse payment,
-        Long activeRegistrationId
+        Long enrolledRegistrationId
 ) {}

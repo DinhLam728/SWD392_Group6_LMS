@@ -192,7 +192,7 @@ public class QuizServiceImpl implements QuizService {
         Quiz quiz = requireActiveQuiz(studentId, quizId);
         Long courseId = quiz.getModule().getCourse().getCourseId();
         List<Registration> studentRegistrations =
-                registrations.findByStudentUserIdAndCourseCourseIdOrderByRegisteredAtDesc(studentId, courseId);
+                registrations.lockByStudentAndCourse(studentId, courseId);
         boolean enrolled = studentRegistrations.stream()
                 .anyMatch(registration -> registration.getStatus() == RegistrationStatus.ACTIVE);
         if (!enrolled) {

@@ -93,8 +93,8 @@ public class CourseServiceImpl implements CourseService {
         Registration registration = null;
         if (studentId != null) {
             registration = registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(studentId, courseId, RegistrationStatus.ACTIVE)
-                    .orElseGet(() -> registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatusAndExpiresAtAfterOrderByRegistrationIdDesc(
-                            studentId, courseId, RegistrationStatus.PENDING, LocalDateTime.now(clock)).orElse(null));
+                    .orElseGet(() -> registrations.findUnexpiredPending(studentId, courseId, LocalDateTime.now(clock))
+                            .stream().findFirst().orElse(null));
         }
         return new CourseDetailResponse(toSummary(course), outline,
                 registration == null ? null : registration.getRegistrationId(),

@@ -16,14 +16,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
     private static final Pattern PAYMENT_CODE = Pattern.compile("(?<![A-Z0-9])LMS[A-F0-9]{32}(?![A-Z0-9])");
-    private static final DateTimeFormatter TRANSACTION_TIME = DateTimeFormatter
+    private static final DateTimeFormatter BANK_TIME_FORMAT = DateTimeFormatter
             .ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT);
+
     private final SePayProxy sePayProxy;
     private final SePayProperties properties;
     private final Clock clock;
@@ -41,49 +45,49 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public void authenticateWebhook(String authorization) {
-        String key = properties.getWebhookApiKey();
-        if (key.isBlank() || authorization == null || !authorization.startsWith("Apikey ")
-                || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8),
-                        authorization.substring(7).getBytes(StandardCharsets.UTF_8))) {
+        String expected = "Apikey " + properties.getWebhookApiKey();
+        boolean valid = !properties.getWebhookApiKey().isBlank()
+                && authorization != null
+                && MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                        authorization.getBytes(StandardCharsets.UTF_8));
+        if (!valid) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
     }
 
     @Override
     public String extractPaymentCode(SePayWebhookRequest request) {
-        String code = request.code();
-        if (code != null && PAYMENT_CODE.matcher(code).matches()) {
-            return code;
+        if (request.code() != null && PAYMENT_CODE.matcher(request.code()).matches()) {
+            return request.code();
         }
-        var matcher = PAYMENT_CODE.matcher(request.content() == null ? "" : request.content());
-        if (!matcher.find()) {
-            return null;
-        }
-        String match = matcher.group();
-        return matcher.find() ? null : match;
+        List<String> codesInContent = PAYMENT_CODE.matcher(Objects.toString(request.content(), ""))
+                .results()
+                .map(MatchResult::group)
+                .toList();
+        return codesInContent.size() == 1 ? codesInContent.get(0) : null;
     }
 
     @Override
-    public LocalDateTime verifyPayment(Registration registration, SePayWebhookRequest request) {
-        if (!"in".equals(request.transferType()) || properties.getAccountNumber().isBlank()
-                || !properties.getAccountNumber().equals(request.accountNumber())
-                || (!properties.getSubAccount().isBlank() && !properties.getSubAccount().equals(request.subAccount()))
-                || registration.getAmount().compareTo(request.transferAmount()) != 0) {
-            return null;
-        }
+    public boolean verifyPayment(Registration registration, SePayWebhookRequest request) {
+        boolean moneyIn = "in".equals(request.transferType());
+        boolean correctAccount = !properties.getAccountNumber().isBlank()
+                && properties.getAccountNumber().equals(request.accountNumber())
+                && (properties.getSubAccount().isBlank() || properties.getSubAccount().equals(request.subAccount()));
+        boolean correctAmount = registration.getAmount().compareTo(request.transferAmount()) == 0;
+        return moneyIn && correctAccount && correctAmount && paidInTime(registration, request.transactionDate());
+    }
+
+    private boolean paidInTime(Registration registration, String transactionDate) {
+        LocalDateTime bankTime;
         try {
-            LocalDateTime bankTime = LocalDateTime.parse(request.transactionDate(), TRANSACTION_TIME);
-            LocalDateTime receivedAt = LocalDateTime.now(clock).withNano(0);
-            LocalDateTime registeredAt = registration.getRegisteredAt();
-            boolean sameRoundedMinute = bankTime.getSecond() == 0
-                    && bankTime.equals(registeredAt.truncatedTo(ChronoUnit.MINUTES));
-            if ((bankTime.isBefore(registeredAt) && !sameRoundedMinute) || !bankTime.isBefore(registration.getExpiresAt())
-                    || bankTime.isAfter(receivedAt)) {
-                return null;
-            }
-            return receivedAt;
+            bankTime = LocalDateTime.parse(transactionDate, BANK_TIME_FORMAT);
         } catch (DateTimeParseException exception) {
-            return null;
+            return false;
         }
+        LocalDateTime registeredMinute = registration.getRegisteredAt().truncatedTo(ChronoUnit.MINUTES);
+        boolean afterRegistration = !bankTime.isBefore(registeredMinute);
+        boolean beforeExpiry = bankTime.isBefore(registration.getExpiresAt());
+        boolean notInFuture = !bankTime.isAfter(LocalDateTime.now(clock));
+        return afterRegistration && beforeExpiry && notInFuture;
     }
 }
