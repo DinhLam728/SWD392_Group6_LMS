@@ -111,7 +111,7 @@ public class QuizServiceImpl implements QuizService {
     @Transactional
     public PracticeQuizSetupResponse getPracticeQuizSetup(Long studentId, Long moduleId) {
         CourseModule module = requireEnrolledModule(studentId, moduleId);
-        int available = questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(moduleId).size();
+        int available = activeTeacherQuestions(moduleId).size();
         List<QuizInfoResponse> myQuizzes = quizzes
                 .findByModuleModuleIdAndCreatedByUserIdAndStatusOrderByQuizIdDesc(moduleId, studentId, QuizStatus.ACTIVE)
                 .stream().map(quiz -> getQuizInfo(studentId, quiz.getQuizId())).toList();
@@ -123,13 +123,25 @@ public class QuizServiceImpl implements QuizService {
     @Transactional
     public QuizInfoResponse createPracticeQuiz(Long studentId, Long moduleId, CreatePracticeQuizRequest request) {
         CourseModule module = requireEnrolledModule(studentId, moduleId);
-        if (questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(moduleId).isEmpty()) {
+        registrations.findByStudentUserIdAndCourseCourseIdOrderByRegisteredAtDesc(
+                studentId, module.getCourse().getCourseId());
+        if (activeTeacherQuestions(moduleId).isEmpty()) {
             throw new ConflictException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
-        String title = request.title() == null || request.title().isBlank()
+        String rawTitle = request.title() == null || request.title().isBlank()
                 ? "Ôn tập " + module.getTitle() + " (" + request.questionCount() + " câu)"
                 : request.title().trim();
-        Quiz quiz = new Quiz(module, title.length() > 150 ? title.substring(0, 150) : title);
+        String title = rawTitle.length() > 150 ? rawTitle.substring(0, 150) : rawTitle;
+        boolean randomQuestions = Boolean.TRUE.equals(request.randomQuestions());
+        boolean shuffleQuestions = Boolean.TRUE.equals(request.shuffleQuestions());
+        boolean shuffleOptions = Boolean.TRUE.equals(request.shuffleOptions());
+        Optional<Quiz> sameUnused = quizzes.lockUnusedIdenticalPracticeQuiz(moduleId, studentId, title,
+                request.questionCount(), request.durationMinutes(), request.maxAttempts(), request.passingScore(),
+                randomQuestions, shuffleQuestions, shuffleOptions);
+        if (sameUnused.isPresent()) {
+            return getQuizInfo(studentId, sameUnused.get().getQuizId());
+        }
+        Quiz quiz = new Quiz(module, title);
         quiz.setStatus(QuizStatus.ACTIVE);
         quiz.setCreatedBy(users.getReferenceById(studentId));
         quizzes.save(quiz);
@@ -139,9 +151,9 @@ public class QuizServiceImpl implements QuizService {
         config.setDurationMinutes(request.durationMinutes());
         config.setMaxAttempts(request.maxAttempts());
         config.setPassingScore(request.passingScore());
-        config.setRandomQuestions(request.randomQuestions());
-        config.setShuffleQuestions(request.shuffleQuestions());
-        config.setShuffleOptions(request.shuffleOptions());
+        config.setRandomQuestions(randomQuestions);
+        config.setShuffleQuestions(shuffleQuestions);
+        config.setShuffleOptions(shuffleOptions);
         configs.save(config);
         return getQuizInfo(studentId, quiz.getQuizId());
     }
@@ -324,7 +336,12 @@ public class QuizServiceImpl implements QuizService {
     private List<Question> questionPool(Quiz quiz) {
         return quiz.getCreatedBy() == null
                 ? questions.findByQuizQuizIdOrderByQuestionIdAsc(quiz.getQuizId())
-                : questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(quiz.getModule().getModuleId());
+                : activeTeacherQuestions(quiz.getModule().getModuleId());
+    }
+
+    private List<Question> activeTeacherQuestions(Long moduleId) {
+        return questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullAndQuizStatusOrderByQuestionIdAsc(
+                moduleId, QuizStatus.ACTIVE);
     }
 
     private QuizAttempt requireOwnedAttempt(Long studentId, Long attemptId) {
