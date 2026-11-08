@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { courseImageUrl } from '../utils/courseImageUrl.js'
 import { useCallback, useEffect, useState } from 'react'
 import { useRemoteData } from '../../../shared/hooks/useRemoteData.js'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -97,7 +98,7 @@ export function CourseContentPage({ courseId }) {
       {content && (
         <section className="card tc-summary" aria-label="Course information">
           {content.thumbnailUrl ? (
-            <img className="tc-summary-cover" src={content.thumbnailUrl} alt="" />
+            <img className="tc-summary-cover" src={courseImageUrl(content.thumbnailUrl)} alt="" />
           ) : (
             <span className="tc-summary-cover">No image</span>
           )}

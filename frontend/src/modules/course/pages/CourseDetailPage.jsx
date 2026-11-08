@@ -1,3 +1,4 @@
+import { courseImageUrl } from '../utils/courseImageUrl.js'
 import { Link } from 'react-router'
 import { useNavigate, useParams } from 'react-router'
 import CourseOutline from '../components/CourseOutline.jsx'
@@ -60,7 +61,7 @@ function CourseDetailPageContent({ id }) {
               {detail.course.thumbnailUrl ? (
                 <img
                   className="detail-cover"
-                  src={detail.course.thumbnailUrl}
+                  src={courseImageUrl(detail.course.thumbnailUrl)}
                   alt=""
                 />
               ) : (

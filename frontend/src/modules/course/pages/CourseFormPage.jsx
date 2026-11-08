@@ -1,8 +1,9 @@
-import { useCallback, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useRemoteData } from '../../../shared/hooks/useRemoteData.js'
 import Notice from '../components/Notice.jsx'
-import { createCourse, getCourse, updateCourse } from '../services/teacherCourseService.js'
+import { createCourse, getCourse, updateCourse, uploadCourseImage } from '../services/teacherCourseService.js'
+import { courseImageUrl } from '../utils/courseImageUrl.js'
 import { firstMessageByField } from '../services/fieldErrors.js'
 import { setFlash } from '../services/flash.js'
 
@@ -34,6 +35,23 @@ function CourseForm({ course }) {
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [failure, setFailure] = useState('')
+  const [selectedImage, setSelectedImage] = useState(null)
+
+  useEffect(() => () => {
+    if (selectedImage) URL.revokeObjectURL(selectedImage.preview)
+  }, [selectedImage])
+
+  function selectImage(event) {
+    const file = event.target.files[0]
+    if (!file) return
+    if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setErrors((current) => ({ ...current, thumbnailUrl: 'Chọn ảnh JPG hoặc PNG, tối đa 5MB.' }))
+      event.target.value = ''
+      return
+    }
+    setErrors((current) => ({ ...current, thumbnailUrl: '' }))
+    setSelectedImage({ file, preview: URL.createObjectURL(file) })
+  }
 
   function setField(name, value) {
     setValues((current) => ({ ...current, [name]: value }))
@@ -53,6 +71,12 @@ function CourseForm({ course }) {
     }
     setSaving(true)
     try {
+      if (selectedImage) {
+        const { data } = await uploadCourseImage(selectedImage.file)
+        body.thumbnailUrl = data.thumbnailUrl
+        setField('thumbnailUrl', data.thumbnailUrl)
+        setSelectedImage(null)
+      }
       await (isEdit ? updateCourse(course.courseId, body) : createCourse(body))
       setFlash(isEdit ? 'Course updated.' : 'Course saved as draft.')
       navigate('/teacher/courses')
@@ -112,21 +136,34 @@ function CourseForm({ course }) {
       </div>
 
       <div className="tc-field">
-        <label htmlFor={ids.thumbnail}>Thumbnail image URL</label>
+        <label htmlFor={ids.thumbnail}>Ảnh khóa học</label>
         <div className="tc-thumb-row">
-          {values.thumbnailUrl.trim() ? (
-            <img className="tc-thumb" src={values.thumbnailUrl.trim()} alt="Thumbnail preview" />
+          {selectedImage || values.thumbnailUrl.trim() ? (
+            <img className="tc-thumb" src={selectedImage?.preview || courseImageUrl(values.thumbnailUrl.trim())} alt="Thumbnail preview" />
           ) : (
             <span className="tc-thumb">No image</span>
           )}
           <input
             id={ids.thumbnail}
-            placeholder="https://…"
-            value={values.thumbnailUrl}
+            type="file"
+            accept="image/jpeg,image/png"
+            disabled={saving}
             aria-invalid={Boolean(errors.thumbnailUrl)}
-            onChange={(event) => setField('thumbnailUrl', event.target.value)}
+            onChange={selectImage}
           />
         </div>
+        <small>JPG hoặc PNG, tối đa 5MB và 4096 × 4096 pixel. Ảnh được upload khi lưu khóa học.</small>
+        <label htmlFor={ids.thumbnail + '-url'}>Hoặc dùng đường dẫn ảnh</label>
+        <input
+          id={ids.thumbnail + '-url'}
+          placeholder="https://…"
+          value={values.thumbnailUrl}
+          disabled={saving}
+          onChange={(event) => {
+            setSelectedImage(null)
+            setField('thumbnailUrl', event.target.value)
+          }}
+        />
         <span className="tc-field-error">{errors.thumbnailUrl}</span>
       </div>
 

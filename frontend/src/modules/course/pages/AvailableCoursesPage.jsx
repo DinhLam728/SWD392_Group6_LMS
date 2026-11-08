@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { courseImageUrl } from '../utils/courseImageUrl.js'
 import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { getCourses } from '../services/courseService.js'
@@ -107,7 +108,7 @@ export default function AvailableCoursesPage() {
             {result.items.map((course) => (
               <article className="card course-card" key={course.courseId}>
                 {course.thumbnailUrl ? (
-                  <img className="thumbnail" src={course.thumbnailUrl} alt="" />
+                  <img className="thumbnail" src={courseImageUrl(course.thumbnailUrl)} alt="" />
                 ) : (
                   <div className="placeholder">
                     <span className="cover-symbol">&lt;/&gt;</span>

@@ -20,6 +20,11 @@ export const listMyCourses = ({ keyword, status, sort, page, size }, signal) =>
 
 export const getCourse = (courseId, signal) => teacherApi(`courses/${courseId}`, { signal })
 export const createCourse = (body) => teacherApi('courses', { method: 'POST', body })
+export const uploadCourseImage = (file) => {
+  const body = new FormData()
+  body.append('file', file)
+  return teacherApi('courses/thumbnail', { method: 'POST', body })
+}
 export const updateCourse = (courseId, body) =>
   teacherApi(`courses/${courseId}`, { method: 'PUT', body })
 export const deleteCourse = (courseId) => teacherApi(`courses/${courseId}`, { method: 'DELETE' })

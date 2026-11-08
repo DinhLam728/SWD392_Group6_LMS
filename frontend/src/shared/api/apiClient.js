@@ -15,7 +15,9 @@ export function createApiClient({
     }
     const requestHeaders = new Headers(headers)
     requestHeaders.set('Accept', 'application/json')
-    if (body !== undefined) requestHeaders.set('Content-Type', 'application/json')
+    const isFormData = body instanceof FormData
+    if (isFormData) requestHeaders.delete('Content-Type')
+    else if (body !== undefined) requestHeaders.set('Content-Type', 'application/json')
 
     let response
     let text
@@ -24,7 +26,7 @@ export function createApiClient({
         credentials: 'include',
         ...options,
         headers: requestHeaders,
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        ...(body !== undefined ? { body: isFormData ? body : JSON.stringify(body) } : {}),
       })
       if (response.status === 204 && response.ok) return null
       text = await response.text()
