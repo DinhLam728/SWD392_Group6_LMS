@@ -1,12 +1,16 @@
 package fu.se.lms_group6.service.impl;
 
 import fu.se.lms_group6.common.exception.BadRequestException;
+import fu.se.lms_group6.common.exception.BusinessException;
+import fu.se.lms_group6.common.exception.ErrorCode;
 import fu.se.lms_group6.common.exception.NotFoundException;
 import fu.se.lms_group6.common.http.PageResponse;
 import fu.se.lms_group6.dto.course.CourseDetailResponse;
 import fu.se.lms_group6.dto.course.CourseSummaryResponse;
+import fu.se.lms_group6.dto.course.LessonResponse;
 import fu.se.lms_group6.dto.course.ModuleResponse;
 import fu.se.lms_group6.entity.Course;
+import fu.se.lms_group6.entity.Lesson;
 import fu.se.lms_group6.entity.Registration;
 import fu.se.lms_group6.entity.enums.RegistrationStatus;
 import fu.se.lms_group6.repository.CourseModuleRepository;
@@ -80,7 +84,9 @@ public class CourseServiceImpl implements CourseService {
         var lessonTitles = lessons.findByModuleCourseCourseIdOrderByModulePositionAscPositionAsc(courseId).stream()
                 .collect(Collectors.groupingBy(lesson -> lesson.getModule().getModuleId(),
                         Collectors.mapping(lesson -> new LessonSummaryResponse(lesson.getLessonId(), lesson.getTitle(), lesson.getPosition()), Collectors.toList())));
+        // Quiz trong ngân hàng chỉ là nguồn câu hỏi; sinh viên chỉ thấy quiz ôn tập do chính mình tạo.
         var quizTitles = quizzes.findByModuleCourseCourseIdAndStatusOrderByQuizIdAsc(courseId, QuizStatus.ACTIVE).stream()
+                .filter(quiz -> quiz.getCreatedBy() != null && quiz.getCreatedBy().getUserId().equals(studentId))
                 .collect(Collectors.groupingBy(quiz -> quiz.getModule().getModuleId(),
                         Collectors.mapping(quiz -> new QuizSummaryResponse(quiz.getQuizId(), quiz.getTitle()), Collectors.toList())));
         var outline = modules.findByCourseCourseIdOrderByPositionAsc(courseId).stream()
@@ -95,6 +101,22 @@ public class CourseServiceImpl implements CourseService {
         return new CourseDetailResponse(toSummary(course), outline,
                 registration == null ? null : registration.getRegistrationId(),
                 registration == null ? null : registration.getStatus().name());
+    }
+
+    @Override
+    public LessonResponse getLesson(Long courseId, Long lessonId, Long studentId) {
+        // Lesson bodies are only for students with an active enrollment in the course.
+        if (registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
+                studentId, courseId, RegistrationStatus.ACTIVE).isEmpty()) {
+            throw new BusinessException(ErrorCode.LESSON_NOT_ENROLLED);
+        }
+        Lesson lesson = lessons.findById(lessonId)
+                .filter(l -> l.getModule().getCourse().getCourseId().equals(courseId)
+                        && Boolean.TRUE.equals(l.getModule().getCourse().getIsPublished()))
+                .orElseThrow(NotFoundException::new);
+        var module = lesson.getModule();
+        return new LessonResponse(lesson.getLessonId(), module.getModuleId(), courseId, module.getTitle(),
+                lesson.getTitle(), lesson.getContent(), lesson.getPosition());
     }
 
     private CourseSummaryResponse toSummary(Course course) {

@@ -172,7 +172,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         var payment = includePayment && status == RegistrationStatus.PENDING
                 ? payments.createPayment(registration) : null;
         return new RegistrationResponse(registration.getRegistrationId(), registration.getCourse().getCourseId(),
-                registration.getCourse().getTitle(), registration.getAmount(), status, registration.getPaymentStatus(),
+                registration.getCourse().getTitle(), registration.getCourse().getTeacher().getFullName(),
+                registration.getAmount(), status, registration.getPaymentStatus(),
                 registration.getRegisteredAt(), registration.getExpiresAt(), registration.getPaidAt(), registration.getTransactionRef(), payment,
                 registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
                         registration.getStudent().getUserId(), registration.getCourse().getCourseId(), RegistrationStatus.ACTIVE)

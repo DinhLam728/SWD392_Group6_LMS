@@ -25,7 +25,11 @@ import fu.se.lms_group6.entity.enums.QuizAttemptStatus;
 import fu.se.lms_group6.entity.enums.QuizStatus;
 import fu.se.lms_group6.entity.enums.RegistrationStatus;
 import fu.se.lms_group6.externalclient.gemini.GeminiClient;
+import fu.se.lms_group6.dto.quiz.CreatePracticeQuizRequest;
+import fu.se.lms_group6.dto.quiz.PracticeQuizSetupResponse;
+import fu.se.lms_group6.entity.CourseModule;
 import fu.se.lms_group6.repository.AttemptAnswerRepository;
+import fu.se.lms_group6.repository.CourseModuleRepository;
 import fu.se.lms_group6.repository.QuestionRepository;
 import fu.se.lms_group6.repository.QuizAttemptRepository;
 import fu.se.lms_group6.repository.QuizConfigRepository;
@@ -84,11 +88,13 @@ public class QuizServiceImpl implements QuizService {
     private final JsonMapper json;
     private final Clock clock;
     private final TransactionTemplate readOnlyTx;
+    private final CourseModuleRepository modules;
 
     public QuizServiceImpl(QuizRepository quizzes, QuizConfigRepository configs, QuestionRepository questions,
             QuizAttemptRepository attempts, AttemptAnswerRepository answers, RegistrationRepository registrations,
             UserRepository users, GeminiClient gemini, JsonMapper json, Clock enrollmentClock,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, CourseModuleRepository modules) {
+        this.modules = modules;
         this.quizzes = quizzes;
         this.configs = configs;
         this.questions = questions;
@@ -105,8 +111,47 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     @Transactional
+    public PracticeQuizSetupResponse getPracticeQuizSetup(Long studentId, Long moduleId) {
+        CourseModule module = requireEnrolledModule(studentId, moduleId);
+        int available = questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(moduleId).size();
+        List<QuizInfoResponse> myQuizzes = quizzes
+                .findByModuleModuleIdAndCreatedByUserIdAndStatusOrderByQuizIdDesc(moduleId, studentId, QuizStatus.ACTIVE)
+                .stream().map(quiz -> getQuizInfo(studentId, quiz.getQuizId())).toList();
+        return new PracticeQuizSetupResponse(module.getModuleId(), module.getTitle(),
+                module.getCourse().getCourseId(), module.getCourse().getTitle(), available, myQuizzes);
+    }
+
+    @Override
+    @Transactional
+    public QuizInfoResponse createPracticeQuiz(Long studentId, Long moduleId, CreatePracticeQuizRequest request) {
+        CourseModule module = requireEnrolledModule(studentId, moduleId);
+        if (questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(moduleId).isEmpty()) {
+            throw new ConflictException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
+        }
+        String title = request.title() == null || request.title().isBlank()
+                ? "Ôn tập " + module.getTitle() + " (" + request.questionCount() + " câu)"
+                : request.title().trim();
+        Quiz quiz = new Quiz(module, title.length() > 150 ? title.substring(0, 150) : title);
+        quiz.setStatus(QuizStatus.ACTIVE);
+        quiz.setCreatedBy(users.getReferenceById(studentId));
+        quizzes.save(quiz);
+
+        QuizConfig config = new QuizConfig(quiz);
+        config.setQuestionCount(request.questionCount());
+        config.setDurationMinutes(request.durationMinutes());
+        config.setMaxAttempts(request.maxAttempts());
+        config.setPassingScore(request.passingScore());
+        config.setRandomQuestions(request.randomQuestions());
+        config.setShuffleQuestions(request.shuffleQuestions());
+        config.setShuffleOptions(request.shuffleOptions());
+        configs.save(config);
+        return getQuizInfo(studentId, quiz.getQuizId());
+    }
+
+    @Override
+    @Transactional
     public QuizInfoResponse getQuizInfo(Long studentId, Long quizId) {
-        Quiz quiz = requireActiveQuiz(quizId);
+        Quiz quiz = requireActiveQuiz(studentId, quizId);
         Long courseId = quiz.getModule().getCourse().getCourseId();
         if (registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
                 studentId, courseId, RegistrationStatus.ACTIVE).isEmpty()) {
@@ -117,7 +162,7 @@ public class QuizServiceImpl implements QuizService {
         LocalDateTime now = now();
         history.forEach(attempt -> closeIfExpired(attempt, settings, now));
 
-        int poolSize = questions.findByQuizQuizIdOrderByQuestionIdAsc(quizId).size();
+        int poolSize = questionPool(quiz).size();
         int questionCount = settings.questionCount() == null ? poolSize : Math.min(poolSize, settings.questionCount());
         Long inProgressId = history.stream()
                 .filter(attempt -> attempt.getStatus() == QuizAttemptStatus.IN_PROGRESS)
@@ -146,7 +191,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     @Transactional
     public StartResult startAttempt(Long studentId, Long quizId) {
-        Quiz quiz = requireActiveQuiz(quizId);
+        Quiz quiz = requireActiveQuiz(studentId, quizId);
         Long courseId = quiz.getModule().getCourse().getCourseId();
         // Khóa các dòng đăng ký của sinh viên với khóa học để các request bắt đầu song song chạy tuần tự.
         List<Registration> studentRegistrations =
@@ -169,7 +214,7 @@ public class QuizServiceImpl implements QuizService {
         if (history.size() >= settings.maxAttempts()) {
             throw new ConflictException(ErrorCode.MAX_ATTEMPTS_REACHED);
         }
-        List<Question> pool = questions.findByQuizQuizIdOrderByQuestionIdAsc(quizId);
+        List<Question> pool = questionPool(quiz);
         if (pool.isEmpty()) {
             throw new ConflictException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
         }
@@ -267,12 +312,32 @@ public class QuizServiceImpl implements QuizService {
 
     // ---- Kiểm tra điều kiện ----
 
-    private Quiz requireActiveQuiz(Long quizId) {
+    private Quiz requireActiveQuiz(Long studentId, Long quizId) {
         Quiz quiz = quizzes.findById(quizId).orElseThrow(() -> new NotFoundException(ErrorCode.QUIZ_NOT_FOUND));
+        // Quiz ôn tập của sinh viên khác cũng trả 404.
+        if (quiz.getCreatedBy() != null && !quiz.getCreatedBy().getUserId().equals(studentId)) {
+            throw new NotFoundException(ErrorCode.QUIZ_NOT_FOUND);
+        }
         if (quiz.getStatus() != QuizStatus.ACTIVE) {
             throw new ConflictException(ErrorCode.QUIZ_NOT_AVAILABLE);
         }
         return quiz;
+    }
+
+    private CourseModule requireEnrolledModule(Long studentId, Long moduleId) {
+        CourseModule module = modules.findById(moduleId).orElseThrow(NotFoundException::new);
+        if (registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
+                studentId, module.getCourse().getCourseId(), RegistrationStatus.ACTIVE).isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_ENROLLED);
+        }
+        return module;
+    }
+
+    // Quiz của giảng viên dùng câu hỏi đã gán vào nó; quiz sinh viên tự tạo dùng câu hỏi của module.
+    private List<Question> questionPool(Quiz quiz) {
+        return quiz.getCreatedBy() == null
+                ? questions.findByQuizQuizIdOrderByQuestionIdAsc(quiz.getQuizId())
+                : questions.findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(quiz.getModule().getModuleId());
     }
 
     private QuizAttempt requireOwnedAttempt(Long studentId, Long attemptId) {

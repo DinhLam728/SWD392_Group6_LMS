@@ -5,6 +5,7 @@
 -- Current schema: 10 tables, courses.created_at, registration expiry and payment fields.
 -- Registration expiry (24 hours) is set by application code, not a SQL scheduler.
 -- Scores use 0..10; default passing_score is 5.00.
+-- quizzes.created_by: students create their own practice quizzes (see alter_quiz_created_by.sql for old DBs).
 
 SET NAMES utf8mb4;
 
@@ -62,13 +63,17 @@ CREATE TABLE lessons (
 );
 
 -- 5. Practice quizzes associated with modules.
+-- created_by NULL = teacher quiz; otherwise the student who created this practice quiz for themselves.
 CREATE TABLE quizzes (
     quiz_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     module_id BIGINT NOT NULL,
     title VARCHAR(150) NOT NULL,
     status ENUM('DRAFT', 'ACTIVE') NOT NULL DEFAULT 'DRAFT',
+    created_by BIGINT NULL,
     CONSTRAINT fk_quizzes_module
-        FOREIGN KEY (module_id) REFERENCES modules(module_id)
+        FOREIGN KEY (module_id) REFERENCES modules(module_id),
+    CONSTRAINT fk_quizzes_creator
+        FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
 
 -- 6. Per-quiz configuration (quiz 1 -> 0..1 quiz_config).

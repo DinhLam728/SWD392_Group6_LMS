@@ -37,6 +37,6 @@ public interface TeacherModuleRepository extends JpaRepository<CourseModule, Lon
     long countQuizzes(@Param("moduleId") Long moduleId);
 
     @Query(value = "select module_id as moduleId, count(*) as total from quizzes "
-            + "where module_id in (:moduleIds) group by module_id", nativeQuery = true)
+            + "where module_id in (:moduleIds) and created_by is null group by module_id", nativeQuery = true)
     List<TeacherModuleCount> countQuizzesByModule(@Param("moduleIds") Collection<Long> moduleIds);
 }

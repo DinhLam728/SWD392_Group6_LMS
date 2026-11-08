@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findByModuleCourseCourseIdAndStatusOrderByQuizIdAsc(Long courseId, QuizStatus status);
+
+    // Quiz ôn tập của một sinh viên trong một module, mới nhất trước.
+    List<Quiz> findByModuleModuleIdAndCreatedByUserIdAndStatusOrderByQuizIdDesc(Long moduleId, Long studentId, QuizStatus status);
 }

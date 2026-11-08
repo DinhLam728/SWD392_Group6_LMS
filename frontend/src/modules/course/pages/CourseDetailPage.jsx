@@ -79,7 +79,11 @@ function CourseDetailPageContent({ id }) {
               <h2 id="course-outline" tabIndex={-1}>
                 Nội dung khóa học
               </h2>
-              <CourseOutline modules={detail.modules} />
+              <CourseOutline
+                modules={detail.modules}
+                courseId={id}
+                canLearn={detail.registrationStatus === 'ACTIVE'}
+              />
             </section>
             <aside className="card enrollment-card">
               <span className="eyebrow">BẮT ĐẦU HÀNH TRÌNH</span>
@@ -94,6 +98,12 @@ function CourseDetailPageContent({ id }) {
               {detail.registrationStatus === 'ACTIVE' ? (
                 <button
                   onClick={() => {
+                    // Go to the first lesson of module 1; without lessons, show the outline instead.
+                    const firstLesson = detail.modules[0]?.lessons[0]
+                    if (firstLesson) {
+                      navigate(`/courses/${id}/lessons/${firstLesson.lessonId}`)
+                      return
+                    }
                     const outline = document.getElementById('course-outline')
                     outline?.focus({ preventScroll: true })
                     outline?.scrollIntoView({

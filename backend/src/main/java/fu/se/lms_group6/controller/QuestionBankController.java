@@ -13,6 +13,7 @@ import fu.se.lms_group6.dto.questionbank.QuestionResponse;
 import fu.se.lms_group6.dto.questionbank.UpdateQuestionRequest;
 import fu.se.lms_group6.service.QuestionBankService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1")
+// Questions include correct answers, so only teachers may read or change them.
+@PreAuthorize("hasRole('TEACHER')")
 public class QuestionBankController {
 
     private final QuestionBankService questionBankService;

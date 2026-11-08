@@ -10,6 +10,7 @@ public record RegistrationResponse(
         Long registrationId,
         Long courseId,
         String courseTitle,
+        String teacherName,
         BigDecimal amount,
         RegistrationStatus status,
         PaymentStatus paymentStatus,

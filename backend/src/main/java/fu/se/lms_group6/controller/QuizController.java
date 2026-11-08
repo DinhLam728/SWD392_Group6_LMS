@@ -5,6 +5,8 @@ import fu.se.lms_group6.common.http.ResponseBuilder;
 import fu.se.lms_group6.dto.quiz.AiExplanationResponse;
 import fu.se.lms_group6.dto.quiz.AttemptResponse;
 import fu.se.lms_group6.dto.quiz.AttemptResultResponse;
+import fu.se.lms_group6.dto.quiz.CreatePracticeQuizRequest;
+import fu.se.lms_group6.dto.quiz.PracticeQuizSetupResponse;
 import fu.se.lms_group6.dto.quiz.QuizInfoResponse;
 import fu.se.lms_group6.dto.quiz.SubmitAttemptRequest;
 import fu.se.lms_group6.security.CurrentStudent;
@@ -30,6 +32,18 @@ public class QuizController {
     public QuizController(QuizService quizzes, CurrentStudent student) {
         this.quizzes = quizzes;
         this.student = student;
+    }
+
+    @GetMapping("/modules/{moduleId}/practice-quizzes/setup")
+    public ResponseEntity<ApiResponse<PracticeQuizSetupResponse>> practiceQuizSetup(@PathVariable Long moduleId) {
+        return ResponseBuilder.ok(quizzes.getPracticeQuizSetup(student.requireId(), moduleId));
+    }
+
+    @PostMapping("/modules/{moduleId}/practice-quizzes")
+    public ResponseEntity<ApiResponse<QuizInfoResponse>> createPracticeQuiz(@PathVariable Long moduleId,
+            @Valid @RequestBody CreatePracticeQuizRequest request) {
+        return ResponseBuilder.created(quizzes.createPracticeQuiz(student.requireId(), moduleId, request),
+                "Đã tạo quiz ôn tập");
     }
 
     @GetMapping("/quizzes/{quizId}")

@@ -12,6 +12,8 @@ Database `lms_g6`, MySQL 8.0+. SQL v4 là schema hiện tại tương ứng code
 
 Không cần chạy SQL migration hay seed cũ. Hai file đều chạy thủ công, ứng dụng không tự thực thi.
 
+Database tạo từ bản v4 cũ (chưa có `quizzes.created_by`) chạy thêm `alter_quiz_created_by.sql` một lần. TiDB chung đã chạy rồi.
+
 ## Những thay đổi v4 đã bao gồm
 
 - `courses.created_at`: ngày tạo, mặc định thời gian DB; nullable cho dữ liệu cũ chưa biết ngày.
@@ -22,6 +24,7 @@ Không cần chạy SQL migration hay seed cũ. Hai file đều chạy thủ cô
 - `payment_code` và `transaction_ref` duy nhất; trạng thái đăng ký/thanh toán và paid_at lưu trong registrations.
 - Course → Module → Lesson và Module → Quiz. Question bank thuộc course; questions.quiz_id có thể null.
 - Quiz config, attempt và answer giữ cấu trúc hiện tại, điểm theo thang 0–10, mặc định đạt 5.00.
+- `quizzes.created_by`: NULL là quiz của giáo viên; có giá trị là quiz ôn tập do học viên tự tạo (kèm quiz_config theo lựa chọn của học viên), chỉ học viên đó thấy. Câu hỏi lấy từ các quiz của giáo viên trong cùng module.
 
 Tìm kiếm, sort, kích thước trang (8 course, 7 registration), dropdown mục lục và polling 5 giây là logic code, không cần cột DB riêng.
 
@@ -31,7 +34,7 @@ Tìm kiếm, sort, kích thước trang (8 course, 7 registration), dropdown m�
 - 18 khóa học đã publish, giá 5.000–90.000 VND, đủ thử 3 trang ở kích thước 8.
 - 18 ngày tạo giả lập khác nhau để kiểm tra Mới nhất/Cũ nhất.
 - 24 module, mỗi module có 3 lesson và 1 tiêu đề quiz ACTIVE để xem mục lục.
-- Không seed câu hỏi/cấu hình quiz hoặc chức năng học/làm quiz.
+- Khóa "Git và GitHub cho làm việc nhóm" có nội dung thật cho 6 lesson và 5 câu hỏi trắc nghiệm cho mỗi quiz ôn tập (2 quiz) để thử học bài và làm quiz. Không seed cấu hình quiz (dùng mặc định 30 phút, 1 lượt, điểm đạt 5.00).
 - Không seed tài khoản sinh viên, đăng ký, giao dịch thanh toán hoặc bí mật cấu hình.
 
 Seed có thể chạy lại tuần tự, chỉ thêm bản ghi mẫu còn thiếu, không ghi đè ngày tạo hay trạng thái thanh toán có sẵn. Nếu muốn thử thanh toán thật, cấu hình SePay Live và webhook riêng; seed không thay thế quá trình xác nhận giao dịch.

@@ -6,6 +6,7 @@ import fu.se.lms_group6.common.http.PageResponse;
 import fu.se.lms_group6.common.http.ResponseBuilder;
 import fu.se.lms_group6.dto.course.CourseDetailResponse;
 import fu.se.lms_group6.dto.course.CourseSummaryResponse;
+import fu.se.lms_group6.dto.course.LessonResponse;
 import fu.se.lms_group6.security.CurrentStudent;
 import fu.se.lms_group6.service.CourseService;
 import java.math.BigDecimal;
@@ -49,5 +50,10 @@ public class CourseController {
     @GetMapping("/{courseId}")
     public ResponseEntity<ApiResponse<CourseDetailResponse>> detail(@PathVariable Long courseId) {
         return ResponseBuilder.ok(courses.getCourse(courseId, student.optionalId()));
+    }
+
+    @GetMapping("/{courseId}/lessons/{lessonId}")
+    public ResponseEntity<ApiResponse<LessonResponse>> lesson(@PathVariable Long courseId, @PathVariable Long lessonId) {
+        return ResponseBuilder.ok(courses.getLesson(courseId, lessonId, student.requireId()));
     }
 }

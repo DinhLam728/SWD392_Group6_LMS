@@ -325,3 +325,45 @@
     font-size: 40px;
   }
 }
+
+/* Form sinh viên tự tạo quiz ôn tập */
+.practice-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 760px;
+}
+.practice-form > p,
+.practice-form-wide {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.lms-app .practice-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #334155;
+}
+.lms-app .practice-check input {
+  width: 18px;
+  min-height: 18px;
+}
+.practice-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+@media (max-width: 700px) {
+  .practice-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.practice-list-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}

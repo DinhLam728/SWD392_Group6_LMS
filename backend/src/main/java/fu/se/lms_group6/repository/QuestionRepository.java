@@ -46,4 +46,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     // Câu hỏi đã gán vào một quiz, dùng khi tạo đề cho lượt làm bài.
     List<Question> findByQuizQuizIdOrderByQuestionIdAsc(Long quizId);
+
+    // Câu hỏi của các quiz giảng viên trong một module, dùng cho quiz ôn tập sinh viên tự tạo.
+    List<Question> findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(Long moduleId);
 }

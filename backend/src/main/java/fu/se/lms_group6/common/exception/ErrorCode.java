@@ -25,6 +25,7 @@ public enum ErrorCode {
     QUIZ_NOT_AVAILABLE(HttpStatus.CONFLICT, "Bài quiz hiện chưa được mở"),
     QUIZ_HAS_NO_QUESTIONS(HttpStatus.CONFLICT, "Bài quiz chưa có câu hỏi"),
     NOT_ENROLLED(HttpStatus.FORBIDDEN, "Bạn cần đăng ký khóa học trước khi làm bài quiz"),
+    LESSON_NOT_ENROLLED(HttpStatus.FORBIDDEN, "Bạn cần đăng ký khóa học trước khi học bài này"),
     MAX_ATTEMPTS_REACHED(HttpStatus.CONFLICT, "Bạn đã dùng hết số lượt làm bài quiz này"),
     ATTEMPT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy lượt làm bài"),
     ATTEMPT_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "Lượt làm bài đã được nộp"),

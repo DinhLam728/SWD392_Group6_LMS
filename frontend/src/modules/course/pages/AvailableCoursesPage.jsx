@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import CourseCreatedAt from '../components/CourseCreatedAt.jsx'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { getCourses } from '../services/courseService.js'
 
 export default function AvailableCoursesPage() {
@@ -139,17 +139,22 @@ export default function AvailableCoursesPage() {
             >
               Trước
             </button>
-            {Array.from({ length: result.totalPages }, (_, page) => (
-              <button
-                key={page}
-                className="page-number"
-                aria-label={`Trang ${page + 1}`}
-                aria-current={query.page === page ? 'page' : undefined}
-                onClick={() => changePage(page)}
-              >
-                {page + 1}
-              </button>
-            ))}
+            {/* First, last and 2 pages around the current one; "…" marks skipped pages. */}
+            {Array.from({ length: result.totalPages }, (_, page) => page)
+              .filter((page) => page === 0 || page === result.totalPages - 1 || Math.abs(page - query.page) <= 2)
+              .map((page, index, shown) => (
+                <Fragment key={page}>
+                  {index > 0 && page - shown[index - 1] > 1 && <span className="page-ellipsis">…</span>}
+                  <button
+                    className="page-number"
+                    aria-label={`Trang ${page + 1}`}
+                    aria-current={query.page === page ? 'page' : undefined}
+                    onClick={() => changePage(page)}
+                  >
+                    {page + 1}
+                  </button>
+                </Fragment>
+              ))}
             <button
               disabled={query.page + 1 >= result.totalPages}
               onClick={() => changePage(query.page + 1)}

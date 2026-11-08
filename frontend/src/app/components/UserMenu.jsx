@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useEffect, useRef, useState } from 'react'
-import { ClipboardList, LogOut, LibraryBig } from 'lucide-react'
+import { BookOpen, ClipboardList, LogOut, LibraryBig } from 'lucide-react'
 
 export default function UserMenu({ user, onLogout }) {
   const [open, setOpen] = useState(false)
@@ -72,10 +72,16 @@ export default function UserMenu({ user, onLogout }) {
             {user.email && <small>{user.email}</small>}
           </div>
           {user.role === 'STUDENT' && (
-            <Link to="/registrations" onClick={() => setOpen(false)}>
-              <ClipboardList size={17} aria-hidden="true" />
-              Đăng ký của tôi
-            </Link>
+            <>
+              <Link to="/my-courses" onClick={() => setOpen(false)}>
+                <BookOpen size={17} aria-hidden="true" />
+                Khóa học của tôi
+              </Link>
+              <Link to="/registrations" onClick={() => setOpen(false)}>
+                <ClipboardList size={17} aria-hidden="true" />
+                Đăng ký của tôi
+              </Link>
+            </>
           )}
           {user.role === 'TEACHER' && (
             <Link to="/question-bank" onClick={() => setOpen(false)}>

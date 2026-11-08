@@ -1,7 +1,8 @@
 import { BookOpen, ClipboardList, Plus, Minus } from 'lucide-react'
 import { Link } from 'react-router'
 
-export default function CourseOutline({ modules }) {
+// canLearn: the viewer has an active enrollment, so lesson titles open the lesson page.
+export default function CourseOutline({ modules, courseId, canLearn = false }) {
   if (!modules.length) return <p>Nội dung khóa học đang được cập nhật.</p>
 
   return (
@@ -23,24 +24,24 @@ export default function CourseOutline({ modules }) {
             {module.lessons.map((lesson) => (
               <li key={`lesson-${lesson.lessonId}`}>
                 <BookOpen size={18} aria-hidden="true" />
-                <span>{lesson.title}</span>
+                {canLearn ? (
+                  <Link to={`/courses/${courseId}/lessons/${lesson.lessonId}`}>
+                    {lesson.title}
+                  </Link>
+                ) : (
+                  <span>{lesson.title}</span>
+                )}
                 <small>Bài học</small>
               </li>
             ))}
-            {(module.quizzes || []).map((quiz) => (
-              <li key={`quiz-${quiz.quizId}`}>
+            {/* Quiz ôn tập do sinh viên tự tạo, gom vào một dòng để mục lục không bị dài. */}
+            {canLearn && (
+              <li>
                 <ClipboardList size={18} aria-hidden="true" />
-                <Link to={`/quizzes/${quiz.quizId}`}>
-                  Tạo quiz ôn tập: {quiz.title}
+                <Link to={`/modules/${module.moduleId}/practice-quizzes`}>
+                  Quiz ôn tập của bạn
                 </Link>
-                <small>Quiz</small>
-              </li>
-            ))}
-            {!module.quizzes?.length && (
-              <li aria-disabled="true">
-                <ClipboardList size={18} aria-hidden="true" />
-                <span>Tạo quiz ôn tập · Chưa có quiz</span>
-                <small>Quiz</small>
+                <small>{(module.quizzes || []).length} quiz</small>
               </li>
             )}
           </ul>

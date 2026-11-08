@@ -1,6 +1,12 @@
 import { enrollmentClient } from '../../enrollment/services/enrollmentClient.js'
 
 // Dùng chung wrapper của enrollment để tự gắn token đăng nhập.
+export const getPracticeQuizSetup = (moduleId, signal) =>
+  enrollmentClient(`modules/${moduleId}/practice-quizzes/setup`, { signal })
+
+export const createPracticeQuiz = (moduleId, body) =>
+  enrollmentClient(`modules/${moduleId}/practice-quizzes`, { method: 'POST', body })
+
 export const getQuiz = (quizId, signal) =>
   enrollmentClient(`quizzes/${quizId}`, { signal })
 
