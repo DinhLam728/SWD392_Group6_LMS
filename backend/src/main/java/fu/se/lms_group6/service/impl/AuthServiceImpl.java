@@ -226,6 +226,17 @@ public class AuthServiceImpl implements AuthService {
         return AuthResponse.of(token, mapToUserResponse(user));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(String email) {
+        if (email == null || email.isBlank()) {
+            throw new NotFoundException(ErrorCode.NOT_FOUND);
+        }
+        User user = userRepository.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+        return mapToUserResponse(user);
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return new UserResponse(
                 user.getUserId(),

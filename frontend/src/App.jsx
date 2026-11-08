@@ -1,4 +1,4 @@
-import { RouterProvider } from 'react-router/dom'
+import { RouterProvider } from 'react-router'
 import AuthProvider from './app/provider/AuthProvider.jsx'
 import { router } from './app/router/routes.jsx'
 import './assets/enrollment.css'

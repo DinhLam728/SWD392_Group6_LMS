@@ -21,7 +21,7 @@ export function createApiClient({
     let text
     try {
       response = await fetchImpl(url, {
-        credentials: 'omit',
+        credentials: 'include',
         ...options,
         headers: requestHeaders,
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
