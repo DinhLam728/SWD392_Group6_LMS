@@ -5,7 +5,7 @@ import { ApiError } from '../../../shared/api/ApiError.js'
 
 export default function VerifyOtpForm({
   email = 'student@example.com',
-  mode = 'register', // 'register' hoặc 'forgot-password'
+  mode = 'register',
   onNavigate,
   onVerifySuccess,
 }) {
@@ -89,7 +89,6 @@ export default function VerifyOtpForm({
 
     try {
       if (isResetFlow) {
-        // Xác thực OTP khôi phục mật khẩu trước khi qua màn nhập pass mới
         await validateResetOtpApi({ email, otp: fullCode })
         if (onVerifySuccess) {
           onVerifySuccess(fullCode)
@@ -97,7 +96,6 @@ export default function VerifyOtpForm({
           onNavigate('reset-password', { email, otp: fullCode })
         }
       } else {
-        // Luồng kích hoạt tài khoản đăng ký
         await verifyOtpApi({ email, otp: fullCode })
         if (onVerifySuccess) {
           onVerifySuccess()

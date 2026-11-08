@@ -1234,12 +1234,13 @@ body {
 .lms-app .lms-toolbar-filters select { min-width: 0; }
 .lms-app .lms-course-switcher {
   display: grid;
-  grid-template-columns: 88px auto;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 .lms-app .lms-course-switcher label { grid-column: 1 / -1; }
 .lms-app .lms-course-switcher input { width: 88px !important; min-height: 44px; }
 .lms-app .lms-course-switcher button { min-height: 44px; padding: 8px 14px !important; }
+.lms-app .lms-course-switcher select { min-width: 200px; min-height: 44px; }
 .lms-app .btn-action-icon {
   width: auto;
   height: 34px;

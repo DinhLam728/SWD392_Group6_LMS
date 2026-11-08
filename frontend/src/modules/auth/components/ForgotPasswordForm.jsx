@@ -15,7 +15,6 @@ export default function ForgotPasswordForm({ onNavigate }) {
 
     try {
       await forgotPasswordApi({ email })
-      // Chuyển sang màn hình nhập OTP trước (chế độ forgot-password)
       onNavigate('verify-otp-reset', { email })
     } catch (err) {
       if (err instanceof ApiError) {

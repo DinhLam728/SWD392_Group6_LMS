@@ -45,7 +45,6 @@ public class GoogleAuthClient {
                 throw new BusinessException(ErrorCode.INVALID_REQUEST);
             }
 
-            // Nếu có cấu hình client id thì kiểm tra tính khớp (Audience claim)
             if (expectedClientId != null && !expectedClientId.isBlank()) {
                 if (!expectedClientId.equals(response.aud())) {
                     log.error("Audience token Google không khớp: expected={}, actual={}", expectedClientId, response.aud());

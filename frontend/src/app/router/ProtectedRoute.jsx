@@ -6,16 +6,11 @@ import { roleHome } from './rolePaths.js'
 export default function ProtectedRoute({ role }) {
   const { user } = useContext(AuthContext)
   const location = useLocation()
-  const demoStudent = role === 'STUDENT'
-    && import.meta.env.DEV
-    && import.meta.env.VITE_DEMO_USER_ID
-    && !localStorage.getItem('lms_token')
-
-  if (!user && !demoStudent) {
+  if (!user) {
     return <Navigate to="/login" state={{ from: location, role }} replace />
   }
 
-  if (user && user.role !== role) {
+  if (user.role !== role) {
     return <Navigate to={roleHome[user.role] || '/courses'} replace />
   }
 

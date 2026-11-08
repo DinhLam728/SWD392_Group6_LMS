@@ -92,7 +92,6 @@ function QuizResultContent({ id }) {
         <span className="eyebrow">KẾT QUẢ LƯỢT {result.attemptNumber}</span>
         <h1>{result.quizTitle}</h1>
       </div>
-      {/* Cùng bố cục với trang kết quả đăng ký: notice + details + result-actions. */}
       <section className="card result-card quiz-result-card">
         <div className={`notice ${result.passed ? 'notice-success' : 'notice-neutral'}`}>
           <span className="notice-icon">{result.passed ? '✓' : '✗'}</span>

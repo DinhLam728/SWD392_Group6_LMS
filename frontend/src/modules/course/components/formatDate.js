@@ -1,4 +1,3 @@
-// "2026-11-05T10:20:30" -> "05/11/2026", the same format as the student pages.
 export function formatDate(value) {
   if (!value) {
     return '—'

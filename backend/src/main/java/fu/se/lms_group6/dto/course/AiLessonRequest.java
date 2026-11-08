@@ -10,5 +10,9 @@ public record AiLessonRequest(
 
         @NotBlank(message = "Tiêu đề bài học không được để trống")
         @Size(max = 150, message = "Tiêu đề bài học tối đa 150 ký tự")
-        String title
+        String title,
+
+        String fileName,
+
+        String fileData
 ) {}

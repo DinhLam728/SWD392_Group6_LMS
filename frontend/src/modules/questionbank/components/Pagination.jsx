@@ -13,7 +13,6 @@ export function Pagination({
   const startItem = page * pageSize + 1
   const endItem = Math.min((page + 1) * pageSize, totalElements)
 
-  // Generate page numbers with ellipses
   const getPageNumbers = () => {
     const pages = []
     const total = totalPages || 1
@@ -59,7 +58,6 @@ export function Pagination({
       </div>
 
       <div className="lms-pagination-controls">
-        {/* First page button */}
         <button
           type="button"
           className="btn-page-nav"
@@ -70,7 +68,6 @@ export function Pagination({
           «
         </button>
 
-        {/* Previous page button */}
         <button
           type="button"
           className="btn-page-nav"
@@ -81,7 +78,6 @@ export function Pagination({
           ‹
         </button>
 
-        {/* Numbered buttons */}
         {pageNumbers.map((p, idx) => {
           if (p === 'ellipsis') {
             return (
@@ -105,7 +101,6 @@ export function Pagination({
           )
         })}
 
-        {/* Next page button */}
         <button
           type="button"
           className="btn-page-nav"
@@ -116,7 +111,6 @@ export function Pagination({
           ›
         </button>
 
-        {/* Last page button */}
         <button
           type="button"
           className="btn-page-nav"

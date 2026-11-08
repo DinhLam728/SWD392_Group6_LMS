@@ -23,23 +23,13 @@ import fu.se.lms_group6.dto.questionbank.QuestionOptionDto;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * The only class that talks to Gemini. Lesson drafting (Manage Courses) and question generation
- * (Question Bank) both go through requestText, so the key, the model, the timeout and the error
- * handling live in one place.
- *
- * <p>The key is sent in the x-goog-api-key header and comes from GEMINI_API_KEY; it is never in
- * the URL or in source code. Every failure is reported as {@link AIException}.
- */
 @Component
 public class GeminiClient {
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
 
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-    // Google retires fixed model names (gemini-1.5-* and gemini-2.0-* no longer exist), so the default
-    // is the alias that follows the current Flash model. Pin a name with GEMINI_MODEL if needed.
     private static final String DEFAULT_MODEL = "gemini-flash-latest";
-    // lessons.content is TEXT (65,535 bytes); 16000 characters stay below it even at 4 bytes each.
+    private static final String FALLBACK_MODEL = "gemini-flash-lite-latest";
     private static final int MAX_LESSON_CHARS = 16_000;
     private static final int LOG_BODY_CHARS = 500;
 
@@ -61,15 +51,8 @@ public class GeminiClient {
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
 
-    // ------------------------------------------------------------------ lesson drafting
-
-    /**
-     * Sends the prompt and returns plain lesson text, never longer than the lesson content limit.
-     *
-     * @throws AIException when the key is missing, the call fails or times out, or the answer is empty
-     */
-    public String generateLesson(String prompt) {
-        String content = cleanLessonText(requestText(prompt, 0.7, false));
+    public String generateLesson(String prompt, byte[] pdf) {
+        String content = cleanLessonText(requestText(prompt, 0.7, false, pdf));
         if (content.isBlank()) {
             throw new AIException("Gemini returned an empty lesson");
         }
@@ -85,19 +68,12 @@ public class GeminiClient {
             return cleaned;
         }
         int end = MAX_LESSON_CHARS;
-        // Do not cut a surrogate pair in half.
         if (Character.isHighSurrogate(cleaned.charAt(end - 1))) {
             end--;
         }
         return cleaned.substring(0, end).strip();
     }
 
-    // ------------------------------------------------------------------ question generation
-
-    /**
-     * Question Bank behaviour is unchanged: without a key or when the call fails the simulated
-     * generator answers instead, and an unreadable answer gives an empty list.
-     */
     public List<GeneratedQuestionItemDto> generateQuestions(GenerateQuestionsAiRequest request) {
         int count = request.numberOfQuestions() != null ? request.numberOfQuestions() : 5;
         String difficulty = request.difficultyLevel() != null && !request.difficultyLevel().isBlank()
@@ -201,12 +177,24 @@ public class GeminiClient {
         }
     }
 
-    // ------------------------------------------------------------------ shared transport
-
-    /** One call to generateContent; returns the concatenated text parts of the first candidate. */
     private String requestText(String prompt, double temperature, boolean jsonOutput) {
+        return requestText(prompt, temperature, jsonOutput, null);
+    }
+
+    private String requestText(String prompt, double temperature, boolean jsonOutput, byte[] pdf) {
+        try {
+            return callModel(model, prompt, temperature, jsonOutput, pdf);
+        } catch (AIException ex) {
+            if (apiKey.isEmpty() || model.equals(FALLBACK_MODEL)) {
+                throw ex;
+            }
+            log.warn("Gemini model {} failed ({}); retrying with {}", model, ex.getMessage(), FALLBACK_MODEL);
+            return callModel(FALLBACK_MODEL, prompt, temperature, jsonOutput, pdf);
+        }
+    }
+
+    private String callModel(String modelName, String prompt, double temperature, boolean jsonOutput, byte[] pdf) {
         if (apiKey.isEmpty()) {
-            // A missing key is a configuration error; never hand back made-up content from here.
             throw new AIException("GEMINI_API_KEY is not configured");
         }
         Map<String, Object> generationConfig = new HashMap<>();
@@ -214,12 +202,18 @@ public class GeminiClient {
         if (jsonOutput) {
             generationConfig.put("responseMimeType", "application/json");
         }
+        List<Map<String, Object>> parts = new ArrayList<>();
+        if (pdf != null) {
+            parts.add(Map.of("inline_data", Map.of("mime_type", "application/pdf",
+                    "data", java.util.Base64.getEncoder().encodeToString(pdf))));
+        }
+        parts.add(Map.of("text", prompt));
         String body = objectMapper.writeValueAsString(Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                "contents", List.of(Map.of("parts", parts)),
                 "generationConfig", generationConfig));
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + model + ":generateContent"))
+                .uri(URI.create(BASE_URL + modelName + ":generateContent"))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", apiKey)
                 .timeout(timeout)

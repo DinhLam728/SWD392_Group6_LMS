@@ -30,6 +30,7 @@ public enum ErrorCode {
     ATTEMPT_ALREADY_SUBMITTED(HttpStatus.CONFLICT, "Lượt làm bài đã được nộp"),
     ATTEMPT_EXPIRED(HttpStatus.CONFLICT, "Đã hết thời gian làm bài"),
     ATTEMPT_NOT_GRADED(HttpStatus.CONFLICT, "Lượt làm bài chưa được chấm điểm"),
+    AI_CONTEXT_FILE_INVALID(HttpStatus.BAD_REQUEST, "File ngữ cảnh phải là PDF, TXT hoặc MD và không quá 5MB"),
     AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ AI tạm thời không khả dụng, vui lòng thử lại sau");
 
     private final HttpStatus status;

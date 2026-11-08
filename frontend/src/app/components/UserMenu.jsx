@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, ClipboardList, LogOut, LibraryBig } from 'lucide-react'
+import { BookOpen, ClipboardList, LogOut, LibraryBig, SquarePen } from 'lucide-react'
 
 export default function UserMenu({ user, onLogout }) {
   const [open, setOpen] = useState(false)
@@ -84,10 +84,16 @@ export default function UserMenu({ user, onLogout }) {
             </>
           )}
           {user.role === 'TEACHER' && (
-            <Link to="/question-bank" onClick={() => setOpen(false)}>
-              <LibraryBig size={17} aria-hidden="true" />
-              Ngân hàng câu hỏi
-            </Link>
+            <>
+              <Link to="/teacher/courses" onClick={() => setOpen(false)}>
+                <SquarePen size={17} aria-hidden="true" />
+                Quản lý khóa học
+              </Link>
+              <Link to="/question-bank" onClick={() => setOpen(false)}>
+                <LibraryBig size={17} aria-hidden="true" />
+                Ngân hàng câu hỏi
+              </Link>
+            </>
           )}
           <button className="profile-logout" onClick={onLogout}>
             <LogOut size={17} aria-hidden="true" />
