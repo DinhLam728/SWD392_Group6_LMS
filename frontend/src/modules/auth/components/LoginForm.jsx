@@ -18,7 +18,6 @@ export default function LoginForm({ initialEmail = '', onNavigate, onLoginSucces
   const [fieldErrors, setFieldErrors] = useState({})
   const googleBtnRef = useRef(null)
 
-  // Khởi tạo Google Identity Services Button
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
@@ -183,7 +182,6 @@ export default function LoginForm({ initialEmail = '', onNavigate, onLoginSucces
           <span>hoặc đăng nhập với</span>
         </div>
 
-        {/* Nút đăng nhập Google chính thức của Google Identity Services */}
         <div ref={googleBtnRef} className="google-sso-wrapper" />
 
         <div className="auth-footer">

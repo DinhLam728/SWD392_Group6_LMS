@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { useRemoteData } from '../../../shared/hooks/useRemoteData.js'
 import AiUnavailableDialog from '../components/AiUnavailableDialog.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import Dialog from '../components/Dialog.jsx'
 import Notice from '../components/Notice.jsx'
 import { firstMessageByField } from '../services/fieldErrors.js'
 import { setFlash } from '../services/flash.js'
@@ -42,7 +43,11 @@ function LessonForm({ context, lesson }) {
   const [aiNotice, setAiNotice] = useState(false)
   const [aiDialog, setAiDialog] = useState(false)
   const [replaceDialog, setReplaceDialog] = useState(false)
+  const [fileDialog, setFileDialog] = useState(false)
+  const [contextFile, setContextFile] = useState(null)
+  const [fileError, setFileError] = useState('')
   const requestedTitle = useRef('')
+  const requestedFile = useRef(null)
   const pending = useRef(null)
   const contentUrl = `/teacher/courses/${context.courseId}/content`
 
@@ -52,8 +57,9 @@ function LessonForm({ context, lesson }) {
     setValues((current) => ({ ...current, [name]: value }))
   }
 
-  async function runGeneration(title) {
+  async function runGeneration(title, file) {
     requestedTitle.current = title
+    requestedFile.current = file
     pending.current?.abort()
     const request = new AbortController()
     pending.current = request
@@ -63,7 +69,18 @@ function LessonForm({ context, lesson }) {
     setReplaceDialog(false)
     setFailure('')
     try {
-      const response = await generateLessonContent({ moduleId: context.moduleId, title }, request.signal)
+      const fileData = file
+        ? await new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result.split(',')[1])
+            reader.onerror = reject
+            reader.readAsDataURL(file)
+          })
+        : null
+      const response = await generateLessonContent(
+        { moduleId: context.moduleId, title, fileName: file?.name ?? null, fileData },
+        request.signal,
+      )
       setField('content', response.data.content)
       setErrors((current) => ({ ...current, content: undefined }))
       setAiNotice(true)
@@ -91,11 +108,28 @@ function LessonForm({ context, lesson }) {
       return
     }
     setErrors((current) => ({ ...current, title: undefined }))
+    setFileError('')
+    setContextFile(null)
+    setFileDialog(true)
+  }
+
+  function confirmFile() {
+    if (contextFile) {
+      if (!/.(pdf|txt|md)$/i.test(contextFile.name)) {
+        setFileError('Only PDF, TXT or MD files are supported.')
+        return
+      }
+      if (contextFile.size > 5 * 1024 * 1024) {
+        setFileError('The file must be at most 5MB.')
+        return
+      }
+    }
+    setFileDialog(false)
     if (values.content.trim()) {
       setReplaceDialog(true)
       return
     }
-    runGeneration(values.title.trim())
+    runGeneration(values.title.trim(), contextFile)
   }
 
   async function save(event) {
@@ -160,7 +194,7 @@ function LessonForm({ context, lesson }) {
         </div>
         {aiNotice && (
           <Notice tone="ai">
-            AI draft generated from the lesson title. Review and edit it before saving.
+            AI draft generated from the lesson title{requestedFile.current ? ` and ${requestedFile.current.name}` : ''}. Review and edit it before saving.
           </Notice>
         )}
         <textarea
@@ -192,9 +226,42 @@ function LessonForm({ context, lesson }) {
 
       {aiDialog && (
         <AiUnavailableDialog
-          onRetry={() => runGeneration(requestedTitle.current)}
+          onRetry={() => runGeneration(requestedTitle.current, requestedFile.current)}
           onCancel={() => setAiDialog(false)}
         />
+      )}
+
+      {fileDialog && (
+        <Dialog
+          title="Generate Content with AI"
+          onClose={() => setFileDialog(false)}
+          footer={
+            <>
+              <button type="button" className="button button-secondary" onClick={() => setFileDialog(false)}>
+                Cancel
+              </button>
+              <button type="button" className="button" onClick={confirmFile}>
+                Generate
+              </button>
+            </>
+          }
+        >
+          <p>Choose a context file (optional). Gemini will write the lesson based on its content.</p>
+          <div className="tc-field" style={{ marginTop: '0.8rem' }}>
+            <input
+              type="file"
+              accept=".pdf,.txt,.md"
+              onChange={(event) => {
+                setContextFile(event.target.files[0] ?? null)
+                setFileError('')
+              }}
+            />
+            <div className="tc-field-meta">
+              <span className="tc-field-error">{fileError}</span>
+              <span>PDF, TXT, MD - max 5MB</span>
+            </div>
+          </div>
+        </Dialog>
       )}
 
       {replaceDialog && (
@@ -203,7 +270,7 @@ function LessonForm({ context, lesson }) {
           message="Generating content replaces the text that is already in Lesson Content. Continue?"
           confirmLabel="Generate"
           onCancel={() => setReplaceDialog(false)}
-          onConfirm={() => runGeneration(values.title.trim())}
+          onConfirm={() => runGeneration(values.title.trim(), contextFile)}
         />
       )}
     </form>

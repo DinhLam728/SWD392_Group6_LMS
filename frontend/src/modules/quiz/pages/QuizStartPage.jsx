@@ -5,7 +5,6 @@ import { getQuiz, startAttempt } from '../services/quizService.js'
 import { formatDateTime, formatScore } from '../utils/quizFormat.js'
 import '../styles/quiz.css'
 
-// Dùng chung kiểu nhãn trạng thái (status-badge) với các trang đăng ký.
 function resultBadge(attempt) {
   if (attempt.status === 'IN_PROGRESS') return ['status-pending', 'Đang làm']
   if (attempt.passed === true) return ['status-success', 'Đạt']

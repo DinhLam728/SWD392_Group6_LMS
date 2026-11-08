@@ -15,6 +15,7 @@ import { QuestionBankTable } from '../components/QuestionBankTable.jsx'
 import { QuestionFormModal } from '../components/QuestionFormModal.jsx'
 import { AiGeneratorModal } from '../components/AiGeneratorModal.jsx'
 import { BulkAssignModal } from '../components/BulkAssignModal.jsx'
+import { listMyCourses } from '../../course/services/teacherCourseService.js'
 import '../styles/questionBank.css'
 
 const PRESET_TOPICS = [
@@ -26,8 +27,8 @@ const PRESET_TOPICS = [
 ]
 
 export function QuestionBankPage() {
-  const [courseIdInput, setCourseIdInput] = useState('1')
-  const [activeCourseId, setActiveCourseId] = useState(1)
+  const [myCourses, setMyCourses] = useState([])
+  const [activeCourseId, setActiveCourseId] = useState(null)
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(0)
@@ -62,6 +63,16 @@ export function QuestionBankPage() {
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
 
   useEffect(() => {
+    listMyCourses({ page: 0, size: 100 }).then((res) => {
+      const items = res.data.items
+      setMyCourses(items)
+      if (items.length > 0) setActiveCourseId(items[0].courseId)
+      else setLoading(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!activeCourseId) return
     let active = true
     getQuestionBankStats(activeCourseId).then((realStats) => {
       if (active && realStats) {
@@ -74,6 +85,7 @@ export function QuestionBankPage() {
   }, [activeCourseId, refreshKey])
 
   useEffect(() => {
+    if (!activeCourseId) return
     let active = true
 
     getCourseQuestions(activeCourseId, {
@@ -139,13 +151,10 @@ export function QuestionBankPage() {
     return () => clearTimeout(timer)
   }, [keywordInput])
 
-  const handleApplyCourse = (e) => {
-    e.preventDefault()
-    if (courseIdInput.trim()) {
-      setActiveCourseId(Number(courseIdInput.trim()))
-      setPage(0)
-      setLoading(true)
-    }
+  const handleChangeCourse = (e) => {
+    setActiveCourseId(Number(e.target.value))
+    setPage(0)
+    setLoading(true)
   }
 
   const handleClearSearch = () => {
@@ -261,7 +270,9 @@ export function QuestionBankPage() {
         <div className="lms-compact-header">
           <div className="lms-header-info">
             <h1 className="lms-title-main">Question Bank</h1>
-            <span className="lms-course-badge">SWD392</span>
+            <span className="lms-course-badge">
+              {myCourses.find((course) => course.courseId === activeCourseId)?.title ?? 'Chưa có khóa học'}
+            </span>
           </div>
 
           <div className="lms-header-buttons">
@@ -495,22 +506,22 @@ export function QuestionBankPage() {
             </div>
 
             <div className="lms-toolbar-right">
-              <form onSubmit={handleApplyCourse} className="lms-course-switcher">
-                <label htmlFor="question-bank-course">Mã khóa học</label>
-                <input
+              <div className="lms-course-switcher">
+                <label htmlFor="question-bank-course">Khóa học</label>
+                <select
                   id="question-bank-course"
-                  type="number"
-                  min="1"
-                  required
                   className="lms-form-control"
-                  style={{ width: '48px', padding: '4px 6px', textAlign: 'center', fontWeight: 700 }}
-                  value={courseIdInput}
-                  onChange={(e) => setCourseIdInput(e.target.value)}
-                />
-                <button type="submit" className="btn-lms btn-lms-secondary" style={{ padding: '4px 8px', fontSize: '11.5px' }}>
-                  Xem
-                </button>
-              </form>
+                  value={activeCourseId ?? ''}
+                  onChange={handleChangeCourse}
+                  disabled={myCourses.length === 0}
+                >
+                  {myCourses.map((course) => (
+                    <option key={course.courseId} value={course.courseId}>
+                      {course.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

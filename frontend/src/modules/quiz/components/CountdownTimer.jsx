@@ -7,7 +7,6 @@ function format(ms) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-// endAt là mốc giờ trên máy người dùng, đã quy đổi từ hạn nộp và giờ server.
 export default function CountdownTimer({ endAt, onExpire }) {
   const [remaining, setRemaining] = useState(null)
   const expiredRef = useRef(false)

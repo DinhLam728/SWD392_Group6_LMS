@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class OtpServiceImpl implements OtpService {
 
-    private static final int OTP_EXPIRATION_SECONDS = 300; // 5 phút
+    private static final int OTP_EXPIRATION_SECONDS = 300;
     private final SecureRandom random = new SecureRandom();
 
     private record OtpEntry(String code, Instant expiresAt) {}

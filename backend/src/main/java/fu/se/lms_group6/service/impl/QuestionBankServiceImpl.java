@@ -10,6 +10,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fu.se.lms_group6.common.exception.BadRequestException;
+import fu.se.lms_group6.common.exception.BusinessException;
+import fu.se.lms_group6.common.exception.ErrorCode;
+import fu.se.lms_group6.controller.CurrentTeacher;
 import fu.se.lms_group6.common.exception.NotFoundException;
 import fu.se.lms_group6.common.http.PageRequestFactory;
 import fu.se.lms_group6.common.http.PageResponse;
@@ -45,18 +48,21 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     private final QuizRepository quizRepository;
     private final GeminiClient geminiClient;
     private final ObjectMapper objectMapper;
+    private final CurrentTeacher currentTeacher;
 
     public QuestionBankServiceImpl(
             QuestionRepository questionRepository,
             CourseRepository courseRepository,
             QuizRepository quizRepository,
             GeminiClient geminiClient,
+            CurrentTeacher currentTeacher,
             @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper
     ) {
         this.questionRepository = questionRepository;
         this.courseRepository = courseRepository;
         this.quizRepository = quizRepository;
         this.geminiClient = geminiClient;
+        this.currentTeacher = currentTeacher;
         this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
     }
 
@@ -73,9 +79,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             int size,
             String sort
     ) {
-        if (!courseRepository.existsById(courseId)) {
-            throw new NotFoundException();
-        }
+        ownCourse(courseId);
 
         boolean onlyUnassigned = Boolean.TRUE.equals(unassignedOnly);
         String searchKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
@@ -99,9 +103,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     @Override
     @Transactional(readOnly = true)
     public QuestionBankStatsDto getQuestionBankStats(Long courseId) {
-        if (!courseRepository.existsById(courseId)) {
-            throw new NotFoundException();
-        }
+        ownCourse(courseId);
 
         long total = questionRepository.countByCourse_CourseId(courseId);
         long easy = questionRepository.countByCourseIdAndDifficulty(courseId, "easy");
@@ -129,18 +131,17 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     public QuestionResponse getQuestionById(Long questionId) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(NotFoundException::new);
+        ownCourse(question.getCourse().getCourseId());
         return toResponse(question);
     }
 
     @Override
     public QuestionResponse createQuestion(CreateQuestionRequest request) {
-        Course course = courseRepository.findById(request.courseId())
-                .orElseThrow(NotFoundException::new);
+        Course course = ownCourse(request.courseId());
 
         Quiz quiz = null;
         if (request.quizId() != null) {
-            quiz = quizRepository.findById(request.quizId())
-                    .orElseThrow(NotFoundException::new);
+            quiz = quizOfCourse(request.quizId(), course);
         }
 
         String optionsJson = buildOptionsJson(
@@ -167,11 +168,11 @@ public class QuestionBankServiceImpl implements QuestionBankService {
     public QuestionResponse updateQuestion(Long questionId, UpdateQuestionRequest request) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(NotFoundException::new);
+        Course course = ownCourse(question.getCourse().getCourseId());
 
         Quiz quiz = null;
         if (request.quizId() != null) {
-            quiz = quizRepository.findById(request.quizId())
-                    .orElseThrow(NotFoundException::new);
+            quiz = quizOfCourse(request.quizId(), course);
         }
 
         ExtractedQuestionMetadata existingMeta = parseOptionsJson(question.getOptionsJson());
@@ -194,30 +195,26 @@ public class QuestionBankServiceImpl implements QuestionBankService {
 
     @Override
     public void deleteQuestion(Long questionId) {
-        if (!questionRepository.existsById(questionId)) {
-            throw new NotFoundException();
-        }
-        questionRepository.deleteById(questionId);
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(NotFoundException::new);
+        ownCourse(question.getCourse().getCourseId());
+        questionRepository.delete(question);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<GeneratedQuestionItemDto> generateQuestionsWithAi(GenerateQuestionsAiRequest request) {
-        if (!courseRepository.existsById(request.courseId())) {
-            throw new NotFoundException();
-        }
+        ownCourse(request.courseId());
         return geminiClient.generateQuestions(request);
     }
 
     @Override
     public List<QuestionResponse> batchSaveQuestions(BatchSaveQuestionsRequest request) {
-        Course course = courseRepository.findById(request.courseId())
-                .orElseThrow(NotFoundException::new);
+        Course course = ownCourse(request.courseId());
 
         Quiz quiz = null;
         if (request.quizId() != null) {
-            quiz = quizRepository.findById(request.quizId())
-                    .orElseThrow(NotFoundException::new);
+            quiz = quizOfCourse(request.quizId(), course);
         }
 
         List<QuestionResponse> responses = new ArrayList<>();
@@ -243,6 +240,23 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         }
 
         return responses;
+    }
+
+    private Course ownCourse(Long courseId) {
+        Course course = courseRepository.findById(courseId).orElseThrow(NotFoundException::new);
+        if (!course.getTeacher().getUserId().equals(currentTeacher.requireId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return course;
+    }
+
+    private Quiz quizOfCourse(Long quizId, Course course) {
+        Quiz quiz = quizRepository.findById(quizId).orElseThrow(NotFoundException::new);
+        if (quiz.getCreatedBy() != null
+                || !quiz.getModule().getCourse().getCourseId().equals(course.getCourseId())) {
+            throw new BadRequestException();
+        }
+        return quiz;
     }
 
     private String buildOptionsJson(

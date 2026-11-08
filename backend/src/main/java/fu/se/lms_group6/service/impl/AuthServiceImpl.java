@@ -194,19 +194,15 @@ public class AuthServiceImpl implements AuthService {
         if (existingUserOpt.isPresent()) {
             user = existingUserOpt.get();
         } else {
-            // Kiểm tra xem email này đã từng đăng ký bằng email/password chưa
             Optional<User> byEmailOpt = userRepository.findByEmail(email);
             if (byEmailOpt.isPresent()) {
                 user = byEmailOpt.get();
-                // Liên kết google_id vào tài khoản hiện tại
                 user.setGoogleId(googleUser.sub());
-                // Vì Google đã verify email nên tự động active tài khoản nếu đang PENDING
                 if (user.getStatus() == UserStatus.PENDING) {
                     user.setStatus(UserStatus.ACTIVE);
                 }
                 user = userRepository.save(user);
             } else {
-                // Tự động tạo mới tài khoản STUDENT trạng thái ACTIVE theo đặc tả UC Login with Google
                 user = User.builder()
                         .fullName(googleUser.name())
                         .email(email)

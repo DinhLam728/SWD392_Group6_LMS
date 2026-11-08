@@ -1,6 +1,5 @@
 import { Link } from 'react-router'
 
-// Hiển thị lỗi API theo status/code, không dựa vào nội dung message.
 export default function QuizErrorNotice({ error }) {
   if (!error) return null
   let hint = null

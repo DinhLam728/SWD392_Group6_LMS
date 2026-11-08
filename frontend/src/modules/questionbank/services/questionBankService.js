@@ -2,13 +2,11 @@ import { apiClient } from '../../../shared/api/apiClient.js'
 
 const MOCK_STORAGE_KEY = 'lms_question_bank_en_v4'
 
-// Clean up old keys
 try {
   localStorage.removeItem('lms_question_bank_mock_data')
   localStorage.removeItem('lms_question_bank_v2')
   localStorage.removeItem('lms_question_bank_v3')
 } catch {
-  // Ignore
 }
 
 export const PRESET_SAMPLE_QUESTIONS = [
@@ -285,7 +283,6 @@ function saveMockStore(data) {
   try {
     localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(data))
   } catch {
-    // Ignore storage errors
   }
 }
 
@@ -311,7 +308,6 @@ export async function getCourseQuestions(courseId, {
     const res = await apiClient(`courses/${courseId}/questions`, { query })
     if (res?.data?.items) {
       let items = res.data.items.map(normalizeQuestion)
-      // Client-side backup filtering in case backend returned unfiltered items
       if (difficulty && difficulty !== 'ALL') {
         const diffUpper = difficulty.trim().toUpperCase()
         items = items.filter((q) => (q.difficulty || '').trim().toUpperCase() === diffUpper)
@@ -338,13 +334,11 @@ export async function getCourseQuestions(courseId, {
       list = list.filter((q) => Number(q.quizId) === Number(quizId))
     }
 
-    // Filter by difficulty (case-insensitive)
     if (difficulty && difficulty !== 'ALL') {
       const diffUpper = difficulty.trim().toUpperCase()
       list = list.filter((q) => (q.difficulty || '').trim().toUpperCase() === diffUpper)
     }
 
-    // Filter by topic (case-insensitive substring/equality)
     if (topic && topic !== 'ALL') {
       const topicLower = topic.trim().toLowerCase()
       list = list.filter((q) => {
@@ -353,7 +347,6 @@ export async function getCourseQuestions(courseId, {
       })
     }
 
-    // Live instant search keyword (content, topic, options text)
     if (keyword && keyword.trim()) {
       const term = keyword.trim().toLowerCase()
       list = list.filter((q) => {
@@ -364,7 +357,6 @@ export async function getCourseQuestions(courseId, {
       })
     }
 
-    // Sort
     if (sort === 'content,asc') {
       list.sort((a, b) => a.content.localeCompare(b.content))
     } else if (sort === 'questionId,asc') {
@@ -415,7 +407,6 @@ export async function getQuestionBankStats(courseId) {
     console.warn('[QuestionBank] Failed to fetch server stats. Calculating dynamically:', error.message)
   }
 
-  // Fallback: compute dynamically from local store
   const all = getMockStore().filter((q) => Number(q.courseId) === Number(courseId))
   return {
     total: all.length,

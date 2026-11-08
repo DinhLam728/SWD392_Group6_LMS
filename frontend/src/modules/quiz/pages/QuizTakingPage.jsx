@@ -41,7 +41,6 @@ function QuizTakingContent({ id }) {
         )
         answersRef.current = draft
         setAnswers(draft)
-        // Đếm theo chênh lệch giờ server để không phụ thuộc đồng hồ máy người dùng.
         setEndAt(Date.now() + parseServerTime(data.deadline) - parseServerTime(data.serverTime))
         setAttempt(data)
       })

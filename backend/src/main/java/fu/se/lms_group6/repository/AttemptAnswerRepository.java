@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AttemptAnswerRepository extends JpaRepository<AttemptAnswer, Long> {
-    // Thứ tự answer_id chính là thứ tự hiển thị câu hỏi của lượt làm bài.
     @EntityGraph(attributePaths = "question")
     List<AttemptAnswer> findByAttemptAttemptIdOrderByAnswerIdAsc(Long attemptId);
 }
