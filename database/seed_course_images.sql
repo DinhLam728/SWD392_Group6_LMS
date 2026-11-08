@@ -1,0 +1,26 @@
+-- Local course cover seed. Only fills missing thumbnails.
+SET NAMES utf8mb4;
+USE lms_g6;
+START TRANSACTION;
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-1.svg' WHERE title='Java căn bản cho người mới bắt đầu' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-2.svg' WHERE title='ReactJS: xây dựng giao diện web' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-3.svg' WHERE title='Spring Boot REST API cơ bản' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-4.svg' WHERE title='MySQL và thiết kế cơ sở dữ liệu' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-5.svg' WHERE title='Git và GitHub cho làm việc nhóm' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-6.svg' WHERE title='JavaScript thực hành cho frontend' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-7.svg' WHERE title='HTML và CSS: thiết kế web responsive' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-8.svg' WHERE title='TypeScript cho lập trình viên JavaScript' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-9.svg' WHERE title='Node.js và Express REST API' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-10.svg' WHERE title='Kiểm thử phần mềm với JUnit' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-11.svg' WHERE title='Docker cơ bản cho dự án web' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-12.svg' WHERE title='Thiết kế API và xử lý exception' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-13.svg' WHERE title='Spring Security và JWT' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-14.svg' WHERE title='Cấu trúc dữ liệu và giải thuật' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-15.svg' WHERE title='SQL nâng cao và tối ưu truy vấn' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-16.svg' WHERE title='UI UX cơ bản cho lập trình viên' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-17.svg' WHERE title='React Hooks và quản lý state' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-18.svg' WHERE title='Triển khai ứng dụng web thực tế' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-30001.svg' WHERE title='Test Course' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-60001.svg' WHERE title='Docker Fundamental' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+UPDATE courses SET thumbnail_url='/images/courses/demo-course-60002.svg' WHERE title='java' AND (thumbnail_url IS NULL OR TRIM(thumbnail_url)='');
+COMMIT;
