@@ -1,5 +1,15 @@
 # Database LMS Group 6
 
+## File hoàn chỉnh
+
+`lms_g6.sql` gồm toàn bộ schema (10 bảng) và dữ liệu mẫu trong một file, dùng để nộp bài hoặc dựng database mới:
+
+```
+mysql -u root -p < lms_g6.sql
+```
+
+File **xóa và tạo lại** database `lms_g6`, không chạy lên database đang có dữ liệu cần giữ. Các file bên dưới (`lms_g6_v4.sql`, `seed_enrollment_demo.sql`, `alter_quiz_created_by.sql`) là bản tách riêng, dùng khi cần chạy từng phần.
+
 Database `lms_g6`, MySQL 8.0+. SQL v4 là schema hiện tại tương ứng code BE.
 
 ## Thứ tự chạy

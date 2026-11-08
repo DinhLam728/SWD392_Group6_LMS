@@ -226,10 +226,10 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(String email) {
         if (email == null || email.isBlank()) {
-            throw new NotFoundException(ErrorCode.NOT_FOUND);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         User user = userRepository.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         return mapToUserResponse(user);
     }
 
