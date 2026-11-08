@@ -1,6 +1,5 @@
 import { apiClient } from '../../../shared/api/apiClient.js'
 
-<<<<<<< HEAD
 const MOCK_STORAGE_KEY = 'lms_question_bank_en_v4'
 
 try {
