@@ -1,6 +1,7 @@
 package fu.se.lms_group6.repository;
 
 import fu.se.lms_group6.entity.Question;
+import fu.se.lms_group6.entity.enums.QuizStatus;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,5 +47,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     List<Question> findByQuizQuizIdOrderByQuestionIdAsc(Long quizId);
 
-    List<Question> findByQuizModuleModuleIdAndQuizCreatedByIsNullOrderByQuestionIdAsc(Long moduleId);
+    List<Question> findByQuizModuleModuleIdAndQuizCreatedByIsNullAndQuizStatusOrderByQuestionIdAsc(
+            Long moduleId, QuizStatus status);
 }

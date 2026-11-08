@@ -32,7 +32,7 @@ public record CreatePracticeQuizRequest(
         @DecimalMax(value = "10", message = "Điểm đạt từ 0 đến 10")
         BigDecimal passingScore,
 
-        boolean randomQuestions,
-        boolean shuffleQuestions,
-        boolean shuffleOptions
+        Boolean randomQuestions,
+        Boolean shuffleQuestions,
+        Boolean shuffleOptions
 ) {}
