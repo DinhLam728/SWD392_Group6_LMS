@@ -29,30 +29,30 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/registrations")
+@RequestMapping("/api/v1/registrationService")
 public class RegistrationController {
-    private final RegistrationService registrations;
-    private final PaymentService payments;
-    private final CurrentStudent student;
+    private final RegistrationService registrationService;
+    private final PaymentService paymentService;
+    private final CurrentStudent currentStudent;
 
-    public RegistrationController(RegistrationService registrations, PaymentService payments, CurrentStudent student) {
-        this.registrations = registrations;
-        this.payments = payments;
-        this.student = student;
+    public RegistrationController(RegistrationService registrationService, PaymentService paymentService, CurrentStudent currentStudent) {
+        this.registrationService = registrationService;
+        this.paymentService = paymentService;
+        this.currentStudent = currentStudent;
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<RegistrationResponse>> register(@Valid @RequestBody CreateRegistrationRequest request) {
-        return ResponseBuilder.ok(registrations.registerCourse(student.requireId(), request.courseId()));
+    public ResponseEntity<ApiResponse<RegistrationResponse>> registerCourse(@Valid @RequestBody CreateRegistrationRequest request) {
+        return ResponseBuilder.ok(registrationService.registerCourse(currentStudent.requireId(), request.courseId()));
     }
 
     @GetMapping("/{registrationId}")
-    public ResponseEntity<ApiResponse<RegistrationResponse>> detail(@PathVariable Long registrationId) {
-        return ResponseBuilder.ok(registrations.getRegistration(student.requireId(), registrationId));
+    public ResponseEntity<ApiResponse<RegistrationResponse>> getRegistration(@PathVariable Long registrationId) {
+        return ResponseBuilder.ok(registrationService.getRegistration(currentStudent.requireId(), registrationId));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<RegistrationResponse>>> list(
+    public ResponseEntity<ApiResponse<PageResponse<RegistrationResponse>>> getRegistrations(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) RegistrationStatus status,
             @RequestParam(required = false) PaymentStatus paymentStatus,
@@ -61,14 +61,14 @@ public class RegistrationController {
             @RequestParam(defaultValue = "registeredAt,desc") String sort) {
         Pageable pageable = PageRequestFactory.create(page, size, sort, Set.of("registeredAt"));
         Pageable newestFirstOnTie = PageRequest.of(page, size, pageable.getSort().and(Sort.by("registrationId").descending()));
-        return ResponseBuilder.ok(registrations.getRegistrations(student.requireId(), keyword, status, paymentStatus, newestFirstOnTie));
+        return ResponseBuilder.ok(registrationService.getRegistrations(currentStudent.requireId(), keyword, status, paymentStatus, newestFirstOnTie));
     }
 
     @PostMapping("/webhooks/sepay")
-    public Map<String, Boolean> webhook(@RequestHeader(value = "Authorization", required = false) String authorization,
+    public Map<String, Boolean> handlePaymentWebhook(@RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody SePayWebhookRequest request) {
-        payments.authenticateWebhook(authorization);
-        registrations.handlePaymentWebhook(request);
+        paymentService.authenticateWebhook(authorization);
+        registrationService.handlePaymentWebhook(request);
         return Map.of("success", true);
     }
 }

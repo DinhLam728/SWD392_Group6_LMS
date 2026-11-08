@@ -6,14 +6,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class RegistrationExpirationJob {
-    private final RegistrationService registrations;
+    private final RegistrationService registrationService;
 
-    public RegistrationExpirationJob(RegistrationService registrations) {
-        this.registrations = registrations;
+    public RegistrationExpirationJob(RegistrationService registrationService) {
+        this.registrationService = registrationService;
     }
 
     @Scheduled(fixedDelay = 60000)
     public void expirePendingRegistrations() {
-        registrations.expireRegistrations();
+        registrationService.expireRegistrations();
     }
 }

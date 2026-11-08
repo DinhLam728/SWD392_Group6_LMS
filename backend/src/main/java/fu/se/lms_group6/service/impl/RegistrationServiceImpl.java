@@ -38,18 +38,18 @@ public class RegistrationServiceImpl implements RegistrationService {
     private static final Logger log = LoggerFactory.getLogger(RegistrationServiceImpl.class);
     private static final int PAYMENT_TIMEOUT_HOURS = 24;
 
-    private final RegistrationRepository registrations;
-    private final CourseRepository courses;
-    private final UserRepository users;
-    private final PaymentService payments;
+    private final RegistrationRepository registrationRepository;
+    private final CourseRepository courseRepository;
+    private final UserRepository userRepository;
+    private final PaymentService paymentService;
     private final Clock clock;
 
-    public RegistrationServiceImpl(RegistrationRepository registrations, CourseRepository courses,
-            UserRepository users, PaymentService payments, Clock enrollmentClock) {
-        this.registrations = registrations;
-        this.courses = courses;
-        this.users = users;
-        this.payments = payments;
+    public RegistrationServiceImpl(RegistrationRepository registrationRepository, CourseRepository courseRepository,
+            UserRepository userRepository, PaymentService paymentService, Clock enrollmentClock) {
+        this.registrationRepository = registrationRepository;
+        this.courseRepository = courseRepository;
+        this.userRepository = userRepository;
+        this.paymentService = paymentService;
         this.clock = enrollmentClock;
     }
 
@@ -57,11 +57,11 @@ public class RegistrationServiceImpl implements RegistrationService {
     public RegistrationResponse registerCourse(Long studentId, Long courseId) {
         User student = lockStudent(studentId);
         requireActiveStudent(student);
-        Course course = courses.findById(courseId)
+        Course course = courseRepository.findById(courseId)
                 .filter(Course::isAvailableForEnrollment)
                 .orElseThrow(NotFoundException::new);
 
-        List<Registration> previous = registrations.lockByStudentAndCourse(studentId, courseId);
+        List<Registration> previous = registrationRepository.lockByStudentAndCourse(studentId, courseId);
         if (hasActive(previous)) {
             throw new ConflictException(ErrorCode.ALREADY_ENROLLED);
         }
@@ -72,7 +72,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 continue;
             }
             if (old.getExpiresAt().isAfter(now)) {
-                return toResponse(old, payments.createPayment(old));
+                return toResponse(old, paymentService.createPayment(old));
             }
             old.setStatus(RegistrationStatus.EXPIRED);
         }
@@ -81,17 +81,17 @@ public class RegistrationServiceImpl implements RegistrationService {
         registration.setRegisteredAt(now);
         registration.setExpiresAt(now.plusHours(PAYMENT_TIMEOUT_HOURS));
         registration.setPaymentCode(newPaymentCode());
-        registrations.save(registration);
-        return toResponse(registration, payments.createPayment(registration));
+        registrationRepository.save(registration);
+        return toResponse(registration, paymentService.createPayment(registration));
     }
 
     @Override
     @Transactional(readOnly = true)
     public RegistrationResponse getRegistration(Long studentId, Long registrationId) {
-        requireActiveStudent(users.findById(studentId).orElseThrow(NotFoundException::new));
-        Registration registration = registrations.findByRegistrationIdAndStudentUserId(registrationId, studentId)
+        requireActiveStudent(userRepository.findById(studentId).orElseThrow(NotFoundException::new));
+        Registration registration = registrationRepository.findByRegistrationIdAndStudentUserId(registrationId, studentId)
                 .orElseThrow(NotFoundException::new);
-        PaymentInfoResponse payment = isWaitingForPayment(registration) ? payments.createPayment(registration) : null;
+        PaymentInfoResponse payment = isWaitingForPayment(registration) ? paymentService.createPayment(registration) : null;
         return toResponse(registration, payment);
     }
 
@@ -99,7 +99,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Transactional(readOnly = true)
     public PageResponse<RegistrationResponse> getRegistrations(Long studentId, String keyword,
             RegistrationStatus status, PaymentStatus paymentStatus, Pageable pageable) {
-        requireActiveStudent(users.findById(studentId).orElseThrow(NotFoundException::new));
+        requireActiveStudent(userRepository.findById(studentId).orElseThrow(NotFoundException::new));
         Specification<Registration> filter = (root, query, cb) -> cb.equal(root.get("student").get("userId"), studentId);
         if (status != null) {
             filter = filter.and(statusFilter(status));
@@ -110,29 +110,29 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (keyword != null && !keyword.isBlank()) {
             filter = filter.and(keywordFilter(keyword.strip()));
         }
-        return PageResponse.from(registrations.findAll(filter, pageable).map(r -> toResponse(r, null)));
+        return PageResponse.from(registrationRepository.findAll(filter, pageable).map(r -> toResponse(r, null)));
     }
 
     @Override
     public void handlePaymentWebhook(SePayWebhookRequest request) {
-        String paymentCode = payments.extractPaymentCode(request);
+        String paymentCode = paymentService.extractPaymentCode(request);
         if (paymentCode == null) {
             log.info("Ignoring SePay transaction {}: no payment code", request.id());
             return;
         }
-        Optional<Long> studentId = registrations.findStudentIdByPaymentCode(paymentCode);
+        Optional<Long> studentId = registrationRepository.findStudentIdByPaymentCode(paymentCode);
         if (studentId.isEmpty()) {
             log.info("Ignoring SePay transaction {}: registration not found", request.id());
             return;
         }
 
         lockStudent(studentId.get());
-        Registration registration = registrations.lockByPaymentCode(paymentCode).orElseThrow(NotFoundException::new);
+        Registration registration = registrationRepository.lockByPaymentCode(paymentCode).orElseThrow(NotFoundException::new);
         if (isDuplicatePayment(registration, request)) {
             log.info("Ignoring SePay transaction {}: already recorded", request.id());
             return;
         }
-        if (!payments.verifyPayment(registration, request)) {
+        if (!paymentService.verifyPayment(registration, request)) {
             log.warn("Ignoring SePay transaction {}: account, amount or time does not match", request.id());
             return;
         }
@@ -143,11 +143,11 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     public int expireRegistrations() {
-        return registrations.expirePending(now());
+        return registrationRepository.expirePending(now());
     }
 
     private void activateRegistration(Registration registration, String transactionRef) {
-        List<Registration> sameCourse = registrations.lockByStudentAndCourse(
+        List<Registration> sameCourse = registrationRepository.lockByStudentAndCourse(
                 registration.getStudent().getUserId(), registration.getCourse().getCourseId());
         boolean alreadyEnrolled = hasActive(sameCourse);
 
@@ -166,7 +166,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private boolean isDuplicatePayment(Registration registration, SePayWebhookRequest request) {
         return registration.getPaymentStatus() == PaymentStatus.SUCCESS
-                || registrations.existsByTransactionRef(request.transactionRef());
+                || registrationRepository.existsByTransactionRef(request.transactionRef());
     }
 
     private boolean isWaitingForPayment(Registration registration) {
@@ -181,7 +181,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private RegistrationResponse toResponse(Registration registration, PaymentInfoResponse payment) {
         Course course = registration.getCourse();
-        Long enrolledRegistrationId = registrations.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
+        Long enrolledRegistrationId = registrationRepository.findFirstByStudentUserIdAndCourseCourseIdAndStatus(
                         registration.getStudent().getUserId(), course.getCourseId(), RegistrationStatus.ACTIVE)
                 .map(Registration::getRegistrationId)
                 .orElse(null);
@@ -231,7 +231,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     private User lockStudent(Long studentId) {
-        return users.findByIdForUpdate(studentId).orElseThrow(NotFoundException::new);
+        return userRepository.findByIdForUpdate(studentId).orElseThrow(NotFoundException::new);
     }
 
     private void requireActiveStudent(User user) {

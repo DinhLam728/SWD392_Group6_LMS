@@ -123,7 +123,7 @@ public class QuizServiceImpl implements QuizService {
     @Transactional
     public QuizInfoResponse createPracticeQuiz(Long studentId, Long moduleId, CreatePracticeQuizRequest request) {
         CourseModule module = requireEnrolledModule(studentId, moduleId);
-        registrations.findByStudentUserIdAndCourseCourseIdOrderByRegisteredAtDesc(
+        registrations.lockByStudentAndCourse(
                 studentId, module.getCourse().getCourseId());
         if (activeTeacherQuestions(moduleId).isEmpty()) {
             throw new ConflictException(ErrorCode.QUIZ_HAS_NO_QUESTIONS);
