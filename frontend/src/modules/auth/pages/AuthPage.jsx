@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { AuthContext } from '../../../app/provider/AuthContext.js'
 import { roleHome } from '../../../app/router/rolePaths.js'
 import { useState } from 'react'
@@ -58,10 +58,10 @@ export default function AuthPage() {
       <div className="auth-background-shape shape-2" />
 
       <div className="auth-wrapper">
-        <div className="auth-brand">
+        <Link to="/courses" className="auth-brand" title="Quay về trang danh sách khóa học">
           <div className="brand-logo">LMS</div>
           <span className="brand-title">E-Learning Platform</span>
-        </div>
+        </Link>
 
         {currentView === 'login' && (
           <LoginForm
