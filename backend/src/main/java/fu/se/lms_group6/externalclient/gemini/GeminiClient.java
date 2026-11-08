@@ -28,25 +28,21 @@ public class GeminiClient {
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
 
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-    private static final String DEFAULT_MODEL = "gemini-flash-latest";
-    private static final String FALLBACK_MODEL = "gemini-flash-lite-latest";
+    private static final String MODEL = "gemini-flash-lite-latest";
     private static final int MAX_LESSON_CHARS = 16_000;
     private static final int LOG_BODY_CHARS = 500;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String apiKey;
-    private final String model;
     private final Duration timeout;
 
     public GeminiClient(
             ObjectMapper objectMapper,
             @Value("${gemini.api-key:${GEMINI_API_KEY:}}") String apiKey,
-            @Value("${gemini.model:${GEMINI_MODEL:" + DEFAULT_MODEL + "}}") String model,
             @Value("${GEMINI_TIMEOUT_SECONDS:120}") int timeoutSeconds) {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey == null ? "" : apiKey.trim();
-        this.model = model == null || model.isBlank() ? DEFAULT_MODEL : model.trim();
         this.timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
@@ -182,18 +178,6 @@ public class GeminiClient {
     }
 
     private String requestText(String prompt, double temperature, boolean jsonOutput, byte[] pdf) {
-        try {
-            return callModel(model, prompt, temperature, jsonOutput, pdf);
-        } catch (AIException ex) {
-            if (apiKey.isEmpty() || model.equals(FALLBACK_MODEL)) {
-                throw ex;
-            }
-            log.warn("Gemini model {} failed ({}); retrying with {}", model, ex.getMessage(), FALLBACK_MODEL);
-            return callModel(FALLBACK_MODEL, prompt, temperature, jsonOutput, pdf);
-        }
-    }
-
-    private String callModel(String modelName, String prompt, double temperature, boolean jsonOutput, byte[] pdf) {
         if (apiKey.isEmpty()) {
             throw new AIException("GEMINI_API_KEY is not configured");
         }
@@ -213,7 +197,7 @@ public class GeminiClient {
                 "generationConfig", generationConfig));
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + modelName + ":generateContent"))
+                .uri(URI.create(BASE_URL + MODEL + ":generateContent"))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", apiKey)
                 .timeout(timeout)
