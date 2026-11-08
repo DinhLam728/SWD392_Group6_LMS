@@ -86,6 +86,13 @@ export default function LoginForm({ initialEmail = '', onNavigate, onLoginSucces
       }
     } catch (err) {
       if (err instanceof ApiError) {
+        if (err.code === 'ACCOUNT_NOT_ACTIVATED') {
+          // Tài khoản chưa kích hoạt OTP, tự động chuyển sang trang xác thực OTP
+          if (onNavigate) {
+            onNavigate('verify-otp-register', { email: formData.email })
+          }
+          return
+        }
         setErrorMsg(err.message)
         if (err.errors && Array.isArray(err.errors)) {
           const mapped = {}
