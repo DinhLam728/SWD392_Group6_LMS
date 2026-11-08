@@ -1,17 +1,9 @@
 package fu.se.lms_group6.controller;
 
 import java.util.List;
+
 import jakarta.validation.Valid;
-import fu.se.lms_group6.common.http.ApiResponse;
-import fu.se.lms_group6.common.http.PageResponse;
-import fu.se.lms_group6.common.http.ResponseBuilder;
-import fu.se.lms_group6.dto.questionbank.BatchSaveQuestionsRequest;
-import fu.se.lms_group6.dto.questionbank.CreateQuestionRequest;
-import fu.se.lms_group6.dto.questionbank.GenerateQuestionsAiRequest;
-import fu.se.lms_group6.dto.questionbank.GeneratedQuestionItemDto;
-import fu.se.lms_group6.dto.questionbank.QuestionResponse;
-import fu.se.lms_group6.dto.questionbank.UpdateQuestionRequest;
-import fu.se.lms_group6.service.QuestionBankService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,6 +15,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import fu.se.lms_group6.common.http.ApiResponse;
+import fu.se.lms_group6.common.http.PageResponse;
+import fu.se.lms_group6.common.http.ResponseBuilder;
+import fu.se.lms_group6.dto.questionbank.BatchSaveQuestionsRequest;
+import fu.se.lms_group6.dto.questionbank.BulkAssignQuizRequest;
+import fu.se.lms_group6.dto.questionbank.BulkDeleteQuestionsRequest;
+import fu.se.lms_group6.dto.questionbank.CreateQuestionRequest;
+import fu.se.lms_group6.dto.questionbank.GenerateQuestionsAiRequest;
+import fu.se.lms_group6.dto.questionbank.GeneratedQuestionItemDto;
+import fu.se.lms_group6.dto.questionbank.QuestionBankStatsDto;
+import fu.se.lms_group6.dto.questionbank.QuestionResponse;
+import fu.se.lms_group6.dto.questionbank.UpdateQuestionRequest;
+import fu.se.lms_group6.service.QuestionBankService;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -58,15 +64,15 @@ public class QuestionBankController {
                 size,
                 sort
         );
-        return ResponseBuilder.ok(response, "Questions retrieved successfully");
+        return ResponseBuilder.ok(response, "Lấy danh sách câu hỏi thành công");
     }
 
     @GetMapping("/courses/{courseId}/question-bank/stats")
-    public ResponseEntity<ApiResponse<fu.se.lms_group6.dto.questionbank.QuestionBankStatsDto>> getQuestionBankStats(
+    public ResponseEntity<ApiResponse<QuestionBankStatsDto>> getQuestionBankStats(
             @PathVariable Long courseId
     ) {
-        fu.se.lms_group6.dto.questionbank.QuestionBankStatsDto stats = questionBankService.getQuestionBankStats(courseId);
-        return ResponseBuilder.ok(stats, "Question bank statistics retrieved successfully");
+        QuestionBankStatsDto stats = questionBankService.getQuestionBankStats(courseId);
+        return ResponseBuilder.ok(stats, "Lấy thống kê ngân hàng câu hỏi thành công");
     }
 
     @GetMapping("/questions/{questionId}")
@@ -74,7 +80,7 @@ public class QuestionBankController {
             @PathVariable Long questionId
     ) {
         QuestionResponse response = questionBankService.getQuestionById(questionId);
-        return ResponseBuilder.ok(response, "Question details retrieved successfully");
+        return ResponseBuilder.ok(response, "Lấy thông tin chi tiết câu hỏi thành công");
     }
 
     @PostMapping("/questions")
@@ -82,7 +88,7 @@ public class QuestionBankController {
             @Valid @RequestBody CreateQuestionRequest request
     ) {
         QuestionResponse response = questionBankService.createQuestion(request);
-        return ResponseBuilder.created(response, "Question created successfully");
+        return ResponseBuilder.created(response, "Tạo câu hỏi thành công");
     }
 
     @PutMapping("/questions/{questionId}")
@@ -91,7 +97,7 @@ public class QuestionBankController {
             @Valid @RequestBody UpdateQuestionRequest request
     ) {
         QuestionResponse response = questionBankService.updateQuestion(questionId, request);
-        return ResponseBuilder.ok(response, "Question updated successfully");
+        return ResponseBuilder.ok(response, "Cập nhật câu hỏi thành công");
     }
 
     @DeleteMapping("/questions/{questionId}")
@@ -102,12 +108,28 @@ public class QuestionBankController {
         return ResponseBuilder.noContent();
     }
 
+    @PostMapping("/question-bank/bulk-delete")
+    public ResponseEntity<Void> bulkDeleteQuestions(
+            @Valid @RequestBody BulkDeleteQuestionsRequest request
+    ) {
+        questionBankService.bulkDeleteQuestions(request.questionIds());
+        return ResponseBuilder.noContent();
+    }
+
+    @PostMapping("/question-bank/bulk-assign")
+    public ResponseEntity<Void> bulkAssignQuiz(
+            @Valid @RequestBody BulkAssignQuizRequest request
+    ) {
+        questionBankService.bulkAssignQuiz(request.questionIds(), request.quizId());
+        return ResponseBuilder.noContent();
+    }
+
     @PostMapping("/question-bank/generate-ai")
     public ResponseEntity<ApiResponse<List<GeneratedQuestionItemDto>>> generateQuestionsAi(
             @Valid @RequestBody GenerateQuestionsAiRequest request
     ) {
         List<GeneratedQuestionItemDto> response = questionBankService.generateQuestionsWithAi(request);
-        return ResponseBuilder.ok(response, "Questions generated with AI successfully");
+        return ResponseBuilder.ok(response, "Sinh câu hỏi AI thành công");
     }
 
     @PostMapping("/question-bank/batch-save")
@@ -115,6 +137,6 @@ public class QuestionBankController {
             @Valid @RequestBody BatchSaveQuestionsRequest request
     ) {
         List<QuestionResponse> response = questionBankService.batchSaveQuestions(request);
-        return ResponseBuilder.created(response, "Questions saved successfully");
+        return ResponseBuilder.created(response, "Lưu danh sách câu hỏi thành công");
     }
 }

@@ -5,10 +5,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import fu.se.lms_group6.common.exception.BadRequestException;
 import fu.se.lms_group6.common.exception.BusinessException;
 import fu.se.lms_group6.common.exception.ErrorCode;
@@ -32,10 +39,6 @@ import fu.se.lms_group6.repository.CourseRepository;
 import fu.se.lms_group6.repository.QuestionRepository;
 import fu.se.lms_group6.repository.QuizRepository;
 import fu.se.lms_group6.service.QuestionBankService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -199,6 +202,30 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 .orElseThrow(NotFoundException::new);
         ownCourse(question.getCourse().getCourseId());
         questionRepository.delete(question);
+    }
+
+    @Override
+    public void bulkDeleteQuestions(List<Long> questionIds) {
+        if (questionIds == null || questionIds.isEmpty()) {
+            return;
+        }
+        questionRepository.deleteAllById(questionIds);
+    }
+
+    @Override
+    public void bulkAssignQuiz(List<Long> questionIds, Long quizId) {
+        if (questionIds == null || questionIds.isEmpty()) {
+            return;
+        }
+        Quiz quiz = null;
+        if (quizId != null) {
+            quiz = quizRepository.findById(quizId).orElseThrow(NotFoundException::new);
+        }
+        List<Question> questions = questionRepository.findAllById(questionIds);
+        for (Question q : questions) {
+            q.setQuiz(quiz);
+        }
+        questionRepository.saveAll(questions);
     }
 
     @Override

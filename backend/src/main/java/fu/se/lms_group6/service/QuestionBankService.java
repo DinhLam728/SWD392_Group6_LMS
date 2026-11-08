@@ -34,6 +34,10 @@ public interface QuestionBankService {
 
     void deleteQuestion(Long questionId);
 
+    void bulkDeleteQuestions(List<Long> questionIds);
+
+    void bulkAssignQuiz(List<Long> questionIds, Long quizId);
+
     List<GeneratedQuestionItemDto> generateQuestionsWithAi(GenerateQuestionsAiRequest request);
 
     List<QuestionResponse> batchSaveQuestions(BatchSaveQuestionsRequest request);

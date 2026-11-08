@@ -1,5 +1,6 @@
 import { apiClient } from '../../../shared/api/apiClient.js'
 
+<<<<<<< HEAD
 const MOCK_STORAGE_KEY = 'lms_question_bank_en_v4'
 
 try {
@@ -296,15 +297,15 @@ export async function getCourseQuestions(courseId, {
   difficulty,
   topic,
 } = {}) {
-  try {
-    const query = { page, size }
-    if (sort) query.sort = sort
-    if (quizId != null && quizId !== '') query.quizId = quizId
-    if (unassignedOnly) query.unassignedOnly = true
-    if (topic && topic !== 'ALL') query.topic = topic
-    if (difficulty && difficulty !== 'ALL') query.difficulty = difficulty
-    if (keyword && keyword.trim()) query.keyword = keyword.trim()
+  const query = { page, size }
+  if (sort) query.sort = sort
+  if (quizId != null && quizId !== '') query.quizId = quizId
+  if (unassignedOnly) query.unassignedOnly = true
+  if (topic && topic !== 'ALL') query.topic = topic
+  if (difficulty && difficulty !== 'ALL') query.difficulty = difficulty
+  if (keyword && keyword.trim()) query.keyword = keyword.trim()
 
+  try {
     const res = await apiClient(`courses/${courseId}/questions`, { query })
     if (res?.data?.items) {
       let items = res.data.items.map(normalizeQuestion)
@@ -418,171 +419,59 @@ export async function getQuestionBankStats(courseId) {
   }
 }
 
-export async function createQuestion(data, headers) {
-  try {
-    return await apiClient('questions', { method: 'POST', body: data, headers })
-  } catch {
-    const list = getMockStore()
-    const newId = list.reduce((max, item) => Math.max(max, item.questionId || 0), 100) + 1
-    const newQuestion = {
-      questionId: newId,
-      courseId: data.courseId,
-      courseTitle: `Course #${data.courseId}`,
-      quizId: data.quizId || null,
-      quizTitle: data.quizId ? `Quiz #${data.quizId}` : null,
-      topic: data.topic || 'OOP Inheritance & Polymorphism',
-      difficulty: (data.difficulty || 'MEDIUM').toUpperCase(),
-      content: data.content,
-      questionType: data.questionType || 'MULTIPLE_CHOICE',
-      options: data.options || [],
-      correctAnswer: data.correctAnswer,
-      explanation: data.explanation || '',
-    }
-    list.unshift(newQuestion)
-    saveMockStore(list)
-    return {
-      code: 'SUCCESS',
-      message: 'Created successfully',
-      data: newQuestion,
-    }
-  }
+export async function getQuestionDetail(questionId) {
+  return apiClient(`questions/${questionId}`)
 }
 
-export async function updateQuestion(questionId, data, headers) {
-  try {
-    return await apiClient(`questions/${questionId}`, { method: 'PUT', body: data, headers })
-  } catch {
-    const list = getMockStore()
-    const index = list.findIndex((q) => Number(q.questionId) === Number(questionId))
-    if (index !== -1) {
-      list[index] = {
-        ...list[index],
-        quizId: data.quizId || null,
-        quizTitle: data.quizId ? `Quiz #${data.quizId}` : null,
-        topic: data.topic || list[index].topic,
-        difficulty: (data.difficulty || list[index].difficulty || 'MEDIUM').toUpperCase(),
-        content: data.content,
-        questionType: data.questionType,
-        options: data.options || [],
-        correctAnswer: data.correctAnswer,
-        explanation: data.explanation !== undefined ? data.explanation : list[index].explanation,
-      }
-      saveMockStore(list)
-    }
-    return {
-      code: 'SUCCESS',
-      message: 'Updated successfully',
-      data: list[index],
-    }
-  }
+export async function createQuestion(data) {
+  return apiClient('questions', { method: 'POST', body: data })
 }
 
-export async function deleteQuestion(questionId, headers) {
-  try {
-    return await apiClient(`questions/${questionId}`, { method: 'DELETE', headers })
-  } catch {
-    const list = getMockStore()
-    const updated = list.filter((q) => Number(q.questionId) !== Number(questionId))
-    saveMockStore(updated)
-    return null
-  }
+export async function updateQuestion(questionId, data) {
+  return apiClient(`questions/${questionId}`, { method: 'PUT', body: data })
+}
+
+export async function deleteQuestion(questionId) {
+  return apiClient(`questions/${questionId}`, { method: 'DELETE' })
 }
 
 export async function bulkDeleteQuestions(questionIds) {
-  const idsSet = new Set(questionIds.map(Number))
-  const list = getMockStore()
-  const updated = list.filter((q) => !idsSet.has(Number(q.questionId)))
-  saveMockStore(updated)
-  return { code: 'SUCCESS', message: `Deleted ${questionIds.length} questions successfully.` }
+  return apiClient('question-bank/bulk-delete', {
+    method: 'POST',
+    body: { questionIds },
+  })
 }
 
-export async function bulkAssignQuiz(questionIds, quizId, quizTitle = '') {
-  const idsSet = new Set(questionIds.map(Number))
-  const list = getMockStore()
-  for (const q of list) {
-    if (idsSet.has(Number(q.questionId))) {
-      q.quizId = quizId ? Number(quizId) : null
-      q.quizTitle = quizId ? (quizTitle || `Quiz #${quizId}`) : null
-    }
-  }
-  saveMockStore(list)
-  return { code: 'SUCCESS', message: 'Assigned successfully' }
+export async function bulkAssignQuiz(questionIds, quizId) {
+  return apiClient('question-bank/bulk-assign', {
+    method: 'POST',
+    body: {
+      questionIds,
+      quizId: quizId != null && quizId !== '' ? Number(quizId) : null,
+    },
+  })
 }
 
 export async function generateAiQuestions(params) {
-  try {
-    return await apiClient('question-bank/generate-ai', {
-      method: 'POST',
-      body: params,
-    })
-  } catch {
-    const mockGenerated = Array.from({ length: params.numberOfQuestions || 3 }, (_, idx) => {
-      const diff = idx % 3 === 0 ? 'EASY' : idx % 3 === 1 ? 'MEDIUM' : 'HARD'
-      return {
-        content: `[Gemini AI (${params.topic})] Practice question #${idx + 1} regarding ${params.topic}?`,
-        topic: params.topic,
-        difficulty: params.difficultyLevel === 'MIXED' ? diff : params.difficultyLevel,
-        questionType: 'MULTIPLE_CHOICE',
-        options: [
-          { key: 'A', text: `Option A for question #${idx + 1}` },
-          { key: 'B', text: `Accurate standard answer choice B` },
-          { key: 'C', text: `Alternative edge-case choice C` },
-          { key: 'D', text: `Distractor option D` },
-        ],
-        correctAnswer: 'B',
-        explanation: `Choice B is correct according to the standard principles of ${params.topic}.`,
-      }
-    })
-    return {
-      code: 'SUCCESS',
-      message: 'Generated questions successfully (AI Mock)',
-      data: mockGenerated,
-    }
-  }
+  return apiClient('question-bank/generate-ai', {
+    method: 'POST',
+    body: params,
+  })
 }
 
 export async function batchSaveQuestions(questionsList) {
-  try {
-    return await apiClient('question-bank/batch-save', {
-      method: 'POST',
-      body: {
-        courseId: questionsList[0]?.courseId || 1,
-        quizId: questionsList[0]?.quizId || null,
-        questions: questionsList,
-      },
-    })
-  } catch {
-    const list = getMockStore()
-    let maxId = list.reduce((max, item) => Math.max(max, item.questionId || 0), 100)
-    for (const q of questionsList) {
-      maxId += 1
-      list.unshift({
-        questionId: maxId,
-        courseId: q.courseId,
-        courseTitle: `Course #${q.courseId}`,
-        quizId: q.quizId || null,
-        quizTitle: q.quizId ? `Quiz #${q.quizId}` : null,
-        topic: q.topic || 'OOP Inheritance & Polymorphism',
-        difficulty: (q.difficulty || 'MEDIUM').toUpperCase(),
-        content: q.content,
-        questionType: q.questionType || 'MULTIPLE_CHOICE',
-        options: q.options || [],
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation || '',
-      })
-    }
-    saveMockStore(list)
-    return {
-      code: 'SUCCESS',
-      message: 'Batch saved successfully',
-      data: questionsList,
-    }
-  }
+  return apiClient('question-bank/batch-save', {
+    method: 'POST',
+    body: {
+      courseId: questionsList[0]?.courseId || 1,
+      quizId: questionsList[0]?.quizId || null,
+      questions: questionsList,
+    },
+  })
 }
 
-export function exportBankToJson(courseId) {
-  const list = getMockStore().filter((q) => Number(q.courseId) === Number(courseId))
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(list, null, 2))
+export function exportBankToJson(courseId, questions = []) {
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(questions, null, 2))
   const downloadAnchor = document.createElement('a')
   downloadAnchor.setAttribute('href', dataStr)
   downloadAnchor.setAttribute('download', `question_bank_course_${courseId}.json`)

@@ -74,11 +74,11 @@ export function QuestionBankPage() {
   useEffect(() => {
     if (!activeCourseId) return
     let active = true
-    getQuestionBankStats(activeCourseId).then((realStats) => {
-      if (active && realStats) {
-        setStats(realStats)
+    getQuestionBankStats(activeCourseId).then((res) => {
+      if (active && res) {
+        setStats(res.data || res)
       }
-    })
+    }).catch(() => {})
     return () => {
       active = false
     }
@@ -224,15 +224,24 @@ export function QuestionBankPage() {
   }
 
   const handleFormSubmit = async (formData) => {
-    if (editingQuestion) {
-      await updateQuestion(editingQuestion.questionId, formData)
-      setMessage('Question updated successfully!')
-    } else {
-      await createQuestion(formData)
-      setMessage('New question added to bank successfully!')
+    try {
+      if (editingQuestion) {
+        await updateQuestion(editingQuestion.questionId, formData)
+        setMessage('Question updated successfully!')
+      } else {
+        await createQuestion(formData)
+        setMessage('New question added to bank successfully!')
+      }
+      setTimeout(() => setMessage(''), 3000)
+      triggerReload()
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message)
+      } else {
+        setErrorMessage('Failed to save question.')
+      }
+      throw err
     }
-    setTimeout(() => setMessage(''), 3000)
-    triggerReload()
   }
 
   const handleBulkDelete = async () => {
@@ -240,21 +249,39 @@ export function QuestionBankPage() {
     if (!window.confirm(`Are you sure you want to delete ${selectedIds.size} selected questions?`)) {
       return
     }
-    await bulkDeleteQuestions(Array.from(selectedIds))
-    setMessage(`Successfully deleted ${selectedIds.size} questions!`)
-    setTimeout(() => setMessage(''), 3000)
-    triggerReload()
+    try {
+      await bulkDeleteQuestions(Array.from(selectedIds))
+      setMessage(`Successfully deleted ${selectedIds.size} questions!`)
+      setSelectedIds(new Set())
+      setTimeout(() => setMessage(''), 3000)
+      triggerReload()
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message)
+      } else {
+        setErrorMessage('Failed to delete selected questions.')
+      }
+    }
   }
 
   const handleBulkAssignConfirm = async (quizId, quizTitle) => {
-    await bulkAssignQuiz(Array.from(selectedIds), quizId, quizTitle)
-    setMessage(
-      quizId
-        ? `Successfully assigned ${selectedIds.size} questions to Quiz #${quizId}!`
-        : `Moved ${selectedIds.size} questions to the Reserve Bank!`
-    )
-    setTimeout(() => setMessage(''), 3000)
-    triggerReload()
+    try {
+      await bulkAssignQuiz(Array.from(selectedIds), quizId, quizTitle)
+      setMessage(
+        quizId
+          ? `Successfully assigned ${selectedIds.size} questions to Quiz #${quizId}!`
+          : `Moved ${selectedIds.size} questions to the Reserve Bank!`
+      )
+      setSelectedIds(new Set())
+      setTimeout(() => setMessage(''), 3000)
+      triggerReload()
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message)
+      } else {
+        setErrorMessage('Failed to assign quiz to questions.')
+      }
+    }
   }
 
   const startItem = page * pageSize + 1
@@ -293,7 +320,7 @@ export function QuestionBankPage() {
             <button
               type="button"
               className="btn-lms btn-lms-secondary"
-              onClick={() => exportBankToJson(activeCourseId)}
+              onClick={() => exportBankToJson(activeCourseId, questions)}
               title="Export questions to JSON"
             >
               Export JSON
