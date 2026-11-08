@@ -209,7 +209,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         if (questionIds == null || questionIds.isEmpty()) {
             return;
         }
-        questionRepository.deleteAllById(questionIds);
+        questionRepository.deleteAll(ownQuestions(questionIds));
     }
 
     @Override
@@ -217,15 +217,22 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         if (questionIds == null || questionIds.isEmpty()) {
             return;
         }
-        Quiz quiz = null;
-        if (quizId != null) {
-            quiz = quizRepository.findById(quizId).orElseThrow(NotFoundException::new);
-        }
-        List<Question> questions = questionRepository.findAllById(questionIds);
+        List<Question> questions = ownQuestions(questionIds);
         for (Question q : questions) {
-            q.setQuiz(quiz);
+            q.setQuiz(quizId == null ? null : quizOfCourse(quizId, q.getCourse()));
         }
         questionRepository.saveAll(questions);
+    }
+
+    private List<Question> ownQuestions(List<Long> questionIds) {
+        List<Question> questions = questionRepository.findAllById(questionIds);
+        if (questions.size() != new java.util.HashSet<>(questionIds).size()) {
+            throw new NotFoundException();
+        }
+        for (Question question : questions) {
+            ownCourse(question.getCourse().getCourseId());
+        }
+        return questions;
     }
 
     @Override
