@@ -37,7 +37,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     boolean existsByTransactionRef(String transactionRef);
 
     @Modifying(clearAutomatically = true)
-    @Query("update Registration r set r.status = fu.se.lms_group6.entity.enums.RegistrationStatus.EXPIRED "
-            + "where r.status = fu.se.lms_group6.entity.enums.RegistrationStatus.PENDING and r.expiresAt <= :now")
+    @Query("update Registration r set r.status = fu.se.lms_group6.entity.enums.RegistrationStatus.EXPIRED, "
+            + "r.paymentStatus = fu.se.lms_group6.entity.enums.PaymentStatus.FAILED "
+            + "where r.paymentStatus = fu.se.lms_group6.entity.enums.PaymentStatus.PENDING and r.expiresAt <= :now")
     int expirePending(@Param("now") LocalDateTime now);
 }

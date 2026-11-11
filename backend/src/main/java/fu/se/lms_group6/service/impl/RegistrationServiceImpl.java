@@ -75,6 +75,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 return toResponse(old, paymentService.createPayment(old));
             }
             old.setStatus(RegistrationStatus.EXPIRED);
+            old.setPaymentStatus(PaymentStatus.FAILED);
         }
 
         Registration registration = new Registration(student, course, course.getPrice());
@@ -160,6 +161,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             boolean isOther = !other.getRegistrationId().equals(registration.getRegistrationId());
             if (isOther && other.getStatus() == RegistrationStatus.PENDING) {
                 other.setStatus(RegistrationStatus.EXPIRED);
+                other.setPaymentStatus(PaymentStatus.FAILED);
             }
         }
     }
