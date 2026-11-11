@@ -114,13 +114,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
-    public void simulatePayment(Long studentId, Long registrationId) {
-        Registration registration = registrationRepository.findByRegistrationIdAndStudentUserId(registrationId, studentId)
-                .orElseThrow(NotFoundException::new);
-        handlePaymentWebhook(paymentService.createDemoTransaction(registration));
-    }
-
-    @Override
     public void handlePaymentWebhook(SePayWebhookRequest request) {
         String paymentCode = paymentService.extractPaymentCode(request);
         if (paymentCode == null) {

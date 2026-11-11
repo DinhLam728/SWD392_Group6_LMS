@@ -13,6 +13,5 @@ public interface RegistrationService {
     PageResponse<RegistrationResponse> getRegistrations(Long studentId, String keyword,
             RegistrationStatus status, PaymentStatus paymentStatus, Pageable pageable);
     void handlePaymentWebhook(SePayWebhookRequest request);
-    void simulatePayment(Long studentId, Long registrationId);
     int expireRegistrations();
 }

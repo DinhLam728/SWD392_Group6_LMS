@@ -9,5 +9,4 @@ public interface PaymentService {
     void authenticateWebhook(String authorization);
     String extractPaymentCode(SePayWebhookRequest request);
     boolean verifyPayment(Registration registration, SePayWebhookRequest request);
-    SePayWebhookRequest createDemoTransaction(Registration registration);
 }
