@@ -65,8 +65,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             CourseModuleRepository courseModuleRepository,
             GeminiClient geminiClient,
             CurrentTeacher currentTeacher,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper
-    ) {
+            @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper) {
         this.questionRepository = questionRepository;
         this.courseRepository = courseRepository;
         this.quizRepository = quizRepository;
@@ -88,14 +87,16 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             String keyword,
             int page,
             int size,
-            String sort
-    ) {
+            String sort) {
         ownCourse(courseId);
 
         boolean onlyUnassigned = Boolean.TRUE.equals(unassignedOnly);
         String searchKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
-        String topicFilter = (topic != null && !topic.isBlank() && !"ALL".equalsIgnoreCase(topic)) ? topic.trim() : null;
-        String difficultyFilter = (difficulty != null && !difficulty.isBlank() && !"ALL".equalsIgnoreCase(difficulty)) ? difficulty.trim() : null;
+        String topicFilter = (topic != null && !topic.isBlank() && !"ALL".equalsIgnoreCase(topic)) ? topic.trim()
+                : null;
+        String difficultyFilter = (difficulty != null && !difficulty.isBlank() && !"ALL".equalsIgnoreCase(difficulty))
+                ? difficulty.trim()
+                : null;
 
         PageRequest pageable = PageRequestFactory.create(page, size, sort, ALLOWED_SORT_FIELDS);
         Page<Question> questionPage = questionRepository.searchQuestions(
@@ -106,8 +107,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 topicFilter,
                 difficultyFilter,
                 searchKeyword,
-                pageable
-        );
+                pageable);
 
         return PageResponse.from(questionPage.map(this::toResponse));
     }
@@ -134,8 +134,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 medium,
                 hard,
                 assigned,
-                reserve
-        );
+                reserve);
     }
 
     @Override
@@ -157,8 +156,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                 request.options(),
                 request.topic(),
                 request.difficulty(),
-                request.explanation()
-        );
+                request.explanation());
 
         Question question = Question.builder()
                 .course(course)
@@ -204,6 +202,9 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(NotFoundException::new);
         ownCourse(question.getCourse().getCourseId());
+        if (question.getQuiz() != null) {
+            throw new BusinessException(ErrorCode.QUESTION_ALREADY_ASSIGNED);
+        }
         questionRepository.delete(question);
     }
 
@@ -212,7 +213,13 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         if (questionIds == null || questionIds.isEmpty()) {
             return;
         }
-        questionRepository.deleteAll(ownQuestions(questionIds));
+        List<Question> questions = ownQuestions(questionIds);
+        for (Question q : questions) {
+            if (q.getQuiz() != null) {
+                throw new BusinessException(ErrorCode.QUESTION_ALREADY_ASSIGNED);
+            }
+        }
+        questionRepository.deleteAll(questions);
     }
 
     @Override
@@ -246,7 +253,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
         if (!module.getCourse().getCourseId().equals(course.getCourseId())) {
             throw new BadRequestException();
         }
-        return quizRepository.findFirstByModuleModuleIdAndCreatedByIsNullAndStatusOrderByQuizIdAsc(moduleId, QuizStatus.ACTIVE)
+        return quizRepository
+                .findFirstByModuleModuleIdAndCreatedByIsNullAndStatusOrderByQuizIdAsc(moduleId, QuizStatus.ACTIVE)
                 .orElseGet(() -> {
                     Quiz quiz = new Quiz(module, "Ôn tập: " + module.getTitle());
                     quiz.setStatus(QuizStatus.ACTIVE);
@@ -284,8 +292,7 @@ public class QuestionBankServiceImpl implements QuestionBankService {
                     item.options(),
                     item.topic(),
                     item.difficulty(),
-                    item.explanation()
-            );
+                    item.explanation());
 
             Question question = Question.builder()
                     .course(course)
@@ -324,13 +331,13 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             List<QuestionOptionDto> options,
             String topic,
             String difficulty,
-            String explanation
-    ) {
+            String explanation) {
         try {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("options", options != null ? options : List.of());
             map.put("topic", (topic != null && !topic.isBlank()) ? topic.trim() : "General Topic");
-            map.put("difficulty", (difficulty != null && !difficulty.isBlank()) ? difficulty.trim().toUpperCase() : "MEDIUM");
+            map.put("difficulty",
+                    (difficulty != null && !difficulty.isBlank()) ? difficulty.trim().toUpperCase() : "MEDIUM");
             map.put("explanation", explanation != null ? explanation.trim() : "");
             return objectMapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
@@ -342,8 +349,8 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             List<QuestionOptionDto> options,
             String topic,
             String difficulty,
-            String explanation
-    ) {}
+            String explanation) {
+    }
 
     private ExtractedQuestionMetadata parseOptionsJson(String json) {
         if (json == null || json.isBlank()) {
@@ -354,16 +361,16 @@ public class QuestionBankServiceImpl implements QuestionBankService {
             if (root.isArray()) {
                 List<QuestionOptionDto> options = objectMapper.convertValue(
                         root,
-                        new TypeReference<List<QuestionOptionDto>>() {}
-                );
+                        new TypeReference<List<QuestionOptionDto>>() {
+                        });
                 return new ExtractedQuestionMetadata(options, "General Topic", "MEDIUM", "");
             } else if (root.isObject()) {
                 List<QuestionOptionDto> options = List.of();
                 if (root.has("options") && root.get("options").isArray()) {
                     options = objectMapper.convertValue(
                             root.get("options"),
-                            new TypeReference<List<QuestionOptionDto>>() {}
-                    );
+                            new TypeReference<List<QuestionOptionDto>>() {
+                            });
                 }
                 String topic = root.hasNonNull("topic") ? root.get("topic").asText() : "General Topic";
                 String difficulty = root.hasNonNull("difficulty") ? root.get("difficulty").asText() : "MEDIUM";

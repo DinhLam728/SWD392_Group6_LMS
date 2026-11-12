@@ -53,8 +53,7 @@ public class QuestionBankController {
             @RequestParam(required = false) Boolean unassignedOnly,
             @RequestParam(required = false) String topic,
             @RequestParam(required = false) String difficulty,
-            @RequestParam(required = false) String keyword
-    ) {
+            @RequestParam(required = false) String keyword) {
         PageResponse<QuestionResponse> response = questionBankService.getQuestions(
                 courseId,
                 moduleId,
@@ -65,31 +64,27 @@ public class QuestionBankController {
                 keyword,
                 page,
                 size,
-                sort
-        );
+                sort);
         return ResponseBuilder.ok(response, "Lấy danh sách câu hỏi thành công");
     }
 
     @GetMapping("/courses/{courseId}/question-bank/stats")
     public ResponseEntity<ApiResponse<QuestionBankStatsDto>> getQuestionBankStats(
-            @PathVariable Long courseId
-    ) {
+            @PathVariable Long courseId) {
         QuestionBankStatsDto stats = questionBankService.getQuestionBankStats(courseId);
         return ResponseBuilder.ok(stats, "Lấy thống kê ngân hàng câu hỏi thành công");
     }
 
     @GetMapping("/questions/{questionId}")
     public ResponseEntity<ApiResponse<QuestionResponse>> getQuestionDetail(
-            @PathVariable Long questionId
-    ) {
+            @PathVariable Long questionId) {
         QuestionResponse response = questionBankService.getQuestionById(questionId);
         return ResponseBuilder.ok(response, "Lấy thông tin chi tiết câu hỏi thành công");
     }
 
     @PostMapping("/questions")
     public ResponseEntity<ApiResponse<QuestionResponse>> createQuestion(
-            @Valid @RequestBody CreateQuestionRequest request
-    ) {
+            @Valid @RequestBody CreateQuestionRequest request) {
         QuestionResponse response = questionBankService.createQuestion(request);
         return ResponseBuilder.created(response, "Tạo câu hỏi thành công");
     }
@@ -97,53 +92,48 @@ public class QuestionBankController {
     @PutMapping("/questions/{questionId}")
     public ResponseEntity<ApiResponse<QuestionResponse>> updateQuestion(
             @PathVariable Long questionId,
-            @Valid @RequestBody UpdateQuestionRequest request
-    ) {
+            @Valid @RequestBody UpdateQuestionRequest request) {
         QuestionResponse response = questionBankService.updateQuestion(questionId, request);
         return ResponseBuilder.ok(response, "Cập nhật câu hỏi thành công");
     }
 
     @DeleteMapping("/questions/{questionId}")
     public ResponseEntity<Void> deleteQuestion(
-            @PathVariable Long questionId
-    ) {
+            @PathVariable Long questionId) {
         questionBankService.deleteQuestion(questionId);
         return ResponseBuilder.noContent();
     }
 
     @PostMapping("/question-bank/bulk-delete")
     public ResponseEntity<Void> bulkDeleteQuestions(
-            @Valid @RequestBody BulkDeleteQuestionsRequest request
-    ) {
+            @Valid @RequestBody BulkDeleteQuestionsRequest request) {
         questionBankService.bulkDeleteQuestions(request.questionIds());
         return ResponseBuilder.noContent();
     }
 
     @GetMapping("/courses/{courseId}/question-bank/modules")
-    public ResponseEntity<ApiResponse<java.util.List<ModuleOptionResponse>>> getCourseModules(@PathVariable Long courseId) {
-        return ResponseBuilder.ok(questionBankService.getCourseModules(courseId));
+    public ResponseEntity<ApiResponse<java.util.List<ModuleOptionResponse>>> getCourseModules(
+            @PathVariable Long courseId) {
+        return ResponseBuilder.ok(questionBankService.getCourseModules(courseId), "Lấy danh sách module thành công");
     }
 
     @PostMapping("/question-bank/bulk-assign")
     public ResponseEntity<Void> bulkAssignModule(
-            @Valid @RequestBody BulkAssignQuizRequest request
-    ) {
+            @Valid @RequestBody BulkAssignQuizRequest request) {
         questionBankService.bulkAssignModule(request.questionIds(), request.moduleId());
         return ResponseBuilder.noContent();
     }
 
     @PostMapping("/question-bank/generate-ai")
     public ResponseEntity<ApiResponse<List<GeneratedQuestionItemDto>>> generateQuestionsAi(
-            @Valid @RequestBody GenerateQuestionsAiRequest request
-    ) {
+            @Valid @RequestBody GenerateQuestionsAiRequest request) {
         List<GeneratedQuestionItemDto> response = questionBankService.generateQuestionsWithAi(request);
         return ResponseBuilder.ok(response, "Sinh câu hỏi AI thành công");
     }
 
     @PostMapping("/question-bank/batch-save")
     public ResponseEntity<ApiResponse<List<QuestionResponse>>> batchSaveQuestions(
-            @Valid @RequestBody BatchSaveQuestionsRequest request
-    ) {
+            @Valid @RequestBody BatchSaveQuestionsRequest request) {
         List<QuestionResponse> response = questionBankService.batchSaveQuestions(request);
         return ResponseBuilder.created(response, "Lưu danh sách câu hỏi thành công");
     }

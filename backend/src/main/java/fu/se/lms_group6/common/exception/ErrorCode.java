@@ -32,7 +32,8 @@ public enum ErrorCode {
     ATTEMPT_EXPIRED(HttpStatus.CONFLICT, "Đã hết thời gian làm bài"),
     ATTEMPT_NOT_GRADED(HttpStatus.CONFLICT, "Lượt làm bài chưa được chấm điểm"),
     AI_CONTEXT_FILE_INVALID(HttpStatus.BAD_REQUEST, "File ngữ cảnh phải là PDF, TXT hoặc MD và không quá 5MB"),
-    AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ AI tạm thời không khả dụng, vui lòng thử lại sau");
+    AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ AI tạm thời không khả dụng, vui lòng thử lại sau"),
+    QUESTION_ALREADY_ASSIGNED(HttpStatus.BAD_REQUEST, "Không thể xóa câu hỏi đã được gán vào bài kiểm tra hoặc module");
 
     private final HttpStatus status;
     private final String message;

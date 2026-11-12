@@ -16,15 +16,16 @@ import { QuestionBankTable } from '../components/QuestionBankTable.jsx'
 import { QuestionFormModal } from '../components/QuestionFormModal.jsx'
 import { AiGeneratorModal } from '../components/AiGeneratorModal.jsx'
 import { BulkAssignModal } from '../components/BulkAssignModal.jsx'
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal.jsx'
 import { listMyCourses } from '../../course/services/teacherCourseService.js'
 import '../styles/questionBank.css'
 
 const PRESET_TOPICS = [
-  'OOP Inheritance & Polymorphism',
-  'Encapsulation & Abstraction',
-  'Spring Boot REST MVC',
-  'Spring Data JPA & ORM',
-  'Exception Handling',
+  'Lập trình hướng đối tượng (Kế thừa & Đa hình)',
+  'Đóng gói & Trừu tượng hóa',
+  'Spring Boot REST API & MVC',
+  'Spring Data JPA & Hibernate ORM',
+  'Xử lý ngoại lệ & Mã trạng thái HTTP',
 ]
 
 export function QuestionBankPage() {
@@ -62,6 +63,13 @@ export function QuestionBankPage() {
   const [editingQuestion, setEditingQuestion] = useState(null)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
+  const [deleteModalState, setDeleteModalState] = useState({
+    isOpen: false,
+    question: null,
+    isBulk: false,
+    error: '',
+    busy: false,
+  })
   const [modules, setModules] = useState([])
 
   useEffect(() => {
@@ -122,7 +130,7 @@ export function QuestionBankPage() {
         if (error instanceof ApiError) {
           setErrorMessage(error.message)
         } else {
-          setErrorMessage('Unable to load question bank data. Please verify network connection.')
+          setErrorMessage('Không thể tải dữ liệu ngân hàng câu hỏi. Vui lòng kiểm tra lại kết nối mạng.')
         }
         setLoading(false)
       })
@@ -211,20 +219,64 @@ export function QuestionBankPage() {
     setIsFormModalOpen(true)
   }
 
-  const handleDelete = async (questionId) => {
-    if (!window.confirm('Are you sure you want to delete this question?')) {
-      return
-    }
-    try {
-      await deleteQuestion(questionId)
-      setMessage('Question deleted successfully!')
-      setTimeout(() => setMessage(''), 3000)
-      triggerReload()
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message)
-      } else {
-        setErrorMessage('Failed to delete question.')
+  const handleOpenDeleteModal = (q) => {
+    const isAssigned = Boolean(q.quizId)
+    setDeleteModalState({
+      isOpen: true,
+      question: q,
+      isBulk: false,
+      error: isAssigned
+        ? `Không thể xóa câu hỏi này vì câu hỏi đã được gán vào bài kiểm tra "${q.quizTitle || 'Quiz #' + q.quizId}". Thao tác xóa bị từ chối.`
+        : '',
+      busy: false,
+    })
+  }
+
+  const handleOpenBulkDeleteModal = () => {
+    if (selectedIds.size === 0) return
+    const assigned = questions.filter((q) => selectedIds.has(q.questionId) && q.quizId)
+    setDeleteModalState({
+      isOpen: true,
+      question: null,
+      isBulk: true,
+      error: assigned.length > 0
+        ? `Không thể xóa vì có ${assigned.length} câu hỏi đã được gán vào module hoặc bài kiểm tra. Vui lòng bỏ chọn hoặc gỡ gán các câu hỏi này trước khi xóa.`
+        : '',
+      busy: false,
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (deleteModalState.isBulk) {
+      setDeleteModalState((prev) => ({ ...prev, busy: true, error: '' }))
+      try {
+        await bulkDeleteQuestions(Array.from(selectedIds))
+        setMessage(`Đã xóa thành công ${selectedIds.size} câu hỏi!`)
+        setSelectedIds(new Set())
+        setDeleteModalState({ isOpen: false, question: null, isBulk: false, error: '', busy: false })
+        setTimeout(() => setMessage(''), 3000)
+        triggerReload()
+      } catch (err) {
+        setDeleteModalState((prev) => ({
+          ...prev,
+          busy: false,
+          error: err.message || 'Xóa các câu hỏi đã chọn thất bại.',
+        }))
+      }
+    } else if (deleteModalState.question) {
+      setDeleteModalState((prev) => ({ ...prev, busy: true, error: '' }))
+      try {
+        await deleteQuestion(deleteModalState.question.questionId)
+        setMessage('Xóa câu hỏi thành công!')
+        setDeleteModalState({ isOpen: false, question: null, isBulk: false, error: '', busy: false })
+        setTimeout(() => setMessage(''), 3000)
+        triggerReload()
+      } catch (err) {
+        setDeleteModalState((prev) => ({
+          ...prev,
+          busy: false,
+          error: err.message || 'Xóa câu hỏi thất bại.',
+        }))
       }
     }
   }
@@ -233,10 +285,10 @@ export function QuestionBankPage() {
     try {
       if (editingQuestion) {
         await updateQuestion(editingQuestion.questionId, formData)
-        setMessage('Question updated successfully!')
+        setMessage('Cập nhật câu hỏi thành công!')
       } else {
         await createQuestion(formData)
-        setMessage('New question added to bank successfully!')
+        setMessage('Thêm câu hỏi mới vào ngân hàng thành công!')
       }
       setTimeout(() => setMessage(''), 3000)
       triggerReload()
@@ -244,29 +296,9 @@ export function QuestionBankPage() {
       if (err instanceof ApiError) {
         setErrorMessage(err.message)
       } else {
-        setErrorMessage('Failed to save question.')
+        setErrorMessage('Lưu câu hỏi thất bại.')
       }
       throw err
-    }
-  }
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return
-    if (!window.confirm(`Are you sure you want to delete ${selectedIds.size} selected questions?`)) {
-      return
-    }
-    try {
-      await bulkDeleteQuestions(Array.from(selectedIds))
-      setMessage(`Successfully deleted ${selectedIds.size} questions!`)
-      setSelectedIds(new Set())
-      setTimeout(() => setMessage(''), 3000)
-      triggerReload()
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message)
-      } else {
-        setErrorMessage('Failed to delete selected questions.')
-      }
     }
   }
 
@@ -275,8 +307,8 @@ export function QuestionBankPage() {
       await bulkAssignModule(Array.from(selectedIds), moduleId)
       setMessage(
         moduleId
-          ? `Successfully assigned ${selectedIds.size} questions to ${moduleTitle}!`
-          : `Moved ${selectedIds.size} questions to the Reserve Bank!`
+          ? `Đã gán thành công ${selectedIds.size} câu hỏi vào ${moduleTitle}!`
+          : `Đã chuyển ${selectedIds.size} câu hỏi về Kho dự phòng!`
       )
       setSelectedIds(new Set())
       setTimeout(() => setMessage(''), 3000)
@@ -285,7 +317,7 @@ export function QuestionBankPage() {
       if (err instanceof ApiError) {
         setErrorMessage(err.message)
       } else {
-        setErrorMessage('Failed to assign quiz to questions.')
+        setErrorMessage('Gán câu hỏi vào module thất bại.')
       }
     }
   }
@@ -302,7 +334,7 @@ export function QuestionBankPage() {
       <div className="lms-container">
         <div className="lms-compact-header">
           <div className="lms-header-info">
-            <h1 className="lms-title-main">Question Bank</h1>
+            <h1 className="lms-title-main">Ngân hàng câu hỏi</h1>
             <span className="lms-course-badge">
               {myCourses.find((course) => course.courseId === activeCourseId)?.title ?? 'Chưa có khóa học'}
             </span>
@@ -314,22 +346,22 @@ export function QuestionBankPage() {
               className="btn-lms btn-lms-primary"
               onClick={handleOpenCreateModal}
             >
-              + Add Question
+              + Thêm câu hỏi
             </button>
             <button
               type="button"
               className="btn-lms btn-lms-ai"
               onClick={() => setIsAiModalOpen(true)}
             >
-              Generate with AI
+              Tạo bằng AI
             </button>
             <button
               type="button"
               className="btn-lms btn-lms-secondary"
               onClick={() => exportBankToJson(activeCourseId, questions)}
-              title="Export questions to JSON"
+              title="Xuất danh sách câu hỏi ra file JSON"
             >
-              Export JSON
+              Xuất JSON
             </button>
           </div>
         </div>
@@ -369,7 +401,7 @@ export function QuestionBankPage() {
         <div className="lms-compact-kpi-row">
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
-              <span className="lms-compact-kpi-label">Total Questions</span>
+              <span className="lms-compact-kpi-label">Tổng số câu hỏi</span>
               <span className="lms-compact-kpi-icon slate">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -379,15 +411,15 @@ export function QuestionBankPage() {
             </div>
             <div className="lms-compact-kpi-val">{stats.total}</div>
             <div className="lms-compact-kpi-sub">
-              <span>{stats.assigned} in Module</span>
+              <span>{stats.assigned} Trong module</span>
               <span>•</span>
-              <span>{stats.reserve} in Bank</span>
+              <span>{stats.reserve} Trong kho</span>
             </div>
           </div>
 
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
-              <span className="lms-compact-kpi-label">Difficulty Spread</span>
+              <span className="lms-compact-kpi-label">Phân bổ độ khó</span>
               <span className="lms-compact-kpi-icon amber">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -396,23 +428,23 @@ export function QuestionBankPage() {
             </div>
             <div className="lms-diff-chip-group">
               <span className="lms-diff-chip easy">
-                <strong>{stats.easy}</strong> Easy
+                <strong>{stats.easy}</strong> Dễ
               </span>
               <span className="lms-diff-chip med">
-                <strong>{stats.medium}</strong> Med
+                <strong>{stats.medium}</strong> Vừa
               </span>
               <span className="lms-diff-chip hard">
-                <strong>{stats.hard}</strong> Hard
+                <strong>{stats.hard}</strong> Khó
               </span>
             </div>
             <div className="lms-compact-kpi-sub">
-              <span>Distributed across course</span>
+              <span>Phân bổ trong toàn khóa học</span>
             </div>
           </div>
 
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
-              <span className="lms-compact-kpi-label">In Module</span>
+              <span className="lms-compact-kpi-label">Đã gán vào Module</span>
               <span className="lms-compact-kpi-icon blue">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 11l3 3L22 4" />
@@ -424,13 +456,13 @@ export function QuestionBankPage() {
               {stats.assigned}
             </div>
             <div className="lms-compact-kpi-sub">
-              <span>Assigned to modules</span>
+              <span>Đang dùng trong các bài học</span>
             </div>
           </div>
 
           <div className="lms-compact-kpi-card">
             <div className="lms-compact-kpi-header">
-              <span className="lms-compact-kpi-label">In Bank</span>
+              <span className="lms-compact-kpi-label">Kho dự phòng</span>
               <span className="lms-compact-kpi-icon indigo">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="21 8 21 21 3 21 3 8" />
@@ -443,7 +475,7 @@ export function QuestionBankPage() {
               {stats.reserve}
             </div>
             <div className="lms-compact-kpi-sub">
-              <span>Not assigned to any module</span>
+              <span>Chưa gán vào module nào</span>
             </div>
           </div>
         </div>
@@ -471,7 +503,7 @@ export function QuestionBankPage() {
                     type="button"
                     className="lms-search-clear"
                     onClick={handleClearSearch}
-                    title="Clear search"
+                    title="Xóa tìm kiếm"
                   >
                     ✕
                   </button>
@@ -488,8 +520,14 @@ export function QuestionBankPage() {
                     setPage(0)
                   }}
                 >
-                  <option value="ALL">All Topics</option>
-                  {PRESET_TOPICS.map((t) => (
+                  <option value="ALL">Tất cả chủ đề</option>
+                  {Array.from(
+                    new Set([
+                      ...questions.map((q) => q.topic).filter(Boolean),
+                      ...modules.map((m) => m.title).filter(Boolean),
+                      ...PRESET_TOPICS,
+                    ])
+                  ).map((t) => (
                     <option key={t} value={t}>
                       {t}
                     </option>
@@ -505,10 +543,10 @@ export function QuestionBankPage() {
                     setPage(0)
                   }}
                 >
-                  <option value="ALL">All Difficulties</option>
-                  <option value="EASY">Easy</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HARD">Hard</option>
+                  <option value="ALL">Tất cả độ khó</option>
+                  <option value="EASY">Dễ</option>
+                  <option value="MEDIUM">Trung bình</option>
+                  <option value="HARD">Khó</option>
                 </select>
 
                 <select
@@ -520,9 +558,9 @@ export function QuestionBankPage() {
                     setPage(0)
                   }}
                 >
-                  <option value="ALL">All Statuses</option>
-                  <option value="ASSIGNED">Assigned to a module</option>
-                  <option value="RESERVE">Not assigned (In Bank)</option>
+                  <option value="ALL">Tất cả trạng thái</option>
+                  <option value="ASSIGNED">Đã gán vào module</option>
+                  <option value="RESERVE">Chưa gán (Kho dự phòng)</option>
                   {modules.map((m) => (
                     <option key={m.moduleId} value={m.moduleId}>Module: {m.title}</option>
                   ))}
@@ -535,7 +573,7 @@ export function QuestionBankPage() {
                     onClick={handleResetFilters}
                     style={{ fontSize: '12px', padding: '4px 8px', color: '#dc2626', borderColor: '#fca5a5' }}
                   >
-                    Reset
+                    Đặt lại bộ lọc
                   </button>
                 )}
               </div>
@@ -564,7 +602,7 @@ export function QuestionBankPage() {
           {selectedIds.size > 0 && (
             <div className="lms-bulk-banner">
               <div>
-                Selected <strong>{selectedIds.size}</strong> questions
+                Đã chọn <strong>{selectedIds.size}</strong> câu hỏi
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
@@ -573,15 +611,15 @@ export function QuestionBankPage() {
                   style={{ padding: '4px 10px', fontSize: '12px' }}
                   onClick={() => setIsBulkAssignOpen(true)}
                 >
-                  Assign to Module
+                  Gán vào Module
                 </button>
                 <button
                   type="button"
                   className="btn-lms btn-lms-danger"
                   style={{ padding: '4px 10px', fontSize: '12px' }}
-                  onClick={handleBulkDelete}
+                  onClick={handleOpenBulkDeleteModal}
                 >
-                  Delete Selected
+                  Xóa các câu đã chọn
                 </button>
               </div>
             </div>
@@ -594,20 +632,22 @@ export function QuestionBankPage() {
             onToggleSelect={handleToggleSelect}
             onSelectAll={handleSelectAll}
             onEdit={handleOpenEditModal}
-            onDelete={handleDelete}
+            onDelete={handleOpenDeleteModal}
             onOpenCreate={handleOpenCreateModal}
             onOpenAi={() => setIsAiModalOpen(true)}
+            page={page}
+            pageSize={pageSize}
           />
 
           {totalElements > 0 && (
             <div className="lms-table-footer">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <span>
-                  Showing <strong>{startItem} - {endItem}</strong> of <strong>{totalElements}</strong>
+                  Hiển thị <strong>{startItem} - {endItem}</strong> trên tổng số <strong>{totalElements}</strong> câu hỏi
                 </span>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>Rows:</span>
+                  <span>Số dòng:</span>
                   <select
                     className="lms-form-select"
                     style={{ padding: '2px 6px', fontSize: '12px' }}
@@ -631,7 +671,7 @@ export function QuestionBankPage() {
                   className="btn-page-nav"
                   disabled={page === 0}
                   onClick={() => setPage(0)}
-                  title="First page"
+                  title="Trang đầu"
                 >
                   «
                 </button>
@@ -640,19 +680,19 @@ export function QuestionBankPage() {
                   className="btn-page-nav"
                   disabled={page === 0}
                   onClick={() => setPage(page - 1)}
-                  title="Previous page"
+                  title="Trang trước"
                 >
                   ‹
                 </button>
                 <span style={{ padding: '0 8px', fontWeight: 600, color: '#1e293b' }}>
-                  Page {page + 1} of {Math.max(totalPages, 1)}
+                  Trang {page + 1} / {Math.max(totalPages, 1)}
                 </span>
                 <button
                   type="button"
                   className="btn-page-nav"
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(page + 1)}
-                  title="Next page"
+                  title="Trang sau"
                 >
                   ›
                 </button>
@@ -661,7 +701,7 @@ export function QuestionBankPage() {
                   className="btn-page-nav"
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(totalPages - 1)}
-                  title="Last page"
+                  title="Trang cuối"
                 >
                   »
                 </button>
@@ -684,7 +724,7 @@ export function QuestionBankPage() {
         onClose={() => setIsAiModalOpen(false)}
         courseId={activeCourseId}
         onSavedSuccess={() => {
-          setMessage('Imported questions from Gemini AI successfully!')
+          setMessage('Đã nhập câu hỏi từ Gemini AI vào ngân hàng thành công!')
           setTimeout(() => setMessage(''), 4000)
           triggerReload()
         }}
@@ -696,6 +736,23 @@ export function QuestionBankPage() {
         courseId={activeCourseId}
         selectedCount={selectedIds.size}
         onConfirm={handleBulkAssignConfirm}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={deleteModalState.isOpen}
+        onClose={() => setDeleteModalState({ isOpen: false, question: null, isBulk: false, error: '', busy: false })}
+        onConfirm={handleConfirmDelete}
+        title={deleteModalState.isBulk ? 'Xóa câu hỏi hàng loạt' : 'Xóa câu hỏi'}
+        message={
+          deleteModalState.isBulk
+            ? `Bạn có chắc chắn muốn xóa ${selectedIds.size} câu hỏi đã chọn khỏi ngân hàng câu hỏi? Thao tác này không thể hoàn tác.`
+            : deleteModalState.question
+            ? `Bạn có chắc chắn muốn xóa câu hỏi #${deleteModalState.question.questionId}: "${deleteModalState.question.content?.length > 80 ? deleteModalState.question.content.slice(0, 80) + '...' : deleteModalState.question.content}"? Thao tác này không thể hoàn tác.`
+            : ''
+        }
+        error={deleteModalState.error}
+        isBlocked={Boolean(deleteModalState.error)}
+        busy={deleteModalState.busy}
       />
     </div>
   )

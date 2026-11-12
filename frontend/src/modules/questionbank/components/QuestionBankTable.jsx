@@ -10,6 +10,8 @@ export function QuestionBankTable({
   onDelete,
   onOpenCreate,
   onOpenAi,
+  page = 0,
+  pageSize = 10,
 }) {
   const [expandedId, setExpandedId] = useState(null)
 
@@ -33,7 +35,7 @@ export function QuestionBankTable({
           }}
         />
         <style>{`@keyframes lmsSpin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ fontSize: '13px', fontWeight: 500 }}>Loading questions...</div>
+        <div style={{ fontSize: '13px', fontWeight: 500 }}>Đang tải danh sách câu hỏi...</div>
       </div>
     )
   }
@@ -52,17 +54,17 @@ export function QuestionBankTable({
         }}
       >
         <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
-          No questions found
+          Không tìm thấy câu hỏi nào
         </div>
-        <div style={{ fontSize: '13px', color: '#64748b', maxWidth: '420px', lineHeight: 1.5 }}>
-          No questions matched your search or filters. You can create a question manually or generate them using AI.
+        <div style={{ fontSize: '13px', color: '#64748b', maxWidth: '440px', lineHeight: 1.5 }}>
+          Không có câu hỏi nào khớp với tìm kiếm hoặc bộ lọc của bạn. Bạn có thể tự soạn câu hỏi mới hoặc tạo tự động bằng AI.
         </div>
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" className="btn-lms btn-lms-primary" onClick={onOpenCreate}>
-            + Create Question
+            + Thêm câu hỏi
           </button>
           <button type="button" className="btn-lms btn-lms-ai" onClick={onOpenAi}>
-            Generate with AI
+            Tạo bằng AI
           </button>
         </div>
       </div>
@@ -74,25 +76,25 @@ export function QuestionBankTable({
   const renderDifficultyBadge = (diff) => {
     const d = (diff || '').trim().toUpperCase()
     if (d === 'EASY') {
-      return <span className="badge-lms badge-diff-easy">Easy</span>
+      return <span className="badge-lms badge-diff-easy">Dễ</span>
     }
     if (d === 'HARD') {
-      return <span className="badge-lms badge-diff-hard">Hard</span>
+      return <span className="badge-lms badge-diff-hard">Khó</span>
     }
-    return <span className="badge-lms badge-diff-medium">Medium</span>
+    return <span className="badge-lms badge-diff-medium">Trung bình</span>
   }
 
   const renderStatusBadge = (q) => {
     if (q.quizId) {
       return (
-        <span className="badge-lms badge-quiz-assigned" title={q.quizTitle || `Quiz #${q.quizId}`}>
-          {q.quizTitle || `Quiz #${q.quizId}`}
+        <span className="badge-lms badge-quiz-assigned" title={q.quizTitle || `Bài kiểm tra #${q.quizId}`}>
+          {q.quizTitle || `Bài kiểm tra #${q.quizId}`}
         </span>
       )
     }
     return (
       <span className="badge-lms badge-quiz-reserve">
-        In Bank
+        Kho dự phòng
       </span>
     )
   }
@@ -108,21 +110,23 @@ export function QuestionBankTable({
                 checked={allSelected}
                 onChange={onSelectAll}
                 style={{ cursor: 'pointer', accentColor: '#2563eb' }}
-                title="Select all"
+                title="Chọn tất cả"
               />
             </th>
-            <th className="lms-col-id" style={{ width: '55px', textAlign: 'center' }}>ID</th>
-            <th className="lms-col-prompt">Question Prompt & Choices</th>
-            <th className="lms-col-topic" style={{ width: '170px' }}>Topic</th>
-            <th className="lms-col-diff" style={{ width: '90px', textAlign: 'center' }}>Difficulty</th>
-            <th className="lms-col-status" style={{ width: '110px', textAlign: 'center' }}>Status</th>
-            <th className="lms-col-actions" style={{ width: '160px', textAlign: 'center' }}>Actions</th>
+            <th className="lms-col-id" style={{ width: '60px', textAlign: 'center' }}>STT</th>
+            <th className="lms-col-prompt">Nội dung câu hỏi & Lựa chọn</th>
+            <th className="lms-col-topic" style={{ width: '170px' }}>Chủ đề</th>
+            <th className="lms-col-diff" style={{ width: '90px', textAlign: 'center' }}>Độ khó</th>
+            <th className="lms-col-status" style={{ width: '110px', textAlign: 'center' }}>Trạng thái</th>
+            <th className="lms-col-actions" style={{ width: '160px', textAlign: 'center' }}>Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          {questions.map((q) => {
+          {questions.map((q, index) => {
             const isChecked = selectedIds.has(q.questionId)
             const isExpanded = expandedId === q.questionId
+            const isAssigned = Boolean(q.quizId)
+            const sttNumber = page * pageSize + index + 1
             return (
               <tr key={q.questionId} className={isChecked ? 'selected' : ''}>
                 <td className="lms-col-select" style={{ textAlign: 'center' }}>
@@ -134,34 +138,57 @@ export function QuestionBankTable({
                   />
                 </td>
 
-                <td className="lms-col-id" style={{ textAlign: 'center', fontWeight: 600, color: '#64748b', fontSize: '12.5px' }}>
-                  #{q.questionId}
+                <td className="lms-col-id" style={{ textAlign: 'center' }}>
+                  <div style={{ fontWeight: 700, color: '#334155', fontSize: '13px' }}>
+                    {sttNumber}
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#94a3b8' }} title={`Mã hệ thống: #${q.questionId}`}>
+                    #{q.questionId}
+                  </div>
                 </td>
 
                 <td className="lms-col-prompt">
                   <div className="lms-question-cell">
                     <div className="lms-mobile-badges">
-                      <span className="lms-mobile-id-badge">#{q.questionId}</span>
+                      <span className="lms-mobile-id-badge">STT {sttNumber} (#{q.questionId})</span>
                       {renderDifficultyBadge(q.difficulty)}
                       {renderStatusBadge(q)}
-                      <span className="badge-lms badge-topic">{q.topic || 'General'}</span>
+                      <span className="badge-lms badge-topic">{q.topic || 'Chung'}</span>
                     </div>
 
                     <div className={`lms-question-text ${isExpanded ? 'expanded' : ''}`}>
                       {q.content}
                     </div>
 
-                    <div className="lms-question-meta-row">
+                    <div className="lms-question-meta-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
                       <button
                         type="button"
                         onClick={() => toggleExpand(q.questionId)}
                         className="btn-toggle-options"
+                        style={{
+                          background: isExpanded ? '#e0e7ff' : '#f1f5f9',
+                          color: isExpanded ? '#4338ca' : '#2563eb',
+                          border: isExpanded ? '1px solid #c7d2fe' : '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          lineHeight: 1.4,
+                          boxShadow: 'none',
+                          minHeight: 'auto',
+                          minWidth: 'auto',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
                       >
-                        {isExpanded ? 'Hide choices' : 'View choices'}
+                        <span>{isExpanded ? '▾' : '▸'}</span>
+                        <span>{isExpanded ? 'Ẩn các lựa chọn' : 'Xem các lựa chọn'}</span>
                       </button>
 
                       <span style={{ color: '#64748b' }}>
-                        {q.questionType === 'MULTIPLE_ANSWER' ? 'Correct answers' : 'Correct answer'}: <strong style={{ color: '#15803d', fontWeight: 700 }}>Choice {q.correctAnswer}</strong>
+                        {q.questionType === 'MULTIPLE_ANSWER' ? 'Đáp án đúng' : 'Đáp án đúng'}: <strong style={{ color: '#15803d', fontWeight: 700 }}>Đáp án {q.correctAnswer}</strong>
                       </span>
                     </div>
 
@@ -177,14 +204,14 @@ export function QuestionBankTable({
                               >
                                 <strong style={{ color: isCorrect ? '#065f46' : '#111827' }}>{opt.key}.</strong>
                                 <span style={{ flex: 1 }}>{opt.text}</span>
-                                {isCorrect && <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>✓ Correct</span>}
+                                {isCorrect && <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>✓ Đúng</span>}
                               </div>
                             )
                           })}
                         </div>
                         {q.explanation && (
                           <div style={{ marginTop: '6px', fontSize: '12px', color: '#475569', borderTop: '1px dashed #cbd5e1', paddingTop: '6px' }}>
-                            <strong>Explanation:</strong> {q.explanation}
+                            <strong>Giải thích:</strong> {q.explanation}
                           </div>
                         )}
                       </div>
@@ -194,7 +221,7 @@ export function QuestionBankTable({
 
                 <td className="lms-col-topic">
                   <span className="badge-lms badge-topic" title={q.topic}>
-                    {q.topic || 'General'}
+                    {q.topic || 'Chung'}
                   </span>
                 </td>
 
@@ -222,7 +249,7 @@ export function QuestionBankTable({
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDelete(q.questionId)}
+                      onClick={() => onDelete(q)}
                       title="Xóa câu hỏi"
                       className="btn-action-icon btn-action-delete"
                     >

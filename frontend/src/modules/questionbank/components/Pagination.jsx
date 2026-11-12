@@ -39,11 +39,11 @@ export function Pagination({
     <div className="lms-pagination">
       <div className="lms-pagination-info">
         <div>
-          Showing <strong>{startItem} - {endItem}</strong> of <strong>{totalElements}</strong> questions
+          Hiển thị <strong>{startItem} - {endItem}</strong> trên tổng số <strong>{totalElements}</strong> câu hỏi
         </div>
 
         <div className="lms-page-size-selector">
-          <span>Per page:</span>
+          <span>Số dòng/trang:</span>
           <select
             className="lms-page-size-select"
             value={pageSize}
@@ -61,7 +61,7 @@ export function Pagination({
         <button
           type="button"
           className="btn-page-nav"
-          title="First page"
+          title="Trang đầu"
           disabled={page === 0}
           onClick={() => onPageChange(0)}
         >
@@ -71,7 +71,7 @@ export function Pagination({
         <button
           type="button"
           className="btn-page-nav"
-          title="Previous page"
+          title="Trang trước"
           disabled={page === 0}
           onClick={() => onPageChange(page - 1)}
         >
@@ -94,7 +94,7 @@ export function Pagination({
               type="button"
               className={`btn-page-nav ${isActive ? 'active' : ''}`}
               onClick={() => onPageChange(p)}
-              title={`Page ${p + 1}`}
+              title={`Trang ${p + 1}`}
             >
               {p + 1}
             </button>
@@ -104,7 +104,7 @@ export function Pagination({
         <button
           type="button"
           className="btn-page-nav"
-          title="Next page"
+          title="Trang sau"
           disabled={page >= totalPages - 1}
           onClick={() => onPageChange(page + 1)}
         >
@@ -114,7 +114,7 @@ export function Pagination({
         <button
           type="button"
           className="btn-page-nav"
-          title="Last page"
+          title="Trang cuối"
           disabled={page >= totalPages - 1}
           onClick={() => onPageChange(totalPages - 1)}
         >

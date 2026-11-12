@@ -46,16 +46,32 @@ export function BulkAssignModal({
       <div className="lms-modal-dialog" style={{ maxWidth: '480px' }}>
         <div className="lms-modal-header">
           <div className="lms-modal-title-group">
-            <h2 className="lms-modal-title">Bulk Assign Questions</h2>
+            <h2 className="lms-modal-title">Gán câu hỏi hàng loạt</h2>
             <p className="lms-modal-subtitle">
-              Move or assign {selectedCount} selected questions.
+              Di chuyển hoặc gán {selectedCount} câu hỏi đã chọn.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="lms-modal-close"
-            title="Close dialog"
+            title="Đóng"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '18px',
+              color: '#64748b',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 'none',
+              minWidth: 'auto',
+              minHeight: 'auto',
+              lineHeight: 1,
+            }}
           >
             ✕
           </button>
@@ -74,11 +90,11 @@ export function BulkAssignModal({
                 fontWeight: 500,
               }}
             >
-              You have selected <strong>{selectedCount}</strong> question{selectedCount > 1 ? 's' : ''} to update.
+              Bạn đã chọn <strong>{selectedCount}</strong> câu hỏi để cập nhật.
             </div>
 
             <div className="lms-form-group">
-              <label className="lms-form-label">Destination</label>
+              <label className="lms-form-label">Điểm đến / Mục tiêu</label>
               <div style={{ display: 'flex', gap: '18px', marginTop: '4px', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13.5px', cursor: 'pointer' }}>
                   <input
@@ -88,7 +104,7 @@ export function BulkAssignModal({
                     onChange={() => setActionType('assign')}
                     style={{ accentColor: '#2563eb' }}
                   />
-                  Assign to a Module
+                  Gán vào một Module
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13.5px', cursor: 'pointer' }}>
                   <input
@@ -98,7 +114,7 @@ export function BulkAssignModal({
                     onChange={() => setActionType('unassign')}
                     style={{ accentColor: '#2563eb' }}
                   />
-                  Move to Reserve Bank
+                  Chuyển về Ngân hàng tự do (Chưa gán)
                 </label>
               </div>
             </div>
@@ -106,11 +122,11 @@ export function BulkAssignModal({
             {actionType === 'assign' && (
               <div className="lms-form-group">
                 <label className="lms-form-label">
-                  Module <span style={{ color: '#ef4444' }}>*</span>
+                  Chọn Module <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 {modules.length === 0 ? (
                   <p style={{ fontSize: '13px', color: '#b91c1c' }}>
-                    This course has no modules yet. Add a module in course management first.
+                    Khóa học này chưa có module nào. Vui lòng tạo module trước trong khóa học.
                   </p>
                 ) : (
                   <select
@@ -131,10 +147,10 @@ export function BulkAssignModal({
 
           <div className="lms-modal-footer">
             <button type="button" className="btn-lms btn-lms-secondary" onClick={onClose} disabled={loading}>
-              Cancel
+              Hủy
             </button>
             <button type="submit" disabled={loading || (actionType === 'assign' && !moduleId)} className="btn-lms btn-lms-primary">
-              {loading ? 'Updating...' : 'Apply Changes'}
+              {loading ? 'Đang cập nhật...' : 'Áp dụng thay đổi'}
             </button>
           </div>
         </form>

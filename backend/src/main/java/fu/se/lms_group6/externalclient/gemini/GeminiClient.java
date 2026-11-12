@@ -28,21 +28,23 @@ public class GeminiClient {
     private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
 
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-    private static final String MODEL = "gemini-flash-lite-latest";
     private static final int MAX_LESSON_CHARS = 16_000;
     private static final int LOG_BODY_CHARS = 500;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String apiKey;
+    private final String model;
     private final Duration timeout;
 
     public GeminiClient(
             ObjectMapper objectMapper,
             @Value("${gemini.api-key:${GEMINI_API_KEY:}}") String apiKey,
+            @Value("${GEMINI_MODEL:gemini-2.5-flash}") String model,
             @Value("${GEMINI_TIMEOUT_SECONDS:120}") int timeoutSeconds) {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey == null ? "" : apiKey.trim();
+        this.model = model == null || model.isBlank() ? "gemini-2.5-flash" : model.trim();
         this.timeout = Duration.ofSeconds(Math.max(1, timeoutSeconds));
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
@@ -83,7 +85,7 @@ public class GeminiClient {
                     0.4, true);
         } catch (AIException ex) {
             log.warn("Gemini is unavailable ({}); falling back to the simulated question generator", ex.getMessage());
-            return generateMockQuestions(request.topic(), count, difficulty, multipleAnswers);
+            return generateMockQuestions(request.topic(), request.contextMaterial(), count, difficulty, multipleAnswers);
         }
         return parseQuestions(text, type);
     }
@@ -102,18 +104,30 @@ public class GeminiClient {
         String type = multipleAnswers ? "MULTIPLE_ANSWER" : "MULTIPLE_CHOICE";
         String exampleAnswer = multipleAnswers ? "A,C" : "A";
         StringBuilder sb = new StringBuilder();
-        sb.append("Bạn là một chuyên gia khảo thí và giáo dục. Hãy tạo đúng ").append(count)
-                .append(" câu hỏi trắc nghiệm (").append(type).append(") về chủ đề: \"").append(topic).append("\".\n")
-                .append("Độ khó: ").append(difficulty).append(".\n")
-                .append(multipleAnswers
-                        ? "Mỗi câu có từ 2 đến 3 đáp án đúng. correctAnswer liệt kê các key đúng, cách nhau bằng dấu phẩy, ví dụ \"A,C\".\n"
-                        : "Mỗi câu chỉ có đúng 1 đáp án đúng.\n");
 
         if (context != null && !context.isBlank()) {
-            sb.append("Tài liệu / ngữ cảnh tham khảo:\n").append(context).append("\n");
+            sb.append("Bạn là một chuyên gia khảo thí và giáo dục. DƯỚI ĐÂY LÀ NỘI DUNG TÀI LIỆU HỌC TẬP ĐƯỢC CUNG CẤP:\n\n")
+                    .append("=== NỘI DUNG TÀI LIỆU HỌC TẬP (BẮT BUỘC BÁM SÁT 100%) ===\n")
+                    .append(context.trim())
+                    .append("\n===========================================================\n\n")
+                    .append("YÊU CẦU QUAN TRỌNG NHẤT:\n")
+                    .append("1. Bạn PHẢI tạo đúng ").append(count).append(" câu hỏi trắc nghiệm (").append(type).append(") HOÀN TOÀN BÁM SÁT VÀO NỘI DUNG TÀI LIỆU TRÊN.\n")
+                    .append("2. Mọi câu hỏi, các phương án lựa chọn (A, B, C, D) và lời giải thích PHẢI được trích xuất hoặc suy luận trực tiếp từ nội dung tài liệu này.\n")
+                    .append("3. TUYỆT ĐỐI KHÔNG tự bịa ra kiến thức ngoài tài liệu, và KHÔNG hỏi về chủ đề khác (kể cả chủ đề tham khảo \"").append(topic).append("\" nếu tài liệu nói về môn học khác).\n")
+                    .append("4. Độ khó: ").append(difficulty).append(".\n")
+                    .append(multipleAnswers
+                            ? "5. Mỗi câu có từ 2 đến 3 đáp án đúng. Thuộc tính correctAnswer liệt kê các key đúng cách nhau bằng dấu phẩy (ví dụ \"A,C\").\n"
+                            : "5. Mỗi câu chỉ có DUY NHẤT 1 đáp án đúng (ví dụ \"A\").\n");
+        } else {
+            sb.append("Bạn là một chuyên gia khảo thí và giáo dục. Hãy tạo đúng ").append(count)
+                    .append(" câu hỏi trắc nghiệm (").append(type).append(") chất lượng cao về chủ đề: \"").append(topic).append("\".\n")
+                    .append("Độ khó: ").append(difficulty).append(".\n")
+                    .append(multipleAnswers
+                            ? "Mỗi câu có từ 2 đến 3 đáp án đúng. correctAnswer liệt kê các key đúng, cách nhau bằng dấu phẩy, ví dụ \"A,C\".\n"
+                            : "Mỗi câu chỉ có đúng 1 đáp án đúng.\n");
         }
 
-        sb.append("Yêu cầu định dạng đầu ra BẮT BUỘC là một JSON Array hợp lệ, không chứa markdown, không chứa ```json hoặc văn bản nào khác ngoài JSON thô. Mỗi item có cấu trúc sau:\n")
+        sb.append("\nYêu cầu định dạng đầu ra BẮT BUỘC là một JSON Array hợp lệ, không chứa markdown, không chứa ```json hoặc văn bản nào khác ngoài JSON thô. Mỗi item có cấu trúc sau:\n")
                 .append("[\n")
                 .append("  {\n")
                 .append("    \"content\": \"Nội dung câu hỏi?\",\n")
@@ -125,7 +139,7 @@ public class GeminiClient {
                 .append("      {\"key\": \"D\", \"text\": \"Lựa chọn D\"}\n")
                 .append("    ],\n")
                 .append("    \"correctAnswer\": \"").append(exampleAnswer).append("\",\n")
-                .append("    \"explanation\": \"Giải thích vì sao các đáp án đúng là đúng\"\n")
+                .append("    \"explanation\": \"Giải thích chi tiết vì sao đáp án đúng dựa vào tài liệu\"\n")
                 .append("  }\n")
                 .append("]\n");
 
@@ -187,6 +201,29 @@ public class GeminiClient {
         if (apiKey.isEmpty()) {
             throw new AIException("GEMINI_API_KEY is not configured");
         }
+
+        List<String> candidateModels = new ArrayList<>();
+        candidateModels.add(this.model);
+        if (!"gemini-2.5-flash".equalsIgnoreCase(this.model)) {
+            candidateModels.add("gemini-2.5-flash");
+        }
+        if (!"gemini-2.0-flash".equalsIgnoreCase(this.model)) {
+            candidateModels.add("gemini-2.0-flash");
+        }
+
+        AIException lastException = null;
+        for (String targetModel : candidateModels) {
+            try {
+                return executeGeminiRequest(targetModel, prompt, temperature, jsonOutput, pdf);
+            } catch (AIException ex) {
+                lastException = ex;
+                log.warn("Gemini model {} failed ({}). Attempting next model if available...", targetModel, ex.getMessage());
+            }
+        }
+        throw lastException != null ? lastException : new AIException("All Gemini models failed");
+    }
+
+    private String executeGeminiRequest(String targetModel, String prompt, double temperature, boolean jsonOutput, byte[] pdf) {
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("temperature", temperature);
         if (jsonOutput) {
@@ -203,7 +240,7 @@ public class GeminiClient {
                 "generationConfig", generationConfig));
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + MODEL + ":generateContent"))
+                .uri(URI.create(BASE_URL + targetModel + ":generateContent?key=" + apiKey))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", apiKey)
                 .timeout(timeout)
@@ -221,7 +258,7 @@ public class GeminiClient {
         }
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             String answer = response.body() == null ? "" : response.body();
-            log.error("Gemini API returned HTTP {}: {}", response.statusCode(),
+            log.error("Gemini API ({}) returned HTTP {}: {}", targetModel, response.statusCode(),
                     answer.length() > LOG_BODY_CHARS ? answer.substring(0, LOG_BODY_CHARS) : answer);
             throw new AIException("Gemini answered with HTTP " + response.statusCode());
         }
@@ -241,9 +278,23 @@ public class GeminiClient {
         JsonNode parts = root.path("candidates").path(0).path("content").path("parts");
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < parts.size(); i++) {
-            String part = parts.get(i).path("text").textValue();
-            if (part != null) {
-                text.append(part);
+            JsonNode part = parts.get(i);
+            // Skip Gemini 2.5 internal thinking tokens/blocks
+            if (part.path("thought").asBoolean(false)) {
+                continue;
+            }
+            String partText = part.path("text").textValue();
+            if (partText != null) {
+                text.append(partText);
+            }
+        }
+        // Fallback if thinking was the only text or thought flag was absent
+        if (text.isEmpty()) {
+            for (int i = 0; i < parts.size(); i++) {
+                String partText = parts.get(i).path("text").textValue();
+                if (partText != null) {
+                    text.append(partText);
+                }
             }
         }
         if (text.isEmpty()) {
@@ -253,13 +304,50 @@ public class GeminiClient {
         return text.toString();
     }
 
-    private List<GeneratedQuestionItemDto> generateMockQuestions(String topic, int count, String difficulty, boolean multipleAnswers) {
+    private List<GeneratedQuestionItemDto> generateMockQuestions(String topic, String context, int count, String difficulty, boolean multipleAnswers) {
         List<GeneratedQuestionItemDto> list = new ArrayList<>();
+        List<String> keySentences = new ArrayList<>();
+        if (context != null && !context.isBlank()) {
+            for (String line : context.split("[\\r\\n]+")) {
+                String clean = line.replaceAll("^[\\s*\\-–•#\\d.]+", "").trim();
+                if (clean.length() >= 25 && !clean.startsWith("[Trang")) {
+                    keySentences.add(clean);
+                }
+            }
+        }
+
+        if (!keySentences.isEmpty()) {
+            for (int i = 1; i <= count; i++) {
+                int baseIdx = (i - 1) % keySentences.size();
+                String correctSentence = keySentences.get(baseIdx);
+                String distractor1 = keySentences.size() > 1 ? keySentences.get((baseIdx + 1) % keySentences.size()) : "Nội dung không được đề cập trong tài liệu học tập";
+                String distractor2 = keySentences.size() > 2 ? keySentences.get((baseIdx + 2) % keySentences.size()) : "Phát biểu trái ngược với nguyên lý được nêu trong tài liệu";
+                String distractor3 = keySentences.size() > 3 ? keySentences.get((baseIdx + 3) % keySentences.size()) : "Cả 3 phương án trên đều không chính xác";
+
+                List<QuestionOptionDto> options = List.of(
+                        new QuestionOptionDto("A", correctSentence),
+                        new QuestionOptionDto("B", distractor1),
+                        new QuestionOptionDto("C", distractor2),
+                        new QuestionOptionDto("D", distractor3)
+                );
+
+                String snippet = correctSentence.length() > 60 ? correctSentence.substring(0, 60) + "..." : correctSentence;
+                list.add(new GeneratedQuestionItemDto(
+                        "Dựa trên tài liệu đã cung cấp, phát biểu hoặc nội dung nào sau đây là chính xác?",
+                        multipleAnswers ? "MULTIPLE_ANSWER" : "MULTIPLE_CHOICE",
+                        options,
+                        multipleAnswers ? "A,B" : "A",
+                        "Trích dẫn trực tiếp từ tài liệu: \"" + snippet + "\""
+                ));
+            }
+            return list;
+        }
+
         for (int i = 1; i <= count; i++) {
             List<QuestionOptionDto> options = List.of(
-                    new QuestionOptionDto("A", "Định nghĩa / phương án chính xác thứ nhất liên quan đến " + topic),
-                    new QuestionOptionDto("B", "Phương án đánh lạc hướng phổ biến về " + topic),
-                    new QuestionOptionDto("C", "Khái niệm đối nghịch hoặc sai lệch về " + topic),
+                    new QuestionOptionDto("A", "Nội dung chuẩn xác và quan trọng nhất về " + topic),
+                    new QuestionOptionDto("B", "Phương án mở rộng hoặc ứng dụng thực tế của " + topic),
+                    new QuestionOptionDto("C", "Khái niệm dễ gây nhầm lẫn nhưng không hoàn toàn chính xác về " + topic),
                     new QuestionOptionDto("D", "Không có phương án nào đúng trong số các phương án trên")
             );
             list.add(new GeneratedQuestionItemDto(
@@ -267,7 +355,7 @@ public class GeminiClient {
                     multipleAnswers ? "MULTIPLE_ANSWER" : "MULTIPLE_CHOICE",
                     options,
                     multipleAnswers ? "A,B" : "A",
-                    "Phương án A là câu trả lời chuẩn xác dựa trên lý thuyết và tài liệu học tập của chủ đề " + topic
+                    "Phương án A là nội dung chuẩn xác theo lý thuyết của chủ đề " + topic
             ));
         }
         return list;
