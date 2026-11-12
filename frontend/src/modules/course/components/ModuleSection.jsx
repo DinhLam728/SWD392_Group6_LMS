@@ -1,5 +1,4 @@
 import { Link } from 'react-router'
-const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`
 
 function MoveButtons({ label, canMoveUp, canMoveDown, busy, onMove }) {
   return (
@@ -7,7 +6,7 @@ function MoveButtons({ label, canMoveUp, canMoveDown, busy, onMove }) {
       <button
         type="button"
         className="button button-secondary tc-small tc-icon"
-        aria-label={`Move ${label} up`}
+        aria-label={`Di chuyển ${label} lên`}
         disabled={!canMoveUp || busy}
         onClick={() => onMove('UP')}
       >
@@ -16,7 +15,7 @@ function MoveButtons({ label, canMoveUp, canMoveDown, busy, onMove }) {
       <button
         type="button"
         className="button button-secondary tc-small tc-icon"
-        aria-label={`Move ${label} down`}
+        aria-label={`Di chuyển ${label} xuống`}
         disabled={!canMoveDown || busy}
         onClick={() => onMove('DOWN')}
       >
@@ -49,7 +48,7 @@ export default function ModuleSection({
         <div className="tc-module-title">
           <h2>{module.title}</h2>
           <small>
-            {plural(lessonCount, 'lesson', 'lessons')} · {plural(quizCount, 'practice quiz', 'practice quizzes')}
+            {lessonCount} bài học · {quizCount} quiz ôn tập
           </small>
         </div>
         <div className="tc-tools">
@@ -65,14 +64,14 @@ export default function ModuleSection({
             className="button button-secondary tc-small"
             onClick={() => onEditModule(module)}
           >
-            Edit
+            Sửa
           </button>
           <button
             type="button"
             className="button button-secondary tc-small tc-danger"
             onClick={() => onDeleteModule(module)}
           >
-            Delete
+            Xóa
           </button>
         </div>
       </header>
@@ -86,12 +85,12 @@ export default function ModuleSection({
               </span>
               <span>{lesson.title}</span>
               <span className={`status-badge ${lesson.hasContent ? 'status-active' : 'status-pending'}`}>
-                {lesson.hasContent ? 'Text' : 'Empty'}
+                {lesson.hasContent ? 'Có nội dung' : 'Trống'}
               </span>
             </div>
             <div className="tc-tools">
               <MoveButtons
-                label={`lesson ${lesson.title}`}
+                label={`bài học ${lesson.title}`}
                 canMoveUp={index > 0}
                 canMoveDown={index < lessonCount - 1}
                 busy={busy}
@@ -101,14 +100,14 @@ export default function ModuleSection({
                 className="button button-secondary tc-small"
                 to={`/teacher/courses/${courseId}/lessons/${lesson.lessonId}/edit`}
               >
-                Edit
+                Sửa
               </Link>
               <button
                 type="button"
                 className="button button-secondary tc-small tc-danger"
                 onClick={() => onDeleteLesson(lesson)}
               >
-                Delete
+                Xóa
               </button>
             </div>
           </li>
@@ -116,12 +115,12 @@ export default function ModuleSection({
       </ul>
 
       <div className="tc-add-lesson">
-        {lessonCount === 0 && <span>No lessons yet.</span>}
+        {lessonCount === 0 && <span>Chưa có bài học nào.</span>}
         <Link
           className="button button-secondary tc-small"
           to={`/teacher/courses/${courseId}/modules/${module.moduleId}/lessons/new`}
         >
-          + Add Lesson
+          + Thêm bài học
         </Link>
       </div>
     </section>

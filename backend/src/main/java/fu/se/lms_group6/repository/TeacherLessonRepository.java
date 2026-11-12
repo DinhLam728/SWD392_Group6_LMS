@@ -32,6 +32,8 @@ public interface TeacherLessonRepository extends JpaRepository<Lesson, Long> {
     @Query("select coalesce(max(l.position), 0) from Lesson l where l.module.moduleId = :moduleId")
     int maxPosition(@Param("moduleId") Long moduleId);
 
+    long countByModuleModuleId(Long moduleId);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from Lesson l where l.module.moduleId = :moduleId")
     void deleteByModuleId(@Param("moduleId") Long moduleId);

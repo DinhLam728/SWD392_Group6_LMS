@@ -18,7 +18,7 @@ export default function ConfirmDialog({
       footer={
         <>
           <button type="button" className="button button-secondary" onClick={onCancel} disabled={busy}>
-            Cancel
+            Hủy
           </button>
           <button
             type="button"
@@ -26,7 +26,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
           >
-            {busy ? 'Working…' : confirmLabel}
+            {busy ? 'Đang xử lý…' : confirmLabel}
           </button>
         </>
       }

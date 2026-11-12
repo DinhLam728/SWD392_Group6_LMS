@@ -10,15 +10,15 @@ import { setFlash } from '../services/flash.js'
 function validate(values) {
   const errors = {}
   const title = values.title.trim()
-  if (!title) errors.title = 'Course title is required.'
-  else if (title.length > 150) errors.title = 'Course title must be at most 150 characters.'
+  if (!title) errors.title = 'Tên khóa học không được để trống.'
+  else if (title.length > 150) errors.title = 'Tên khóa học tối đa 150 ký tự.'
   const description = values.description.trim()
-  if (!description) errors.description = 'Description is required.'
-  else if (description.length > 2000) errors.description = 'Description must be at most 2000 characters.'
+  if (!description) errors.description = 'Mô tả không được để trống.'
+  else if (description.length > 2000) errors.description = 'Mô tả tối đa 2000 ký tự.'
   if (!/^\d+$/.test(values.price.trim()) || Number(values.price) < 1) {
-    errors.price = 'Price must be a whole number of 1 or more.'
+    errors.price = 'Giá phải là số nguyên từ 1 trở lên.'
   }
-  if (values.thumbnailUrl.trim().length > 500) errors.thumbnailUrl = 'Image URL must be at most 500 characters.'
+  if (values.thumbnailUrl.trim().length > 500) errors.thumbnailUrl = 'Đường dẫn ảnh tối đa 500 ký tự.'
   return errors
 }
 
@@ -78,11 +78,11 @@ function CourseForm({ course }) {
         setSelectedImage(null)
       }
       await (isEdit ? updateCourse(course.courseId, body) : createCourse(body))
-      setFlash(isEdit ? 'Course updated.' : 'Course saved as draft.')
+      setFlash(isEdit ? 'Đã cập nhật khóa học.' : 'Đã lưu khóa học dưới dạng bản nháp.')
       navigate('/teacher/courses')
     } catch (error) {
       setErrors(firstMessageByField(error.errors))
-      setFailure(error.message || 'The course could not be saved.')
+      setFailure(error.message || 'Không thể lưu khóa học.')
       setSaving(false)
     }
   }
@@ -92,10 +92,10 @@ function CourseForm({ course }) {
       {failure && <Notice tone="error">{failure}</Notice>}
 
       <div className="tc-field">
-        <label htmlFor={ids.title}>Course Title *</label>
+        <label htmlFor={ids.title}>Tên khóa học *</label>
         <input
           id={ids.title}
-          placeholder="e.g. Java Programming Basics"
+          placeholder="Ví dụ: Lập trình Java cơ bản"
           value={values.title}
           aria-invalid={Boolean(errors.title)}
           onChange={(event) => setField('title', event.target.value)}
@@ -107,11 +107,11 @@ function CourseForm({ course }) {
       </div>
 
       <div className="tc-field">
-        <label htmlFor={ids.description}>Description *</label>
+        <label htmlFor={ids.description}>Mô tả *</label>
         <textarea
           id={ids.description}
           className="tc-textarea"
-          placeholder="Describe what students will learn..."
+          placeholder="Mô tả những điều học viên sẽ học được..."
           value={values.description}
           aria-invalid={Boolean(errors.description)}
           onChange={(event) => setField('description', event.target.value)}
@@ -123,11 +123,11 @@ function CourseForm({ course }) {
       </div>
 
       <div className="tc-field tc-form-narrow">
-        <label htmlFor={ids.price}>Price (VND) *</label>
+        <label htmlFor={ids.price}>Giá (VND) *</label>
         <input
           id={ids.price}
           inputMode="numeric"
-          placeholder="e.g. 500000"
+          placeholder="Ví dụ: 500000"
           value={values.price}
           aria-invalid={Boolean(errors.price)}
           onChange={(event) => setField('price', event.target.value)}
@@ -139,9 +139,9 @@ function CourseForm({ course }) {
         <label htmlFor={ids.thumbnail}>Ảnh khóa học</label>
         <div className="tc-thumb-row">
           {selectedImage || values.thumbnailUrl.trim() ? (
-            <img className="tc-thumb" src={selectedImage?.preview || courseImageUrl(values.thumbnailUrl.trim())} alt="Thumbnail preview" />
+            <img className="tc-thumb" src={selectedImage?.preview || courseImageUrl(values.thumbnailUrl.trim())} alt="Xem trước ảnh khóa học" />
           ) : (
-            <span className="tc-thumb">No image</span>
+            <span className="tc-thumb">Chưa có ảnh</span>
           )}
           <input
             id={ids.thumbnail}
@@ -169,10 +169,10 @@ function CourseForm({ course }) {
 
       <div className="tc-actions">
         <button type="submit" disabled={saving}>
-          {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Save as Draft'}
+          {saving ? 'Đang lưu…' : isEdit ? 'Lưu thay đổi' : 'Lưu bản nháp'}
         </button>
         <Link className="button button-secondary" to="/teacher/courses">
-          Cancel
+          Hủy
         </Link>
       </div>
     </form>
@@ -182,13 +182,13 @@ function CourseForm({ course }) {
 function PageHead({ title }) {
   return (
     <>
-      <div className="breadcrumb" role="navigation" aria-label="Breadcrumb">
-        <Link to="/teacher/courses">My Courses</Link>
+      <div className="breadcrumb" role="navigation" aria-label="Đường dẫn">
+        <Link to="/teacher/courses">Khóa học của tôi</Link>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{title}</span>
       </div>
       <div className="page-heading">
-        <span className="eyebrow">TEACHER</span>
+        <span className="eyebrow">GIÁO VIÊN</span>
         <h1>{title}</h1>
       </div>
     </>
@@ -200,7 +200,7 @@ function EditCourse({ courseId }) {
   const { data, error } = useRemoteData(`course-${courseId}`, loader)
   return (
     <>
-      <PageHead title="Edit Course" />
+      <PageHead title="Sửa khóa học" />
       {error && <Notice tone="error">{error.message}</Notice>}
       {data && <CourseForm key={data.data.courseId} course={data.data} />}
     </>
@@ -211,7 +211,7 @@ export function CourseFormPage({ courseId = null }) {
   if (courseId !== null) return <EditCourse courseId={courseId} />
   return (
     <>
-      <PageHead title="Create Course" />
+      <PageHead title="Tạo khóa học" />
       <CourseForm />
     </>
   )

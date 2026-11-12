@@ -137,15 +137,15 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         if (registrations > 0 || questions > 0 || quizzes > 0) {
             List<String> blockers = new ArrayList<>();
             if (registrations > 0) {
-                blockers.add(registrations + " registration(s)");
+                blockers.add(registrations + " lượt đăng ký");
             }
             if (questions > 0) {
-                blockers.add(questions + " question(s) in the question bank");
+                blockers.add(questions + " câu hỏi trong ngân hàng câu hỏi");
             }
             if (quizzes > 0) {
-                blockers.add(quizzes + " practice quiz(zes)");
+                blockers.add(quizzes + " quiz ôn tập");
             }
-            throw new TeacherConflictException("This course cannot be deleted because it still has "
+            throw new TeacherConflictException("Không thể xóa khóa học vì khóa học vẫn còn "
                     + String.join(", ", blockers) + ".");
         }
         courses.deleteLessonsOfCourse(courseId);
@@ -166,8 +166,8 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     private TeacherCourseResponse changePublication(Long teacherId, Long courseId, boolean published) {
         Course course = ownedCourse(teacherId, courseId);
         if (Boolean.TRUE.equals(course.getIsPublished()) == published) {
-            throw new TeacherConflictException(published ? "The course is already published."
-                    : "The course is already a draft.");
+            throw new TeacherConflictException(published ? "Khóa học đã được xuất bản."
+                    : "Khóa học đang ở trạng thái bản nháp.");
         }
         course.setIsPublished(published);
         return toCourseResponse(course);
@@ -219,14 +219,33 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     @Override
     public void deleteModule(Long teacherId, Long moduleId) {
         CourseModule module = ownedModule(teacherId, moduleId);
-        long quizzes = modules.countQuizzes(moduleId);
-        if (quizzes > 0) {
-            throw new TeacherConflictException("This module cannot be deleted because it still has "
-                    + quizzes + " practice quiz(zes).");
+        long lessonCount = lessons.countByModuleModuleId(moduleId);
+        long studentQuizzes = modules.countStudentQuizzes(moduleId);
+        long questions = modules.countQuizQuestions(moduleId);
+        long attempts = modules.countQuizAttempts(moduleId);
+        if (lessonCount > 0 || studentQuizzes > 0 || questions > 0 || attempts > 0) {
+            List<String> blockers = new ArrayList<>();
+            if (lessonCount > 0) {
+                blockers.add(lessonCount + " bài học");
+            }
+            if (studentQuizzes > 0) {
+                blockers.add(studentQuizzes + " quiz ôn tập của học viên");
+            }
+            if (questions > 0) {
+                blockers.add(questions + " câu hỏi thuộc quiz của module");
+            }
+            if (attempts > 0) {
+                blockers.add(attempts + " lượt làm bài quiz của học viên");
+            }
+            throw new TeacherConflictException("Không thể xóa module vì module vẫn còn "
+                    + String.join(", ", blockers) + ". Hãy xử lý các mục này trước khi xóa module.");
         }
         Long courseId = module.getCourse().getCourseId();
         int deletedPosition = module.getPosition();
-        lessons.deleteByModuleId(moduleId);
+        // Quiz rỗng do giáo viên tạo (không có câu hỏi, không có lượt làm bài) không còn liên kết với dữ liệu nào,
+        // nên được xóa cùng module để module không bị kẹt vĩnh viễn.
+        modules.deleteTeacherQuizConfigs(moduleId);
+        modules.deleteTeacherQuizzes(moduleId);
         modules.deleteById(moduleId);
         modules.flush();
         for (CourseModule following : modules
@@ -244,7 +263,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         CourseModule neighbour = (direction == MoveDirection.UP
                 ? modules.findFirstByCourseCourseIdAndPositionLessThanOrderByPositionDesc(courseId, current)
                 : modules.findFirstByCourseCourseIdAndPositionGreaterThanOrderByPositionAsc(courseId, current))
-                .orElseThrow(() -> new TeacherConflictException("The module is already at the edge of the list."));
+                .orElseThrow(() -> new TeacherConflictException("Module đã ở vị trí đầu hoặc cuối danh sách."));
         int other = neighbour.getPosition();
         module.setPosition(TEMPORARY_POSITION);
         modules.saveAndFlush(module);
@@ -279,6 +298,12 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
     @Override
     public void deleteLesson(Long teacherId, Long lessonId) {
         Lesson lesson = ownedLesson(teacherId, lessonId);
+        Long courseId = lesson.getModule().getCourse().getCourseId();
+        long registrations = courses.countRegistrations(courseId);
+        if (registrations > 0) {
+            throw new TeacherConflictException("Không thể xóa bài học vì khóa học đã có " + registrations
+                    + " lượt đăng ký của học viên.");
+        }
         Long moduleId = lesson.getModule().getModuleId();
         int deletedPosition = lesson.getPosition();
         lessons.delete(lesson);
@@ -298,7 +323,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         Lesson neighbour = (direction == MoveDirection.UP
                 ? lessons.findFirstByModuleModuleIdAndPositionLessThanOrderByPositionDesc(moduleId, current)
                 : lessons.findFirstByModuleModuleIdAndPositionGreaterThanOrderByPositionAsc(moduleId, current))
-                .orElseThrow(() -> new TeacherConflictException("The lesson is already at the edge of the list."));
+                .orElseThrow(() -> new TeacherConflictException("Bài học đã ở vị trí đầu hoặc cuối danh sách."));
         int other = neighbour.getPosition();
         lesson.setPosition(TEMPORARY_POSITION);
         lessons.saveAndFlush(lesson);
@@ -393,7 +418,7 @@ public class TeacherCourseServiceImpl implements TeacherCourseService {
         try {
             return save.get();
         } catch (DataIntegrityViolationException ex) {
-            throw new TeacherConflictException("Another change was saved at the same time. Reload the page and try again.");
+            throw new TeacherConflictException("Một thay đổi khác vừa được lưu cùng lúc. Hãy tải lại trang và thử lại.");
         }
     }
 

@@ -21,12 +21,12 @@ const CONTENT_MAX = 16000
 function validate({ title, content }) {
   const errors = {}
   const trimmedTitle = title.trim()
-  if (!trimmedTitle) errors.title = 'Lesson title is required.'
-  else if (trimmedTitle.length > TITLE_MAX) errors.title = `Lesson title must be at most ${TITLE_MAX} characters.`
+  if (!trimmedTitle) errors.title = 'Tiêu đề bài học không được để trống.'
+  else if (trimmedTitle.length > TITLE_MAX) errors.title = `Tiêu đề bài học tối đa ${TITLE_MAX} ký tự.`
   const trimmedContent = content.trim()
-  if (!trimmedContent) errors.content = 'Lesson content is required.'
+  if (!trimmedContent) errors.content = 'Nội dung bài học không được để trống.'
   else if (trimmedContent.length > CONTENT_MAX) {
-    errors.content = `Lesson content must be at most ${CONTENT_MAX} characters.`
+    errors.content = `Nội dung bài học tối đa ${CONTENT_MAX} ký tự.`
   }
   return errors
 }
@@ -92,7 +92,7 @@ function LessonForm({ context, lesson }) {
         setAiDialog(true)
       } else {
         setErrors((current) => ({ ...current, ...firstMessageByField(error.errors) }))
-        setFailure(error.message || 'The content could not be generated.')
+        setFailure(error.message || 'Không thể tạo nội dung.')
       }
     } finally {
       if (!request.signal.aborted) {
@@ -116,11 +116,11 @@ function LessonForm({ context, lesson }) {
   function confirmFile() {
     if (contextFile) {
       if (!/.(pdf|txt|md)$/i.test(contextFile.name)) {
-        setFileError('Only PDF, TXT or MD files are supported.')
+        setFileError('Chỉ hỗ trợ file PDF, TXT hoặc MD.')
         return
       }
       if (contextFile.size > 5 * 1024 * 1024) {
-        setFileError('The file must be at most 5MB.')
+        setFileError('File không được vượt quá 5MB.')
         return
       }
     }
@@ -142,11 +142,11 @@ function LessonForm({ context, lesson }) {
     setSaving(true)
     try {
       await (isEdit ? updateLesson(lesson.lessonId, body) : createLesson(context.moduleId, body))
-      setFlash(isEdit ? 'Lesson updated.' : 'Lesson added.')
+      setFlash(isEdit ? 'Đã cập nhật bài học.' : 'Đã thêm bài học.')
       navigate(contentUrl)
     } catch (error) {
       setErrors(firstMessageByField(error.errors))
-      setFailure(error.message || 'The lesson could not be saved.')
+      setFailure(error.message || 'Không thể lưu bài học.')
       setSaving(false)
     }
   }
@@ -163,16 +163,16 @@ function LessonForm({ context, lesson }) {
           <input value={context.moduleTitle} readOnly aria-readonly="true" />
         </div>
         <div className="tc-field">
-          <label>Order</label>
+          <label>Thứ tự</label>
           <input value={context.order} readOnly aria-readonly="true" />
         </div>
       </div>
 
       <div className="tc-field">
-        <label htmlFor={ids.title}>Lesson Title *</label>
+        <label htmlFor={ids.title}>Tiêu đề bài học *</label>
         <input
           id={ids.title}
-          placeholder="e.g. Introduction to Java classes"
+          placeholder="Ví dụ: Giới thiệu về lớp trong Java"
           value={values.title}
           aria-invalid={Boolean(errors.title)}
           onChange={(event) => setField('title', event.target.value)}
@@ -187,20 +187,20 @@ function LessonForm({ context, lesson }) {
 
       <div className="tc-field">
         <div className="tc-label-row">
-          <label htmlFor={ids.content}>Lesson Content *</label>
+          <label htmlFor={ids.content}>Nội dung bài học *</label>
           <button type="button" className="tc-ai" onClick={generate} disabled={busy}>
-            {generating ? 'Generating content...' : 'Generate Content with AI'}
+            {generating ? 'Đang tạo nội dung...' : 'Tạo nội dung bằng AI'}
           </button>
         </div>
         {aiNotice && (
           <Notice tone="ai">
-            AI draft generated from the lesson title{requestedFile.current ? ` and ${requestedFile.current.name}` : ''}. Review and edit it before saving.
+            Bản nháp AI được tạo từ tiêu đề bài học{requestedFile.current ? ` và file ${requestedFile.current.name}` : ''}. Hãy xem lại và chỉnh sửa trước khi lưu.
           </Notice>
         )}
         <textarea
           id={ids.content}
           className="tc-textarea tc-textarea-lesson"
-          placeholder="Write the lesson content, or generate a draft with AI..."
+          placeholder="Viết nội dung bài học hoặc tạo bản nháp bằng AI..."
           value={values.content}
           readOnly={generating}
           aria-busy={generating}
@@ -217,10 +217,10 @@ function LessonForm({ context, lesson }) {
 
       <div className="tc-actions">
         <button type="submit" disabled={busy}>
-          {saving ? 'Saving…' : 'Save Lesson'}
+          {saving ? 'Đang lưu…' : 'Lưu bài học'}
         </button>
         <Link className="button button-secondary" to={`${contentUrl}`}>
-          Cancel
+          Hủy
         </Link>
       </div>
 
@@ -233,20 +233,20 @@ function LessonForm({ context, lesson }) {
 
       {fileDialog && (
         <Dialog
-          title="Generate Content with AI"
+          title="Tạo nội dung bằng AI"
           onClose={() => setFileDialog(false)}
           footer={
             <>
               <button type="button" className="button button-secondary" onClick={() => setFileDialog(false)}>
-                Cancel
+                Hủy
               </button>
               <button type="button" className="button" onClick={confirmFile}>
-                Generate
+                Tạo nội dung
               </button>
             </>
           }
         >
-          <p>Choose a context file (optional). Gemini will write the lesson based on its content.</p>
+          <p>Chọn file ngữ cảnh (không bắt buộc). Gemini sẽ viết bài học dựa trên nội dung file.</p>
           <div className="tc-field" style={{ marginTop: '0.8rem' }}>
             <input
               type="file"
@@ -258,7 +258,7 @@ function LessonForm({ context, lesson }) {
             />
             <div className="tc-field-meta">
               <span className="tc-field-error">{fileError}</span>
-              <span>PDF, TXT, MD - max 5MB</span>
+              <span>PDF, TXT, MD - tối đa 5MB</span>
             </div>
           </div>
         </Dialog>
@@ -266,9 +266,9 @@ function LessonForm({ context, lesson }) {
 
       {replaceDialog && (
         <ConfirmDialog
-          title="Replace lesson content"
-          message="Generating content replaces the text that is already in Lesson Content. Continue?"
-          confirmLabel="Generate"
+          title="Thay thế nội dung bài học"
+          message="Việc tạo nội dung sẽ thay thế văn bản hiện có trong phần Nội dung bài học. Bạn có muốn tiếp tục?"
+          confirmLabel="Tạo nội dung"
           onCancel={() => setReplaceDialog(false)}
           onConfirm={() => runGeneration(values.title.trim(), contextFile)}
         />
@@ -280,15 +280,15 @@ function LessonForm({ context, lesson }) {
 function PageHead({ title }) {
   return (
     <>
-      <div className="breadcrumb" role="navigation" aria-label="Breadcrumb">
-        <Link to="/teacher/courses">My Courses</Link>
+      <div className="breadcrumb" role="navigation" aria-label="Đường dẫn">
+        <Link to="/teacher/courses">Khóa học của tôi</Link>
         <span aria-hidden="true"> / </span>
-        <span>Content</span>
+        <span>Nội dung</span>
         <span aria-hidden="true"> / </span>
         <span aria-current="page">{title}</span>
       </div>
       <div className="page-heading">
-        <span className="eyebrow">TEACHER</span>
+        <span className="eyebrow">GIÁO VIÊN</span>
         <h1>{title}</h1>
       </div>
     </>
@@ -301,9 +301,9 @@ function NewLesson({ courseId, moduleId }) {
   const module = data?.data.modules.find((item) => item.moduleId === moduleId)
   return (
     <>
-      <PageHead title="Add Lesson" />
+      <PageHead title="Thêm bài học" />
       {error && <Notice tone="error">{error.message}</Notice>}
-      {data && !module && <Notice tone="error">This module was not found in the course.</Notice>}
+      {data && !module && <Notice tone="error">Không tìm thấy module này trong khóa học.</Notice>}
       {module && (
         <LessonForm
           key={moduleId}
@@ -326,9 +326,9 @@ function EditLesson({ courseId, lessonId }) {
   const wrongCourse = lesson && lesson.courseId !== courseId
   return (
     <>
-      <PageHead title="Edit Lesson" />
+      <PageHead title="Sửa bài học" />
       {error && <Notice tone="error">{error.message}</Notice>}
-      {wrongCourse && <Notice tone="error">This lesson does not belong to the course.</Notice>}
+      {wrongCourse && <Notice tone="error">Bài học này không thuộc khóa học.</Notice>}
       {lesson && !wrongCourse && (
         <LessonForm
           key={lessonId}

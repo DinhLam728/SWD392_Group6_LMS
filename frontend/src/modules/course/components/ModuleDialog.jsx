@@ -16,21 +16,21 @@ export default function ModuleDialog({ initialTitle = '', busy = false, error = 
 
   return (
     <Dialog
-      title={initialTitle ? 'Edit module' : 'Add module'}
+      title={initialTitle ? 'Sửa module' : 'Thêm module'}
       onClose={busy ? () => {} : onCancel}
       footer={
         <>
           <button type="button" className="button button-secondary" onClick={onCancel} disabled={busy}>
-            Cancel
+            Hủy
           </button>
           <button type="button" className="button" onClick={submit} disabled={busy}>
-            {busy ? 'Saving…' : 'Save module'}
+            {busy ? 'Đang lưu…' : 'Lưu module'}
           </button>
         </>
       }
     >
       <div className="tc-field">
-        <label htmlFor={inputId}>Module title *</label>
+        <label htmlFor={inputId}>Tên module *</label>
         <input
           id={inputId}
           value={title}
@@ -43,7 +43,7 @@ export default function ModuleDialog({ initialTitle = '', busy = false, error = 
         />
         <div className="tc-field-meta">
           <span className="tc-field-error">
-            {touched && invalid ? 'Module title is required (max 150 characters).' : ''}
+            {touched && invalid ? 'Tên module là bắt buộc (tối đa 150 ký tự).' : ''}
           </span>
           <span>{title.length} / 150</span>
         </div>

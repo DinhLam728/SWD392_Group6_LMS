@@ -19,41 +19,41 @@ import { clearFlash, peekFlash } from '../services/flash.js'
 const PAGE_SIZE = 10
 const DEFAULT_SORT = 'createdAt,desc'
 const SORT_OPTIONS = [
-  ['createdAt,desc', 'Newest first'],
-  ['createdAt,asc', 'Oldest first'],
-  ['title,asc', 'Title A–Z'],
-  ['price,asc', 'Price: low to high'],
-  ['price,desc', 'Price: high to low'],
+  ['createdAt,desc', 'Mới nhất'],
+  ['createdAt,asc', 'Cũ nhất'],
+  ['title,asc', 'Tên A–Z'],
+  ['price,asc', 'Giá: thấp đến cao'],
+  ['price,desc', 'Giá: cao đến thấp'],
 ]
 
 const DIALOG_TEXT = {
   delete: {
-    title: 'Delete course',
-    confirmLabel: 'Delete',
+    title: 'Xóa khóa học',
+    confirmLabel: 'Xóa',
     danger: true,
     message: (course) =>
-      `Delete “${course.title}” together with all of its modules and lessons? This cannot be undone.`,
+      `Xóa khóa học “${course.title}” cùng toàn bộ module và bài học? Khóa học chỉ được xóa khi không còn lượt đăng ký, câu hỏi hoặc quiz liên quan. Thao tác này không thể hoàn tác.`,
   },
   publish: {
-    title: 'Publish course',
-    confirmLabel: 'Publish',
+    title: 'Xuất bản khóa học',
+    confirmLabel: 'Xuất bản',
     danger: false,
-    message: (course) => `Publish “${course.title}”? Students will be able to see and register for it.`,
+    message: (course) => `Xuất bản khóa học “${course.title}”? Học viên sẽ thấy và có thể đăng ký khóa học này.`,
   },
   unpublish: {
-    title: 'Unpublish course',
-    confirmLabel: 'Unpublish',
+    title: 'Hủy xuất bản khóa học',
+    confirmLabel: 'Hủy xuất bản',
     danger: false,
     message: (course) =>
-      `Unpublish “${course.title}”? It will no longer be visible to students who have not registered.`,
+      `Hủy xuất bản khóa học “${course.title}”? Học viên chưa đăng ký sẽ không còn nhìn thấy khóa học này.`,
   },
 }
 
 const ACTIONS = { delete: deleteCourse, publish: publishCourse, unpublish: unpublishCourse }
 const DONE_MESSAGE = {
-  delete: 'Course deleted.',
-  publish: 'Course published.',
-  unpublish: 'Course unpublished.',
+  delete: 'Đã xóa khóa học.',
+  publish: 'Đã xuất bản khóa học.',
+  unpublish: 'Đã hủy xuất bản khóa học.',
 }
 
 export function TeacherCoursesPage() {
@@ -114,7 +114,7 @@ export function TeacherCoursesPage() {
         reload()
       }
     } catch (failure) {
-      setAction({ busy: false, error: failure.message || 'The action could not be completed.' })
+      setAction({ busy: false, error: failure.message || 'Không thể thực hiện thao tác này.' })
     }
   }
 
@@ -124,12 +124,12 @@ export function TeacherCoursesPage() {
     <>
       <div className="page-heading tc-head">
         <div>
-          <span className="eyebrow">TEACHER</span>
-          <h1>My Courses</h1>
-          <p>Manage your courses, modules and lessons.</p>
+          <span className="eyebrow">GIÁO VIÊN</span>
+          <h1>Khóa học của tôi</h1>
+          <p>Quản lý khóa học, module và bài học của bạn.</p>
         </div>
         <Link className="button" to="/teacher/courses/new">
-          + Create Course
+          + Tạo khóa học
         </Link>
       </div>
 
@@ -138,24 +138,24 @@ export function TeacherCoursesPage() {
 
       <form className="filters" onSubmit={applyFilters} onReset={resetFilters}>
         <label>
-          Search courses
+          Tìm kiếm khóa học
           <input
-            placeholder="Search by course title..."
+            placeholder="Tìm theo tên khóa học..."
             maxLength={150}
             value={keywordInput}
             onChange={(event) => setKeywordInput(event.target.value)}
           />
         </label>
         <label>
-          Status
+          Trạng thái
           <select value={statusInput} onChange={(event) => setStatusInput(event.target.value)}>
-            <option value="">All statuses</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="PUBLISHED">PUBLISHED</option>
+            <option value="">Tất cả trạng thái</option>
+            <option value="DRAFT">Bản nháp</option>
+            <option value="PUBLISHED">Đã xuất bản</option>
           </select>
         </label>
         <label>
-          Sort by
+          Sắp xếp theo
           <select value={sortInput} onChange={(event) => setSortInput(event.target.value)}>
             {SORT_OPTIONS.map(([value, label]) => (
               <option key={value} value={value}>
@@ -165,9 +165,9 @@ export function TeacherCoursesPage() {
           </select>
         </label>
         <div className="filter-actions">
-          <button type="submit">Search</button>
+          <button type="submit">Tìm kiếm</button>
           <button type="reset" className="button-secondary">
-            Reset
+            Đặt lại
           </button>
         </div>
       </form>
@@ -177,7 +177,7 @@ export function TeacherCoursesPage() {
           page={result.page}
           size={result.size}
           totalElements={result.totalElements}
-          noun="courses"
+          noun="khóa học"
         />
       )}
 
@@ -186,13 +186,13 @@ export function TeacherCoursesPage() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Course</th>
-              <th>Modules</th>
-              <th>Lessons</th>
-              <th>Students</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>Khóa học</th>
+              <th>Module</th>
+              <th>Bài học</th>
+              <th>Học viên</th>
+              <th>Giá</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -204,11 +204,11 @@ export function TeacherCoursesPage() {
                     {course.thumbnailUrl ? (
                       <img className="tc-thumb" src={courseImageUrl(course.thumbnailUrl)} alt="" />
                     ) : (
-                      <span className="tc-thumb">No image</span>
+                      <span className="tc-thumb">Chưa có ảnh</span>
                     )}
                     <div>
                       <span>{course.title}</span>
-                      <small>Created {formatDate(course.createdAt)}</small>
+                      <small>Ngày tạo: {formatDate(course.createdAt)}</small>
                     </div>
                   </div>
                 </td>
@@ -222,10 +222,10 @@ export function TeacherCoursesPage() {
                 <td>
                   <div className="tc-row-actions">
                     <Link className="button button-secondary" to={`/teacher/courses/${course.courseId}/content`}>
-                      Content
+                      Nội dung
                     </Link>
                     <Link className="button button-secondary" to={`/teacher/courses/${course.courseId}/edit`}>
-                      Edit
+                      Sửa
                     </Link>
                     <button
                       type="button"
@@ -234,14 +234,14 @@ export function TeacherCoursesPage() {
                         openDialog(course.status === 'PUBLISHED' ? 'unpublish' : 'publish', course)
                       }
                     >
-                      {course.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
+                      {course.status === 'PUBLISHED' ? 'Hủy xuất bản' : 'Xuất bản'}
                     </button>
                     <button
                       type="button"
                       className="button button-secondary tc-danger"
                       onClick={() => openDialog('delete', course)}
                     >
-                      Delete
+                      Xóa
                     </button>
                   </div>
                 </td>
@@ -249,12 +249,12 @@ export function TeacherCoursesPage() {
             ))}
           </tbody>
         </table>
-        {loading && !result && <p className="tc-empty">Loading courses…</p>}
+        {loading && !result && <p className="tc-empty">Đang tải danh sách khóa học…</p>}
         {result && result.items.length === 0 && (
           <p className="tc-empty">
             {filters.keyword || filters.status
-              ? 'No course matches your search.'
-              : 'You have not created any course yet.'}
+              ? 'Không có khóa học nào phù hợp với tìm kiếm.'
+              : 'Bạn chưa tạo khóa học nào.'}
           </p>
         )}
       </div>

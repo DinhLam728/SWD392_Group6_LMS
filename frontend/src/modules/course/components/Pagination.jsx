@@ -3,11 +3,11 @@ export function ResultCount({ page, size, totalElements, noun }) {
   const last = Math.min((page + 1) * size, totalElements)
   return (
     <p className="course-count" role="status">
-      Showing{' '}
+      Hiển thị{' '}
       <strong>
         {first}–{last}
       </strong>{' '}
-      of <strong>{totalElements}</strong> {noun}
+      trên tổng số <strong>{totalElements}</strong> {noun}
     </p>
   )
 }
@@ -17,16 +17,16 @@ export default function Pagination({ page, totalPages, onPageChange }) {
     return null
   }
   return (
-    <nav className="pagination" aria-label="Pagination">
+    <nav className="pagination" aria-label="Phân trang">
       <button type="button" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
-        Previous
+        Trước
       </button>
       {Array.from({ length: totalPages }, (_, index) => (
         <button
           key={index}
           type="button"
           className="page-number"
-          aria-label={`Page ${index + 1}`}
+          aria-label={`Trang ${index + 1}`}
           aria-current={index === page ? 'page' : undefined}
           onClick={() => onPageChange(index)}
         >
@@ -34,7 +34,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
         </button>
       ))}
       <button type="button" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
-        Next
+        Sau
       </button>
     </nav>
   )

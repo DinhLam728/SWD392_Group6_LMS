@@ -42,7 +42,7 @@ export function CourseContentPage({ courseId }) {
       await request()
       reload()
     } catch (failure) {
-      setMoveError(failure.message || 'The order could not be changed.')
+      setMoveError(failure.message || 'Không thể thay đổi thứ tự.')
     } finally {
       setMoving(false)
     }
@@ -57,7 +57,7 @@ export function CourseContentPage({ courseId }) {
       setMessage(doneMessage)
       reload()
     } catch (failure) {
-      setAction({ busy: false, error: failure.message || 'The action could not be completed.' })
+      setAction({ busy: false, error: failure.message || 'Không thể thực hiện thao tác này.' })
     }
   }
 
@@ -70,23 +70,23 @@ export function CourseContentPage({ courseId }) {
 
   return (
     <>
-      <div className="breadcrumb" role="navigation" aria-label="Breadcrumb">
-        <Link to="/teacher/courses">My Courses</Link>
+      <div className="breadcrumb" role="navigation" aria-label="Đường dẫn">
+        <Link to="/teacher/courses">Khóa học của tôi</Link>
         <span aria-hidden="true"> / </span>
         <span>{content ? content.title : '…'}</span>
         <span aria-hidden="true"> / </span>
-        <span aria-current="page">Content</span>
+        <span aria-current="page">Nội dung</span>
       </div>
 
       <div className="page-heading tc-head">
         <div>
-          <span className="eyebrow">TEACHER</span>
-          <h1>Course Content</h1>
-          <p>Use the arrows to change the order of modules and lessons.</p>
+          <span className="eyebrow">GIÁO VIÊN</span>
+          <h1>Nội dung khóa học</h1>
+          <p>Dùng các mũi tên để thay đổi thứ tự module và bài học.</p>
         </div>
         {content && (
           <button type="button" onClick={() => openDialog({ type: 'module-form' })}>
-            + Add Module
+            + Thêm module
           </button>
         )}
       </div>
@@ -96,11 +96,11 @@ export function CourseContentPage({ courseId }) {
       {moveError && <Notice tone="error">{moveError}</Notice>}
 
       {content && (
-        <section className="card tc-summary" aria-label="Course information">
+        <section className="card tc-summary" aria-label="Thông tin khóa học">
           {content.thumbnailUrl ? (
             <img className="tc-summary-cover" src={courseImageUrl(content.thumbnailUrl)} alt="" />
           ) : (
-            <span className="tc-summary-cover">No image</span>
+            <span className="tc-summary-cover">Chưa có ảnh</span>
           )}
           <div>
             <div className="tc-summary-title">
@@ -110,46 +110,46 @@ export function CourseContentPage({ courseId }) {
             {content.description && <p className="tc-summary-text">{content.description}</p>}
             <dl className="tc-stats">
               <div>
-                <dt>Price</dt>
+                <dt>Giá</dt>
                 <dd>{formatVnd(content.price)}</dd>
               </div>
               <div>
-                <dt>Modules</dt>
+                <dt>Module</dt>
                 <dd>{content.modules.length}</dd>
               </div>
               <div>
-                <dt>Lessons</dt>
+                <dt>Bài học</dt>
                 <dd>{lessonTotal}</dd>
               </div>
               <div>
-                <dt>Students</dt>
+                <dt>Học viên</dt>
                 <dd>{content.studentCount}</dd>
               </div>
               <div>
-                <dt>Questions</dt>
+                <dt>Câu hỏi</dt>
                 <dd>{content.questionCount}</dd>
               </div>
               <div>
-                <dt>Created</dt>
+                <dt>Ngày tạo</dt>
                 <dd>{formatDate(content.createdAt)}</dd>
               </div>
             </dl>
             <div className="tc-actions">
               <Link className="button button-secondary tc-small" to={`/teacher/courses/${courseId}/edit`}>
-                Edit course
+                Sửa khóa học
               </Link>
               <Link className="button button-secondary tc-small" to="/question-bank">
-                Question Bank
+                Ngân hàng câu hỏi
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {loading && !content && <p className="tc-empty">Loading course content…</p>}
+      {loading && !content && <p className="tc-empty">Đang tải nội dung khóa học…</p>}
 
       {content && content.modules.length === 0 && (
-        <p className="tc-empty">This course has no modules yet. Add the first module to start.</p>
+        <p className="tc-empty">Khóa học chưa có module nào. Hãy thêm module đầu tiên để bắt đầu.</p>
       )}
 
       {content &&
@@ -171,7 +171,7 @@ export function CourseContentPage({ courseId }) {
 
       <div className="tc-actions">
         <Link className="button button-secondary" to="/teacher/courses">
-          Back to My Courses
+          Quay lại Khóa học của tôi
         </Link>
       </div>
 
@@ -187,7 +187,7 @@ export function CourseContentPage({ courseId }) {
                 dialog.module
                   ? updateModule(dialog.module.moduleId, { title })
                   : createModule(courseId, { title }),
-              dialog.module ? 'Module updated.' : 'Module added.',
+              dialog.module ? 'Đã cập nhật module.' : 'Đã thêm module.',
             )
           }
         />
@@ -195,27 +195,27 @@ export function CourseContentPage({ courseId }) {
 
       {dialog?.type === 'delete-module' && (
         <ConfirmDialog
-          title="Delete module"
-          message={`Delete “${dialog.module.title}”? Its ${dialog.module.lessons.length} lesson(s) are deleted with it.`}
-          confirmLabel="Delete"
+          title="Xóa module"
+          message={`Xóa module “${dialog.module.title}”? Module chỉ được xóa khi không còn bài học, câu hỏi hoặc quiz liên quan. Thao tác này không thể hoàn tác.`}
+          confirmLabel="Xóa"
           danger
           busy={action.busy}
           error={action.error}
           onCancel={() => setDialog(null)}
-          onConfirm={() => runDialogAction(() => deleteModule(dialog.module.moduleId), 'Module deleted.')}
+          onConfirm={() => runDialogAction(() => deleteModule(dialog.module.moduleId), 'Đã xóa module.')}
         />
       )}
 
       {dialog?.type === 'delete-lesson' && (
         <ConfirmDialog
-          title="Delete lesson"
-          message={`Delete the lesson “${dialog.lesson.title}”? This cannot be undone.`}
-          confirmLabel="Delete"
+          title="Xóa bài học"
+          message={`Xóa bài học “${dialog.lesson.title}”? Bài học chỉ được xóa khi khóa học chưa có học viên đăng ký. Thao tác này không thể hoàn tác.`}
+          confirmLabel="Xóa"
           danger
           busy={action.busy}
           error={action.error}
           onCancel={() => setDialog(null)}
-          onConfirm={() => runDialogAction(() => deleteLesson(dialog.lesson.lessonId), 'Lesson deleted.')}
+          onConfirm={() => runDialogAction(() => deleteLesson(dialog.lesson.lessonId), 'Đã xóa bài học.')}
         />
       )}
     </>

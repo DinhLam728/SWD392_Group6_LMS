@@ -3,26 +3,26 @@ import Dialog from './Dialog.jsx'
 export default function AiUnavailableDialog({ onRetry, onCancel }) {
   return (
     <Dialog
-      title="AI Service Unavailable"
+      title="Dịch vụ AI không khả dụng"
       onClose={onCancel}
       footer={
         <>
           <button type="button" className="button button-secondary" onClick={onCancel}>
-            Cancel
+            Hủy
           </button>
           <button type="button" className="button" onClick={onRetry}>
-            Retry
+            Thử lại
           </button>
         </>
       }
     >
       <p>
-        Gemini could not generate the lesson content. The AI service is temporarily unavailable or
-        returned an invalid response.
+        Gemini không thể tạo nội dung bài học. Dịch vụ AI tạm thời không khả dụng hoặc trả về phản hồi
+        không hợp lệ.
       </p>
       <p style={{ marginTop: '0.8rem' }}>
-        Your lesson title and content have not been changed. You can try again or write the lesson
-        content manually.
+        Tiêu đề và nội dung bài học của bạn chưa bị thay đổi. Bạn có thể thử lại hoặc tự viết nội dung
+        bài học.
       </p>
     </Dialog>
   )

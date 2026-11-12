@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,6 +34,33 @@ public interface TeacherModuleRepository extends JpaRepository<CourseModule, Lon
 
     @Query(value = "select count(*) from quizzes where module_id = :moduleId", nativeQuery = true)
     long countQuizzes(@Param("moduleId") Long moduleId);
+
+    @Query(value = "select count(*) from quizzes where module_id = :moduleId and created_by is not null",
+            nativeQuery = true)
+    long countStudentQuizzes(@Param("moduleId") Long moduleId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "delete from quiz_configs where quiz_id in "
+            + "(select quiz_id from quizzes where module_id = :moduleId and created_by is null)", nativeQuery = true)
+    void deleteTeacherQuizConfigs(@Param("moduleId") Long moduleId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "delete from quizzes where module_id = :moduleId and created_by is null", nativeQuery = true)
+    void deleteTeacherQuizzes(@Param("moduleId") Long moduleId);
+
+    @Query(value = """
+            select count(*) from questions qs
+            join quizzes q on q.quiz_id = qs.quiz_id
+            where q.module_id = :moduleId
+            """, nativeQuery = true)
+    long countQuizQuestions(@Param("moduleId") Long moduleId);
+
+    @Query(value = """
+            select count(*) from quiz_attempts a
+            join quizzes q on q.quiz_id = a.quiz_id
+            where q.module_id = :moduleId
+            """, nativeQuery = true)
+    long countQuizAttempts(@Param("moduleId") Long moduleId);
 
     @Query(value = "select module_id as moduleId, count(*) as total from quizzes "
             + "where module_id in (:moduleIds) and created_by is null group by module_id", nativeQuery = true)
